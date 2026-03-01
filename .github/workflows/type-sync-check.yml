@@ -1,0 +1,113 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: TypeScript Type Sync Check
+
+# OMN-3258: Verifies that TypeScript boundary types in omnidash/shared/
+# stay in sync with the corresponding Python Pydantic models in
+# omnibase_core and omniintelligence.
+#
+# Triggers:
+#   - Push/PR on omnidash when TypeScript boundary types change
+#   - Cross-repo dispatch from dependency-cascade.yml when Python models change
+#     (specifically: omnibase_core/src/omnibase_core/models/events/*.py)
+#
+# Exit conditions:
+#   PASS — all TypeScript boundary types contain the required Python model fields
+#   FAIL — one or more TypeScript types are missing Python model fields
+#          (Python model was renamed/added without updating TS type)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'shared/**'
+      - 'scripts/check_type_sync.py'
+      - 'scripts/check-type-sync.sh'
+      - '.github/workflows/type-sync-check.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'shared/**'
+      - 'scripts/check_type_sync.py'
+      - 'scripts/check-type-sync.sh'
+      - '.github/workflows/type-sync-check.yml'
+  # Cross-repo dispatch: triggered by dependency-cascade.yml in omnibase_core
+  # and omniintelligence when their Python event models change.
+  workflow_dispatch:
+    inputs:
+      trigger_repo:
+        description: 'Upstream repo that triggered this check (e.g. omnibase_core)'
+        required: false
+        default: ''
+      trigger_sha:
+        description: 'SHA of the upstream commit that triggered this check'
+        required: false
+        default: ''
+  merge_group:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  type-sync-check:
+    name: TypeScript ↔ Python Type Sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout omnidash
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout omnibase_core
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+          repository: OmniNode-ai/omnibase_core
+          # Pinned to omnibase_core main as of 2026-03-01.
+          # Update by running:
+          #   gh api repos/OmniNode-ai/omnibase_core/commits/main --jq '.sha'
+          ref: eb0bd238f7a3f13958e805a2ec51e3cb8454225f
+          path: omnibase_core
+
+      - name: Checkout omniintelligence
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+          repository: OmniNode-ai/omniintelligence
+          # Pinned to omniintelligence main as of 2026-03-01.
+          # Update by running:
+          #   gh api repos/OmniNode-ai/omniintelligence/commits/main --jq '.sha'
+          ref: 496bfed58ef254a1a838da61075824687d2c9a75
+          path: omniintelligence
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+
+      - name: Show trigger context
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "Triggered by: ${{ inputs.trigger_repo }}"
+          echo "Trigger SHA:  ${{ inputs.trigger_sha }}"
+
+      - name: Run TypeScript type sync check
+        run: |
+          bash scripts/check-type-sync.sh \
+            --omnibase-core "$GITHUB_WORKSPACE/omnibase_core" \
+            --omniintelligence "$GITHUB_WORKSPACE/omniintelligence"
+
+      - name: Report result
+        if: failure()
+        run: |
+          echo "::error::TypeScript boundary types are out of sync with Python models."
+          echo "::error::Update the TypeScript types in shared/ to include the missing fields."
+          echo "::error::See OMN-3258 type-sync policy for details."
