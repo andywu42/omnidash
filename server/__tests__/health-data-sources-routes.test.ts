@@ -92,10 +92,10 @@ function makeMockDb(rows: unknown[]) {
 // Default mock setup helpers
 // ============================================================================
 
-/** Set up all DB-backed probes to return empty/no-data (mock status). */
+/** Set up all DB-backed probes to return empty/no-data (offline status). */
 function setupEmptyDb() {
   // probeInsights() queries pattern_learning_artifacts via tryGetIntelligenceDb.
-  // Returning count: 0 → status: mock (empty_tables).
+  // Returning count: 0 → status: offline (upstream_never_emitted).
   vi.mocked(tryGetIntelligenceDb).mockReturnValue(makeMockDb([{ count: 0 }]) as any);
   vi.mocked(getEventBusDataSource).mockReturnValue(null);
 }
@@ -288,7 +288,7 @@ describe('GET /api/health/data-sources', () => {
     expect(res.body.dataSources.patterns.reason).toBe('probe_threw');
   });
 
-  it('reports status: mock for patterns when projection has totalPatterns === 0', async () => {
+  it('reports status: offline for patterns when projection has totalPatterns === 0', async () => {
     const patternsView = makeView({ totalPatterns: 0 });
 
     vi.mocked(projectionService.getView).mockImplementation((viewId: string) => {
@@ -302,13 +302,13 @@ describe('GET /api/health/data-sources', () => {
     const res = await request(app).get('/api/health/data-sources');
 
     expect(res.status).toBe(200);
-    expect(res.body.dataSources.patterns.status).toBe('mock');
-    expect(res.body.dataSources.patterns.reason).toBe('empty_tables');
+    expect(res.body.dataSources.patterns.status).toBe('offline');
+    expect(res.body.dataSources.patterns.reason).toBe('upstream_never_emitted');
   });
 
   it('computes summary counts correctly', async () => {
-    // Set up: 3 live (event-bus, validation, correlationTrace), rest mock.
-    // validation live (totalRuns: 5), patterns mock (totalPatterns: 0).
+    // Set up: 3 live (event-bus, validation, correlationTrace), rest mock/offline.
+    // validation live (totalRuns: 5), patterns offline (totalPatterns: 0).
     const eventBusView = makeView({ totalEventsIngested: 5 });
     const validationView = makeView({ totalRuns: 5 });
     const patternsView = makeView({ totalPatterns: 0 });

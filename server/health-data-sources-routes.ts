@@ -325,7 +325,7 @@ async function probeInsights(): Promise<DataSourceInfo> {
     const result = await db.select({ total: count() }).from(patternLearningArtifacts);
     const total = result[0]?.total ?? 0;
     if (total === 0) {
-      return { status: 'mock', reason: 'empty_tables' };
+      return { status: 'offline', reason: 'upstream_never_emitted' };
     }
     return { status: 'live' };
   } catch {
@@ -350,7 +350,7 @@ function probePatterns(): DataSourceInfo {
       return { status: 'mock', reason: 'empty_projection' };
     }
     if (snapshot.payload.totalPatterns === 0) {
-      return { status: 'mock', reason: 'empty_tables' };
+      return { status: 'offline', reason: 'upstream_never_emitted' };
     }
     return { status: 'live' };
   } catch {
