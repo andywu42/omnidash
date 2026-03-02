@@ -338,6 +338,19 @@ app.use((req, res, next) => {
     }
   }
 
+  // Internal-only: bus/environment identity for omnidash header badge
+  // Not intended for public internet exposure. Contains broker topology info (non-secret).
+  app.get('/api/runtime-environment', (_req, res) => {
+    // Mirror runtime precedence: KAFKA_BROKERS takes priority (legacy), fall back to standard var
+    // TODO follow-up: standardize omnidash to KAFKA_BOOTSTRAP_SERVERS only
+    const brokers = process.env.KAFKA_BROKERS || process.env.KAFKA_BOOTSTRAP_SERVERS || 'unknown';
+    res.json({
+      busId: process.env.BUS_ID || 'unknown',
+      kafkaBrokers: brokers,
+      namespace: process.env.K8S_NAMESPACE || 'local',
+    });
+  });
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || 'Internal Server Error';

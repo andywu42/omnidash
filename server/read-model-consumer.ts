@@ -817,12 +817,22 @@ export class ReadModelConsumer {
       correlationId:
         (data.correlation_id as string) || (data.correlationId as string) || fallbackId,
       sessionId: (data.session_id as string) || (data.sessionId as string) || undefined,
-      userRequest: (data.user_request as string) || (data.userRequest as string) || '',
+      // user_request / userRequest: canonical names.
+      // prompt_preview: field name used by omniclaude routing.decision events. [OMN-3320]
+      userRequest:
+        (data.user_request as string) ||
+        (data.userRequest as string) ||
+        (data.prompt_preview as string) ||
+        '',
       userRequestHash:
         (data.user_request_hash as string) || (data.userRequestHash as string) || undefined,
       contextSnapshot: data.context_snapshot || data.contextSnapshot || undefined,
       selectedAgent: (data.selected_agent as string) || (data.selectedAgent as string) || 'unknown',
-      confidenceScore: String(data.confidence_score ?? data.confidenceScore ?? 0),
+      // confidence_score / confidenceScore: canonical names.
+      // confidence: field name used by omniclaude routing.decision events. [OMN-3320]
+      confidenceScore: String(
+        data.confidence_score ?? data.confidenceScore ?? data.confidence ?? 0
+      ),
       routingStrategy:
         (data.routing_strategy as string) || (data.routingStrategy as string) || 'unknown',
       triggerConfidence:

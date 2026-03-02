@@ -140,7 +140,9 @@ const SQL_PRELOAD_LIMIT = 2000;
  *
  * PRELOAD_WINDOW_MINUTES — Only preload events younger than this from PostgreSQL.
  *   Prevents stale events (3-7 day Kafka retention) from overwriting fresh data.
- *   Override via env: PRELOAD_WINDOW_MINUTES (default: 60).
+ *   Override via env: PRELOAD_WINDOW_MINUTES (default: 1440, i.e. 24 hours).
+ *   60-minute default was too narrow — node-introspection events emitted once at
+ *   plugin startup are missed if omnidash restarts more than 1h after omniclaude. [OMN-3333]
  *
  * MAX_PRELOAD_EVENTS — Hard cap on the number of events loaded in the fresh window.
  *   Override via env: MAX_PRELOAD_EVENTS (default: 5000).
@@ -153,9 +155,9 @@ const SQL_PRELOAD_LIMIT = 2000;
  * BACKFILL_MAX_EVENTS — Cap for the backfill query when ENABLE_BACKFILL is true.
  *   Override via env: BACKFILL_MAX_EVENTS (default: 2000).
  */
-const parsedPreloadWindow = parseInt(process.env.PRELOAD_WINDOW_MINUTES || '60', 10);
+const parsedPreloadWindow = parseInt(process.env.PRELOAD_WINDOW_MINUTES || '1440', 10);
 const PRELOAD_WINDOW_MINUTES =
-  Number.isFinite(parsedPreloadWindow) && parsedPreloadWindow >= 0 ? parsedPreloadWindow : 60;
+  Number.isFinite(parsedPreloadWindow) && parsedPreloadWindow >= 0 ? parsedPreloadWindow : 1440;
 
 const parsedMaxPreload = parseInt(process.env.MAX_PRELOAD_EVENTS || '5000', 10);
 const MAX_PRELOAD_EVENTS =

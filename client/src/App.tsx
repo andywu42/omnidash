@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Switch, Route, Redirect } from 'wouter';
 import { queryClient } from './lib/queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -200,6 +201,20 @@ function App() {
     debug: false,
   });
 
+  // Bus identity badge — reflects server's env at startup (does not hot-reload)
+  const [runtimeEnv, setRuntimeEnv] = useState<{
+    busId: string;
+    kafkaBrokers: string;
+    namespace: string;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/runtime-environment')
+      .then((r) => r.json())
+      .then(setRuntimeEnv)
+      .catch(() => null);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <DemoModeProvider>
@@ -245,6 +260,14 @@ function App() {
                               : 'Disconnected'}
                         </span>
                       </div>
+                      {runtimeEnv && (
+                        <span
+                          className="text-xs font-mono px-2 py-1 rounded bg-muted text-muted-foreground border"
+                          title={`Broker: ${runtimeEnv.kafkaBrokers} | NS: ${runtimeEnv.namespace}`}
+                        >
+                          {runtimeEnv.busId === 'cloud' ? '☁' : '⚡'} {runtimeEnv.busId}
+                        </span>
+                      )}
                       <DemoControlPanel />
                       <ThemeToggle />
                     </div>
