@@ -71,6 +71,10 @@ const EXEMPT_FILES = new Set([
   // already exempt). This route will be removed once all clients migrate to the canonical
   // endpoint. TODO(OMN-2924-followup): delete once client migration is complete.
   'patterns-routes.ts',
+
+  // Routing config CRUD requires direct DB writes (not yet event-sourced).
+  // TODO(OMN-3445-followup): migrate to event-sourced projection.
+  'routing-config-routes.ts',
 ]);
 
 /**

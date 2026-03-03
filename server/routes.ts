@@ -40,6 +40,8 @@ import pipelineHealthRoutes from './pipeline-health-routes';
 import eventBusHealthRoutes from './event-bus-health-routes';
 // Plan reviewer routes (OMN-3324)
 import planReviewerRoutes from './plan-reviewer-routes';
+// Routing config routes (OMN-3445)
+import routingConfigRoutes from './routing-config-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -141,6 +143,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Plan reviewer routes (OMN-3324)
   app.use('/api/plan-reviewer', planReviewerRoutes);
+
+  // Routing config routes (OMN-3445)
+  app.use('/api/routing-config', routingConfigRoutes);
 
   // Conditionally mount golden path test routes (OMN-2079)
   // Only enabled when ENABLE_TEST_ROUTES=true AND (NODE_ENV=test OR OMNIDASH_TEST_MODE=true)
