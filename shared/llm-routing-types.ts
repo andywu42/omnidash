@@ -278,6 +278,32 @@ export interface LlmRoutingFuzzyConfidenceBucket {
   count: number;
 }
 
+/**
+ * Path comparison metrics grouped by omninode_enabled (OMN-3450).
+ * Groups routing decisions by whether they ran through the ONEX node pipeline.
+ *
+ * Semantics (locked from OMN-3449 migration):
+ *   true  = HandlerRoutingLlm ran inside the ONEX node pipeline
+ *   false = legacy path ran (or _onex_nodes_available was False)
+ */
+export interface LlmRoutingByOmninodeMode {
+  /** true = ONEX pipeline (HandlerRoutingLlm), false = legacy path */
+  omninode_enabled: boolean;
+  /** Total routing decisions for this path in the window */
+  total: number;
+  /** Agreement rate for this path (0–1) */
+  agreement_rate: number;
+  /** Average cost per decision (USD) */
+  avg_cost_usd: number;
+  /**
+   * Average total tokens per decision.
+   * Uses AVG(NULLIF(total_tokens, 0)) so pre-Task-5 rows (col=0) are excluded.
+   */
+  avg_total_tokens: number;
+  /** Average LLM routing latency (ms) */
+  avg_llm_latency_ms: number;
+}
+
 // NOTE: Zod runtime validation schemas (LlmRoutingTimeWindowSchema, etc.) live
 // in server/llm-routing-schemas.ts to avoid bundling the 'zod' runtime into
 // client-side JavaScript. Import from there in server-only code.

@@ -21,6 +21,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import {
   llmRoutingSource,
   fetchByModel,
+  fetchByOmninodeMode,
   fetchFuzzyConfidence,
   fetchRoutingConfig,
   putRoutingConfig,
@@ -83,6 +84,7 @@ import {
 import type {
   LlmRoutingTimeWindow,
   LlmRoutingByModel,
+  LlmRoutingByOmninodeMode,
   LlmRoutingDisagreement,
   LlmRoutingFuzzyConfidenceBucket,
 } from '@shared/llm-routing-types';
@@ -856,6 +858,18 @@ export default function LlmRoutingDashboard() {
     staleTime: 60_000,
   });
 
+  const {
+    data: byOmninodeMode = [],
+    isLoading: byOmninodesLoading,
+    isError: byOmninodesError,
+    refetch: refetchByOmninodeMode,
+  } = useQuery<LlmRoutingByOmninodeMode[]>({
+    queryKey: queryKeys.llmRouting.byOmninodeMode(timeWindow),
+    queryFn: () => fetchByOmninodeMode(timeWindow),
+    refetchInterval: getPollingInterval(POLLING_INTERVAL_SLOW),
+    staleTime: 60_000,
+  });
+
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   const handleRefresh = () => {
@@ -866,6 +880,7 @@ export default function LlmRoutingDashboard() {
     void refetchTrend();
     void refetchByModel();
     void refetchFuzzyConfidence();
+    void refetchByOmninodeMode();
   };
 
   // llmRoutingSource.isUsingMockData reads a mutable Set on the singleton.
@@ -1317,6 +1332,70 @@ export default function LlmRoutingDashboard() {
 
       {/* ── Routing by Model with Token Averages (OMN-3449) ─────────────── */}
       <ByModelTable byModel={byModel} isLoading={byModelLoading} isError={byModelError} />
+
+      {/* ── OmniNode Path Comparison (OMN-3450) ──────────────────────────── */}
+      {byOmninodesError ? null : byOmninodesLoading ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">OmniNode Path Comparison</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-32 w-full" />
+          </CardContent>
+        </Card>
+      ) : byOmninodeMode.length > 0 ? (
+        <section className="mt-6 bg-gray-900 rounded-xl p-4">
+          <h2 className="text-lg font-semibold mb-1">OmniNode Path Comparison</h2>
+          <p className="text-xs text-gray-500 mb-3">
+            Compares routing decisions made via the ONEX node pipeline vs legacy path
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            {byOmninodeMode.map((mode) => (
+              <div
+                key={String(mode.omninode_enabled)}
+                className={cn(
+                  'rounded-lg p-3 border',
+                  mode.omninode_enabled
+                    ? 'border-green-700 bg-green-900/20'
+                    : 'border-gray-600 bg-gray-800'
+                )}
+              >
+                <div className="font-semibold mb-2 text-sm">
+                  {mode.omninode_enabled ? '✓ ONEX Path' : '○ Legacy Path'}
+                </div>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Decisions</span>
+                    <span className="font-mono tabular-nums">{fmtCount(mode.total)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Agreement Rate</span>
+                    <span
+                      className={cn('font-mono tabular-nums', agreementColor(mode.agreement_rate))}
+                    >
+                      {fmtPct(mode.agreement_rate)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Avg Cost</span>
+                    <span className="font-mono tabular-nums">{fmtCost(mode.avg_cost_usd)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Avg Tokens</span>
+                    <span className="font-mono tabular-nums">
+                      {mode.avg_total_tokens > 0 ? fmtCount(mode.avg_total_tokens) : '—'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Avg Latency</span>
+                    <span className="font-mono tabular-nums">{fmtMs(mode.avg_llm_latency_ms)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* ── Top Disagreement Pairs ────────────────────────────────────────── */}
       <DisagreementsTable

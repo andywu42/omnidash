@@ -20,6 +20,7 @@ import type {
   LlmRoutingLatencyPoint,
   LlmRoutingByVersion,
   LlmRoutingByModel,
+  LlmRoutingByOmninodeMode,
   LlmRoutingDisagreement,
   LlmRoutingTrendPoint,
   LlmRoutingFuzzyConfidenceBucket,
@@ -190,6 +191,23 @@ router.get('/fuzzy-confidence', async (req, res) => {
   } catch (error) {
     console.error('[llm-routing] Error fetching fuzzy-confidence:', error);
     return res.status(500).json({ error: 'Failed to fetch fuzzy confidence distribution' });
+  }
+});
+
+// ============================================================================
+// GET /api/llm-routing/by-omninode-mode?window=7d   (OMN-3450)
+// ============================================================================
+
+router.get('/by-omninode-mode', async (req, res) => {
+  try {
+    const timeWindow = validateWindow(req, res);
+    if (timeWindow === null) return;
+    const payload = await fetchPayload(timeWindow);
+    setDegradedHeader(res, timeWindow, payload);
+    return res.json(payload.byOmninodeMode satisfies LlmRoutingByOmninodeMode[]);
+  } catch (error) {
+    console.error('[llm-routing] Error fetching by-omninode-mode:', error);
+    return res.status(500).json({ error: 'Failed to fetch LLM routing by omninode mode' });
   }
 });
 

@@ -650,6 +650,10 @@ export const queryKeys = {
 
     /** Per-model effectiveness metrics including token averages (OMN-3443, OMN-3449) */
     byModel: (window: string) => [...queryKeys.llmRouting.all, 'by-model', window] as const,
+
+    /** ONEX path vs legacy path comparison (OMN-3450) */
+    byOmninodeMode: (window: string) =>
+      [...queryKeys.llmRouting.all, 'by-omninode-mode', window] as const,
   },
   // ============================================================================
   // Delegation Metrics (OMN-2284)

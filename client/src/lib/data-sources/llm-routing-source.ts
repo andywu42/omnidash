@@ -11,6 +11,7 @@ import type {
   LlmRoutingLatencyPoint,
   LlmRoutingByVersion,
   LlmRoutingByModel,
+  LlmRoutingByOmninodeMode,
   LlmRoutingDisagreement,
   LlmRoutingTrendPoint,
   LlmRoutingTimeWindow,
@@ -276,6 +277,21 @@ export async function fetchAvailableModels(window: LlmRoutingTimeWindow): Promis
 
 const _routingBase = buildApiUrl('/api/llm-routing');
 const _configBase = buildApiUrl('/api/routing-config');
+
+/**
+ * Fetch ONEX path vs legacy path comparison data (OMN-3450).
+ * Returns at most 2 rows: omninode_enabled=true and omninode_enabled=false.
+ * Returns empty array when no data is available in the requested window.
+ */
+export async function fetchByOmninodeMode(window: string): Promise<LlmRoutingByOmninodeMode[]> {
+  const response = await fetch(
+    `${_routingBase}/by-omninode-mode?window=${encodeURIComponent(window)}`
+  );
+  if (!response.ok) throw new Error(`[fetchByOmninodeMode] HTTP ${response.status}`);
+  const data: LlmRoutingByOmninodeMode[] = await response.json();
+  if (!Array.isArray(data)) throw new Error('[fetchByOmninodeMode] Malformed response');
+  return data;
+}
 
 /**
  * Fetch fuzzy confidence distribution for a given time window.

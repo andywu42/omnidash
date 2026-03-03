@@ -26,6 +26,7 @@ import type {
   LlmRoutingLatencyPoint,
   LlmRoutingByVersion,
   LlmRoutingByModel,
+  LlmRoutingByOmninodeMode,
   LlmRoutingDisagreement,
   LlmRoutingTrendPoint,
   LlmRoutingTimeWindow,
@@ -43,6 +44,8 @@ export interface LlmRoutingPayload {
   latency: LlmRoutingLatencyPoint[];
   byVersion: LlmRoutingByVersion[];
   byModel: LlmRoutingByModel[];
+  /** ONEX path vs legacy path comparison (OMN-3450) */
+  byOmninodeMode: LlmRoutingByOmninodeMode[];
   disagreements: LlmRoutingDisagreement[];
   trend: LlmRoutingTrendPoint[];
   /** Fuzzy confidence distribution buckets (OMN-3447) */
@@ -133,6 +136,7 @@ export class LlmRoutingProjection extends DbBackedProjectionView<LlmRoutingPaylo
       latency: [],
       byVersion: [],
       byModel: [],
+      byOmninodeMode: [],
       disagreements: [],
       trend: [],
       fuzzyConfidence: [],
@@ -168,19 +172,39 @@ export class LlmRoutingProjection extends DbBackedProjectionView<LlmRoutingPaylo
     // Default window for the pre-warmed snapshot: 7d
     const window: LlmRoutingTimeWindow = '7d';
 
-    const [summary, latency, byVersion, byModel, disagreements, trend, fuzzyConfidence, models] =
-      await Promise.all([
-        this.querySummary(db, window),
-        this.queryLatency(db, window),
-        this.queryByVersion(db, window),
-        this.queryByModel(db, window),
-        this.queryDisagreements(db, window),
-        this.queryTrend(db, window),
-        this.queryFuzzyConfidenceDistribution(db, window),
-        this.queryModels(db),
-      ]);
+    const [
+      summary,
+      latency,
+      byVersion,
+      byModel,
+      byOmninodeMode,
+      disagreements,
+      trend,
+      fuzzyConfidence,
+      models,
+    ] = await Promise.all([
+      this.querySummary(db, window),
+      this.queryLatency(db, window),
+      this.queryByVersion(db, window),
+      this.queryByModel(db, window),
+      this.queryByOmninodeMode(db, window),
+      this.queryDisagreements(db, window),
+      this.queryTrend(db, window),
+      this.queryFuzzyConfidenceDistribution(db, window),
+      this.queryModels(db),
+    ]);
 
-    return { summary, latency, byVersion, byModel, disagreements, trend, fuzzyConfidence, models };
+    return {
+      summary,
+      latency,
+      byVersion,
+      byModel,
+      byOmninodeMode,
+      disagreements,
+      trend,
+      fuzzyConfidence,
+      models,
+    };
   }
 
   // --------------------------------------------------------------------------
@@ -399,6 +423,47 @@ export class LlmRoutingProjection extends DbBackedProjectionView<LlmRoutingPaylo
   }
 
   /**
+   * Query ONEX path vs legacy path comparison (OMN-3450).
+   *
+   * Groups by omninode_enabled (added by migration 0013_routing_decisions_tokens.sql).
+   * Uses AVG(NULLIF(total_tokens, 0)) so pre-Task-5 rows (col=0) are excluded
+   * from token averages rather than dragging numbers down.
+   *
+   * Returns at most 2 rows: one for omninode_enabled=true, one for false.
+   * Returns empty array when the column has no non-null data (pre-migration rows only).
+   */
+  async queryByOmninodeMode(
+    db: Db,
+    window: LlmRoutingTimeWindow = '7d'
+  ): Promise<LlmRoutingByOmninodeMode[]> {
+    const cutoff = windowCutoff(window);
+
+    const result = await db.execute(sql`
+      SELECT
+        omninode_enabled,
+        COUNT(*)::int                                                               AS total,
+        AVG(CASE WHEN agreement THEN 1.0 ELSE 0.0 END)::float8                    AS agreement_rate,
+        COALESCE(AVG(cost_usd), 0)::float8                                         AS avg_cost_usd,
+        COALESCE(AVG(NULLIF(total_tokens, 0)), 0)::int                             AS avg_total_tokens,
+        ROUND(AVG(llm_latency_ms))::int                                            AS avg_llm_latency_ms
+      FROM llm_routing_decisions
+      WHERE created_at >= ${cutoff}
+      GROUP BY omninode_enabled
+      ORDER BY omninode_enabled DESC
+    `);
+
+    const rows = result.rows as Array<Record<string, unknown>>;
+    return rows.map((r) => ({
+      omninode_enabled: Boolean(r.omninode_enabled),
+      total: Number(r.total ?? 0),
+      agreement_rate: parseFloat(String(r.agreement_rate ?? '0')),
+      avg_cost_usd: parseFloat(String(r.avg_cost_usd ?? '0')),
+      avg_total_tokens: Number(r.avg_total_tokens ?? 0),
+      avg_llm_latency_ms: Number(r.avg_llm_latency_ms ?? 0),
+    }));
+  }
+
+  /**
    * Query fuzzy confidence distribution (OMN-3447).
    * Buckets: no_data, 0–30%, 30–50%, 50–70%, 70–90%, 90–100%.
    * sort_key is stable (0–5) for ordered rendering.
@@ -599,18 +664,30 @@ export class LlmRoutingProjection extends DbBackedProjectionView<LlmRoutingPaylo
       this.queryLatency(db, window),
       this.queryByVersion(db, window),
       this.queryByModel(db, window),
+      this.queryByOmninodeMode(db, window),
       this.queryDisagreements(db, window),
       this.queryTrend(db, window),
       this.queryFuzzyConfidenceDistribution(db, window),
       this.queryModels(db),
     ])
       .then(
-        ([summary, latency, byVersion, byModel, disagreements, trend, fuzzyConfidence, models]) => {
+        ([
+          summary,
+          latency,
+          byVersion,
+          byModel,
+          byOmninodeMode,
+          disagreements,
+          trend,
+          fuzzyConfidence,
+          models,
+        ]) => {
           const payload: LlmRoutingPayload = {
             summary,
             latency,
             byVersion,
             byModel,
+            byOmninodeMode,
             disagreements,
             trend,
             fuzzyConfidence,
