@@ -95,6 +95,12 @@ import {
   emitPipelineBudgetInvalidate,
   emitCircuitBreakerInvalidate,
 } from './omniclaude-state-events';
+import {
+  PatternProjectionEventSchema,
+  PatternLifecycleTransitionedEventSchema,
+  PatternLearningRequestedEventSchema,
+  validateEvent,
+} from '@shared/event-schemas';
 
 /**
  * Derive a deterministic UUID-shaped string from Kafka message coordinates.
@@ -722,19 +728,55 @@ export class ReadModelConsumer {
         case SUFFIX_MEMORY_INTENT_STORED:
           projected = await this.projectIntentStoredEvent(parsed, fallbackId);
           break;
-        // OMN-2924: Pattern write handlers
-        case SUFFIX_INTELLIGENCE_PATTERN_PROJECTION:
-          projected = await this.projectPatternProjectionEvent(parsed, fallbackId);
+        // OMN-2924: Pattern write handlers (OMN-3751: Zod-validated)
+        case SUFFIX_INTELLIGENCE_PATTERN_PROJECTION: {
+          const validatedProjection = validateEvent(PatternProjectionEventSchema, parsed, topic);
+          if (!validatedProjection) {
+            this.stats.errorsCount++;
+            return;
+          }
+          projected = await this.projectPatternProjectionEvent(
+            parsed as Record<string, unknown>,
+            fallbackId
+          );
           break;
-        case SUFFIX_INTELLIGENCE_PATTERN_LIFECYCLE_TRANSITIONED:
-          projected = await this.projectPatternLifecycleTransitionedEvent(parsed, fallbackId);
+        }
+        case SUFFIX_INTELLIGENCE_PATTERN_LIFECYCLE_TRANSITIONED: {
+          const validatedLifecycle = validateEvent(
+            PatternLifecycleTransitionedEventSchema,
+            parsed,
+            topic
+          );
+          if (!validatedLifecycle) {
+            this.stats.errorsCount++;
+            return;
+          }
+          projected = await this.projectPatternLifecycleTransitionedEvent(
+            parsed as Record<string, unknown>,
+            fallbackId
+          );
           break;
+        }
         // OMN-2920: Pattern learning command — backfill pattern_learning_artifacts
         // from PatternLearningRequested events (omniintelligence has not yet emitted
         // pattern-projection.v1 completions, so this ensures the table is non-empty).
-        case SUFFIX_INTELLIGENCE_PATTERN_LEARNING_CMD:
-          projected = await this.projectPatternLearningRequestedEvent(parsed, fallbackId);
+        // OMN-3751: Zod-validated before projection.
+        case SUFFIX_INTELLIGENCE_PATTERN_LEARNING_CMD: {
+          const validatedLearning = validateEvent(
+            PatternLearningRequestedEventSchema,
+            parsed,
+            topic
+          );
+          if (!validatedLearning) {
+            this.stats.errorsCount++;
+            return;
+          }
+          projected = await this.projectPatternLearningRequestedEvent(
+            parsed as Record<string, unknown>,
+            fallbackId
+          );
           break;
+        }
         // OMN-3324: Plan reviewer strategy run completions
         case TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED:
           projected = await this.projectPlanReviewStrategyRunEvent(parsed, fallbackId);

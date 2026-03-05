@@ -44,6 +44,8 @@ import planReviewerRoutes from './plan-reviewer-routes';
 import routingConfigRoutes from './routing-config-routes';
 // Worker health routes (OMN-3598)
 import workerHealthRoutes from './worker-health-routes';
+// Schema health endpoint (OMN-3751)
+import schemaHealthRoutes from './schema-health';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -148,6 +150,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Worker health routes (OMN-3598)
   app.use('/api/worker-health', workerHealthRoutes);
+
+  // Schema health endpoint (OMN-3751)
+  app.use('/api/health', schemaHealthRoutes);
 
   // Conditionally mount golden path test routes (OMN-2079)
   // Only enabled when ENABLE_TEST_ROUTES=true AND (NODE_ENV=test OR OMNIDASH_TEST_MODE=true)
