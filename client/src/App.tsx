@@ -233,7 +233,11 @@ function App() {
                     <div className="flex items-center gap-4">
                       <SidebarTrigger data-testid="button-sidebar-toggle" />
                       <div className="flex items-center gap-3">
-                        <img src="/logo-inline.svg" alt="OmniNode" className="h-7 w-auto max-w-[180px]" />
+                        <img
+                          src="/logo-inline.svg"
+                          alt="OmniNode"
+                          className="h-7 w-auto max-w-[180px] dark:brightness-0 dark:invert"
+                        />
                       </div>
                     </div>
 
