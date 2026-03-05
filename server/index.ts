@@ -11,6 +11,10 @@ if (!process.env.KAFKAJS_NO_PARTITIONER_WARNING) {
 }
 
 import express, { type Request, Response, NextFunction } from 'express';
+import { initOidcClient, isAuthEnabled } from './auth/oidc-client';
+import { configureSession, getSessionMiddleware } from './auth/session-config';
+import { authRoutes, authMeRoute } from './auth/auth-routes';
+import { refreshTokenIfNeeded, requireAuth } from './auth/middleware';
 import { registerRoutes } from './routes';
 import { setupVite, serveStatic, log } from './vite';
 import { setupWebSocket } from './websocket';
@@ -96,6 +100,29 @@ app.use((req, res, next) => {
   } else {
     log(`Running in standalone mode (no runtime supervision)`);
   }
+
+  // --------------------------------------------------------------------------
+  // Authentication (OMN-3698)
+  // OIDC discovery + session middleware + auth routes + auth gate.
+  // When KEYCLOAK_ISSUER is unset, auth is disabled (dev mode).
+  // When set, auth is fail-closed: discovery failure → process.exit(1).
+  // --------------------------------------------------------------------------
+  await initOidcClient();
+  await configureSession(app);
+
+  // Auth routes: /auth/login, /auth/callback, /auth/logout
+  app.use('/auth', authRoutes);
+
+  // /api/auth/me — returns auth status (BEFORE requireAuth gate)
+  app.use('/api/auth', authMeRoute);
+
+  // Token refresh + auth gate for all /api routes (skip /api/auth/me)
+  const skipAuthMe = (req: Request, _res: Response, next: NextFunction) => {
+    if (req.originalUrl.startsWith('/api/auth/me')) return next('route');
+    next();
+  };
+  app.use('/api', skipAuthMe, refreshTokenIfNeeded);
+  app.use('/api', skipAuthMe, requireAuth);
 
   // --------------------------------------------------------------------------
   // Node Registry Projection (OMN-2097)

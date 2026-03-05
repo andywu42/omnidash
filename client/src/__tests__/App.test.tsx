@@ -157,14 +157,25 @@ vi.mock('@/hooks/useWebSocket', () => ({
   useWebSocket: vi.fn(),
 }));
 
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: vi.fn(),
+}));
+
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useAuth } from '@/hooks/useAuth';
 import App from '../App';
 
 const useWebSocketMock = vi.mocked(useWebSocket);
+const useAuthMock = vi.mocked(useAuth);
 
 describe('App', () => {
   beforeEach(() => {
     window.history.pushState({}, '', '/');
+    useAuthMock.mockReturnValue({
+      authenticated: true,
+      isLoading: false,
+      user: { sub: 'test-user', email: 'test@example.com' },
+    });
     useWebSocketMock.mockReturnValue({
       isConnected: true,
       connectionStatus: 'connected',

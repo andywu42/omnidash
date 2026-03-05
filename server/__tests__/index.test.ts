@@ -16,6 +16,26 @@ const eventBusIsActiveMock = vi.fn();
 const mockGeneratorStartMock = vi.fn();
 const mockGeneratorStopMock = vi.fn();
 
+vi.mock('../auth/oidc-client', () => ({
+  initOidcClient: vi.fn().mockResolvedValue(undefined),
+  isAuthEnabled: vi.fn().mockReturnValue(false),
+}));
+
+vi.mock('../auth/session-config', () => ({
+  configureSession: vi.fn().mockResolvedValue(undefined),
+  getSessionMiddleware: vi.fn().mockReturnValue((_req: any, _res: any, next: any) => next()),
+}));
+
+vi.mock('../auth/auth-routes', () => ({
+  authRoutes: (_req: any, _res: any, next: any) => next(),
+  authMeRoute: (_req: any, _res: any, next: any) => next(),
+}));
+
+vi.mock('../auth/middleware', () => ({
+  refreshTokenIfNeeded: (_req: any, _res: any, next: any) => next(),
+  requireAuth: (_req: any, _res: any, next: any) => next(),
+}));
+
 vi.mock('../routes', () => ({
   registerRoutes: registerRoutesMock,
 }));

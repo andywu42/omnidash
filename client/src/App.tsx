@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Switch, Route, Redirect } from 'wouter';
-import { queryClient } from './lib/queryClient';
+import { queryClient, apiRequest } from './lib/queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -13,6 +13,8 @@ import { DemoModeProvider } from '@/contexts/DemoModeContext';
 import { DemoModeToggle } from '@/components/DemoModeToggle';
 import { DemoControlPanel } from '@/components/DemoControlPanel';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useAuth } from '@/hooks/useAuth';
+import LoginPage from '@/pages/LoginPage';
 
 // Archived legacy pages (OMN-1377)
 import IntelligenceOperations from '@/_archive/pages/IntelligenceOperations';
@@ -195,11 +197,13 @@ function Router() {
   );
 }
 
-function App() {
+function Dashboard() {
   const style = {
     '--sidebar-width': '16rem',
     '--sidebar-width-icon': '3rem',
   };
+
+  const { user } = useAuth();
 
   // WebSocket connection for global status indicator
   const { isConnected, connectionStatus } = useWebSocket({
@@ -214,74 +218,122 @@ function App() {
   } | null>(null);
 
   useEffect(() => {
-    fetch('/api/runtime-environment')
+    fetch('/api/runtime-environment', { credentials: 'include' })
       .then((r) => r.json())
       .then(setRuntimeEnv)
       .catch(() => null);
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      const res = await apiRequest('POST', '/auth/logout');
+      const { logoutUrl } = await res.json();
+      window.location.href = logoutUrl;
+    } catch {
+      // Fallback: just redirect to login
+      window.location.href = '/auth/login';
+    }
+  };
+
+  return (
+    <SidebarProvider style={style as React.CSSProperties}>
+      <div className="flex h-screen w-full">
+        <AppSidebar />
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <header className="flex items-center justify-between px-6 py-4 border-b border-border">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <div className="flex items-center gap-3">
+                <img
+                  src="/logo-inline.svg"
+                  alt="OmniNode"
+                  className="h-7 w-auto max-w-[180px] dark:brightness-0 dark:invert"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <DemoModeToggle />
+              <div className="flex items-center gap-2">
+                <div
+                  className={`h-2 w-2 rounded-full transition-colors duration-300 ${
+                    isConnected
+                      ? 'bg-green-500 animate-pulse'
+                      : connectionStatus === 'connecting'
+                        ? 'bg-yellow-500 animate-pulse'
+                        : 'bg-red-500'
+                  }`}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {isConnected
+                    ? 'Connected'
+                    : connectionStatus === 'connecting'
+                      ? 'Connecting...'
+                      : 'Disconnected'}
+                </span>
+              </div>
+              {runtimeEnv && (
+                <span
+                  className="text-xs font-mono px-2 py-1 rounded bg-muted text-muted-foreground border"
+                  title={`Broker: ${runtimeEnv.kafkaBrokers} | NS: ${runtimeEnv.namespace}`}
+                >
+                  {runtimeEnv.busId === 'cloud' ? '☁' : '⚡'} {runtimeEnv.busId}
+                </span>
+              )}
+              <DemoControlPanel />
+              {user && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {user.email || user.preferred_username || user.sub}
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+              <ThemeToggle />
+            </div>
+          </header>
+
+          <AlertBanner />
+
+          <main className="flex-1 overflow-auto p-8">
+            <Router />
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
+
+function AuthGate() {
+  const { authenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!authenticated) {
+    return <LoginPage />;
+  }
+
+  return <Dashboard />;
+}
+
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <DemoModeProvider>
         <ThemeProvider defaultTheme="dark">
           <TooltipProvider>
-            <SidebarProvider style={style as React.CSSProperties}>
-              <div className="flex h-screen w-full">
-                <AppSidebar />
-                <div className="flex flex-col flex-1 overflow-hidden">
-                  <header className="flex items-center justify-between px-6 py-4 border-b border-border">
-                    <div className="flex items-center gap-4">
-                      <SidebarTrigger data-testid="button-sidebar-toggle" />
-                      <div className="flex items-center gap-3">
-                        <img
-                          src="/logo-inline.svg"
-                          alt="OmniNode"
-                          className="h-7 w-auto max-w-[180px] dark:brightness-0 dark:invert"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <DemoModeToggle />
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`h-2 w-2 rounded-full transition-colors duration-300 ${
-                            isConnected
-                              ? 'bg-green-500 animate-pulse'
-                              : connectionStatus === 'connecting'
-                                ? 'bg-yellow-500 animate-pulse'
-                                : 'bg-red-500'
-                          }`}
-                        />
-                        <span className="text-xs text-muted-foreground">
-                          {isConnected
-                            ? 'Connected'
-                            : connectionStatus === 'connecting'
-                              ? 'Connecting...'
-                              : 'Disconnected'}
-                        </span>
-                      </div>
-                      {runtimeEnv && (
-                        <span
-                          className="text-xs font-mono px-2 py-1 rounded bg-muted text-muted-foreground border"
-                          title={`Broker: ${runtimeEnv.kafkaBrokers} | NS: ${runtimeEnv.namespace}`}
-                        >
-                          {runtimeEnv.busId === 'cloud' ? '☁' : '⚡'} {runtimeEnv.busId}
-                        </span>
-                      )}
-                      <DemoControlPanel />
-                      <ThemeToggle />
-                    </div>
-                  </header>
-
-                  <AlertBanner />
-
-                  <main className="flex-1 overflow-auto p-8">
-                    <Router />
-                  </main>
-                </div>
-              </div>
-            </SidebarProvider>
+            <AuthGate />
             <Toaster />
           </TooltipProvider>
         </ThemeProvider>

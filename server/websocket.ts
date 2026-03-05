@@ -2,6 +2,8 @@ import WebSocket, { WebSocketServer } from 'ws';
 import { Server as HTTPServer } from 'http';
 import type { IncomingMessage } from 'http';
 import { z } from 'zod';
+import { getSessionMiddleware } from './auth/session-config';
+import { isAuthEnabled } from './auth/oidc-client';
 import {
   eventConsumer,
   type NodeIntrospectionEvent,
@@ -341,8 +343,25 @@ export function setupWebSocket(httpServer: HTTPServer) {
   httpServer.on('upgrade', (request, socket, head) => {
     const { pathname } = new URL(request.url || '/', `http://${request.headers.host}`);
     if (pathname === '/ws') {
-      wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit('connection', ws, request);
+      // Parse session cookie for auth check
+      const sessionMiddleware = getSessionMiddleware();
+      const resShim = {
+        getHeader: () => undefined,
+        setHeader: () => resShim,
+        writeHead: () => resShim,
+        end: () => {},
+      } as any;
+
+      sessionMiddleware(request as any, resShim, () => {
+        const session = (request as any).session;
+        if (isAuthEnabled() && (!session?.user || !session?.tokenSet)) {
+          socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+          socket.destroy();
+          return;
+        }
+        wss.handleUpgrade(request, socket, head, (ws) => {
+          wss.emit('connection', ws, request);
+        });
       });
     }
     // Non-/ws paths (e.g., Vite HMR): do nothing — let other listeners handle them
