@@ -12,7 +12,7 @@
 import 'dotenv/config';
 import { Kafka, Partitioners } from 'kafkajs';
 import { randomUUID } from 'crypto';
-import { LEGACY_AGENT_ROUTING_DECISIONS, LEGACY_AGENT_ACTIONS } from '@shared/topics';
+import { TOPIC_OMNICLAUDE_ROUTING_DECISIONS, TOPIC_OMNICLAUDE_AGENT_ACTIONS } from '@shared/topics';
 
 const brokers = process.env.KAFKA_BROKERS || process.env.KAFKA_BOOTSTRAP_SERVERS;
 if (!brokers) {
@@ -109,7 +109,7 @@ async function seedEvents(count: number = 10) {
       // Routing decision event
       const routingEvent = generateRoutingDecision(correlationId);
       messages.push({
-        topic: LEGACY_AGENT_ROUTING_DECISIONS,
+        topic: TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
         key: routingEvent.selected_agent,
         value: JSON.stringify(routingEvent),
       });
@@ -119,7 +119,7 @@ async function seedEvents(count: number = 10) {
       for (let j = 0; j < actionCount; j++) {
         const actionEvent = generateAgentAction(correlationId);
         messages.push({
-          topic: LEGACY_AGENT_ACTIONS,
+          topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
           key: actionEvent.agent_name,
           value: JSON.stringify(actionEvent),
         });

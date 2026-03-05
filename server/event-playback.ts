@@ -14,10 +14,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import {
-  LEGACY_AGENT_ROUTING_DECISIONS,
-  LEGACY_AGENT_ACTIONS,
-  LEGACY_AGENT_TRANSFORMATION_EVENTS,
-  LEGACY_ROUTER_PERFORMANCE_METRICS,
+  TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
+  TOPIC_OMNICLAUDE_AGENT_ACTIONS,
+  TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION,
+  TOPIC_OMNICLAUDE_PERFORMANCE_METRICS,
   SUFFIX_OMNICLAUDE_PROMPT_SUBMITTED,
   SUFFIX_OMNICLAUDE_SESSION_STARTED,
   SUFFIX_OMNICLAUDE_SESSION_ENDED,
@@ -307,16 +307,16 @@ export class EventPlaybackService extends EventEmitter {
     // legacy names from older recordings.
     const topic = event.topic;
     switch (topic) {
-      case LEGACY_AGENT_ROUTING_DECISIONS:
+      case TOPIC_OMNICLAUDE_ROUTING_DECISIONS:
         this.emit('routingDecision', value);
         break;
-      case LEGACY_AGENT_ACTIONS:
+      case TOPIC_OMNICLAUDE_AGENT_ACTIONS:
         this.emit('action', value);
         break;
-      case LEGACY_AGENT_TRANSFORMATION_EVENTS:
+      case TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION:
         this.emit('transformation', value);
         break;
-      case LEGACY_ROUTER_PERFORMANCE_METRICS:
+      case TOPIC_OMNICLAUDE_PERFORMANCE_METRICS:
         this.emit('performanceMetric', value);
         break;
       default:

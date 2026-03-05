@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  LEGACY_AGENT_ROUTING_DECISIONS,
+  TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
   SUFFIX_NODE_HEARTBEAT,
   SUFFIX_NODE_INTROSPECTION,
 } from '@shared/topics';
@@ -43,10 +43,10 @@ describe('topicMatchesSuffix', () => {
     ).toBe(false);
   });
 
-  it('matches legacy flat topic names exactly', () => {
-    expect(topicMatchesSuffix(LEGACY_AGENT_ROUTING_DECISIONS, LEGACY_AGENT_ROUTING_DECISIONS)).toBe(
-      true
-    );
+  it('matches canonical ONEX topic names exactly', () => {
+    expect(
+      topicMatchesSuffix(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, TOPIC_OMNICLAUDE_ROUTING_DECISIONS)
+    ).toBe(true);
   });
 
   it('does NOT match unrelated topics', () => {
@@ -68,7 +68,7 @@ describe('topicMatchesSuffix', () => {
 
 describe('normalizeToSuffix', () => {
   const TOPICS = [
-    LEGACY_AGENT_ROUTING_DECISIONS,
+    TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
     SUFFIX_NODE_HEARTBEAT,
     SUFFIX_NODE_INTROSPECTION,
   ] as const;
@@ -81,9 +81,9 @@ describe('normalizeToSuffix', () => {
     expect(normalizeToSuffix(`dev.${SUFFIX_NODE_HEARTBEAT}`, TOPICS)).toBe(SUFFIX_NODE_HEARTBEAT);
   });
 
-  it('returns legacy flat topic as-is', () => {
-    expect(normalizeToSuffix(LEGACY_AGENT_ROUTING_DECISIONS, TOPICS)).toBe(
-      LEGACY_AGENT_ROUTING_DECISIONS
+  it('returns canonical ONEX topic as-is', () => {
+    expect(normalizeToSuffix(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, TOPICS)).toBe(
+      TOPIC_OMNICLAUDE_ROUTING_DECISIONS
     );
   });
 

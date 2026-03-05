@@ -102,10 +102,10 @@ vi.mock('../topic-catalog-manager', async () => {
 import { EventConsumer } from '../event-consumer';
 import {
   buildSubscriptionTopics,
-  LEGACY_AGENT_ROUTING_DECISIONS,
-  LEGACY_AGENT_ACTIONS,
-  LEGACY_AGENT_TRANSFORMATION_EVENTS,
-  LEGACY_ROUTER_PERFORMANCE_METRICS,
+  TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
+  TOPIC_OMNICLAUDE_AGENT_ACTIONS,
+  TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION,
+  TOPIC_OMNICLAUDE_PERFORMANCE_METRICS,
 } from '@shared/topics';
 
 describe('EventConsumer', () => {
@@ -331,7 +331,7 @@ describe('EventConsumer', () => {
       };
 
       await eachMessageHandler({
-        topic: LEGACY_AGENT_ROUTING_DECISIONS,
+        topic: TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
         message: {
           value: Buffer.from(JSON.stringify(event)),
         },
@@ -369,7 +369,7 @@ describe('EventConsumer', () => {
       };
 
       await eachMessageHandler({
-        topic: LEGACY_AGENT_ROUTING_DECISIONS,
+        topic: TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
         message: {
           value: Buffer.from(JSON.stringify(event)),
         },
@@ -401,7 +401,7 @@ describe('EventConsumer', () => {
 
       for (const event of events) {
         await eachMessageHandler({
-          topic: LEGACY_AGENT_ROUTING_DECISIONS,
+          topic: TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
           message: {
             value: Buffer.from(JSON.stringify(event)),
           },
@@ -445,7 +445,7 @@ describe('EventConsumer', () => {
       };
 
       await eachMessageHandler({
-        topic: LEGACY_AGENT_ACTIONS,
+        topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         message: {
           value: Buffer.from(JSON.stringify(event)),
         },
@@ -471,7 +471,7 @@ describe('EventConsumer', () => {
 
       for (const event of events) {
         await eachMessageHandler({
-          topic: LEGACY_AGENT_ACTIONS,
+          topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
           message: {
             value: Buffer.from(JSON.stringify(event)),
           },
@@ -505,7 +505,7 @@ describe('EventConsumer', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       await eachMessageHandler({
-        topic: LEGACY_AGENT_ACTIONS,
+        topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         message: {
           value: Buffer.from('{ invalid json'),
         },
@@ -532,7 +532,7 @@ describe('EventConsumer', () => {
 
       // Send malformed event (now skipped via inner try/catch, no error emitted)
       await eachMessageHandler({
-        topic: LEGACY_AGENT_ACTIONS,
+        topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         message: {
           value: Buffer.from('invalid'),
         },
@@ -540,7 +540,7 @@ describe('EventConsumer', () => {
 
       // Send valid event
       await eachMessageHandler({
-        topic: LEGACY_AGENT_ACTIONS,
+        topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         message: {
           value: Buffer.from(JSON.stringify({ agent_name: 'test', action_type: 'success' })),
         },
@@ -744,7 +744,7 @@ describe('EventConsumer', () => {
       // without emitting. So in tests, no error event is emitted at all.
       const connectionError = new Error('Network connection error');
       const testMessage = {
-        topic: LEGACY_AGENT_ACTIONS,
+        topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         message: {
           value: {
             toString: () => {
@@ -778,7 +778,7 @@ describe('EventConsumer', () => {
       // Send malformed JSON (non-connection error) - now handled by inner
       // try/catch with console.warn + return, no error event emitted
       const handlerPromise = eachMessageHandler({
-        topic: LEGACY_AGENT_ACTIONS,
+        topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         message: {
           value: Buffer.from('{ invalid json'),
         },
@@ -809,7 +809,7 @@ describe('EventConsumer', () => {
       // event is emitted — the only observable behavior is the handler promise rejecting.
       const brokerError = new Error('Kafka connection lost - broker unreachable');
       const testMessage = {
-        topic: LEGACY_AGENT_ACTIONS,
+        topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         message: {
           value: {
             toString: () => {
@@ -866,12 +866,12 @@ describe('EventConsumer', () => {
       };
 
       await eachMessageHandler({
-        topic: LEGACY_AGENT_ACTIONS,
+        topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         message: { value: Buffer.from(JSON.stringify(oldAction)) },
       });
 
       await eachMessageHandler({
-        topic: LEGACY_AGENT_ACTIONS,
+        topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         message: { value: Buffer.from(JSON.stringify(recentAction)) },
       });
 
@@ -907,12 +907,12 @@ describe('EventConsumer', () => {
       };
 
       await eachMessageHandler({
-        topic: LEGACY_AGENT_ROUTING_DECISIONS,
+        topic: TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
         message: { value: Buffer.from(JSON.stringify(oldDecision)) },
       });
 
       await eachMessageHandler({
-        topic: LEGACY_AGENT_ROUTING_DECISIONS,
+        topic: TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
         message: { value: Buffer.from(JSON.stringify(recentDecision)) },
       });
 
@@ -950,12 +950,12 @@ describe('EventConsumer', () => {
       };
 
       await eachMessageHandler({
-        topic: LEGACY_AGENT_TRANSFORMATION_EVENTS,
+        topic: TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION,
         message: { value: Buffer.from(JSON.stringify(oldTransformation)) },
       });
 
       await eachMessageHandler({
-        topic: LEGACY_AGENT_TRANSFORMATION_EVENTS,
+        topic: TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION,
         message: { value: Buffer.from(JSON.stringify(recentTransformation)) },
       });
 
@@ -993,12 +993,12 @@ describe('EventConsumer', () => {
       };
 
       await eachMessageHandler({
-        topic: LEGACY_ROUTER_PERFORMANCE_METRICS,
+        topic: TOPIC_OMNICLAUDE_PERFORMANCE_METRICS,
         message: { value: Buffer.from(JSON.stringify(oldMetric)) },
       });
 
       await eachMessageHandler({
-        topic: LEGACY_ROUTER_PERFORMANCE_METRICS,
+        topic: TOPIC_OMNICLAUDE_PERFORMANCE_METRICS,
         message: { value: Buffer.from(JSON.stringify(recentMetric)) },
       });
 
@@ -1040,7 +1040,7 @@ describe('EventConsumer', () => {
 
       for (const event of events) {
         await eachMessageHandler({
-          topic: LEGACY_AGENT_ACTIONS,
+          topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
           message: { value: Buffer.from(JSON.stringify(event)) },
         });
       }

@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { LEGACY_AGENT_ACTIONS } from '@shared/topics';
+import { TOPIC_OMNICLAUDE_AGENT_ACTIONS } from '@shared/topics';
 import { ProjectionService, type ProjectionView, type RawEventInput } from '../projection-service';
 import type {
   ProjectionEvent,
@@ -191,8 +191,8 @@ describe('ProjectionService', () => {
     });
 
     it('should use topic as type fallback when type is not provided', () => {
-      const event = service.ingest({ topic: LEGACY_AGENT_ACTIONS });
-      expect(event.type).toBe(LEGACY_AGENT_ACTIONS);
+      const event = service.ingest({ topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS });
+      expect(event.type).toBe(TOPIC_OMNICLAUDE_AGENT_ACTIONS);
     });
 
     it('should preserve error details when provided', () => {

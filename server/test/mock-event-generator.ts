@@ -1,5 +1,5 @@
 import { Kafka, Producer } from 'kafkajs';
-import { LEGACY_AGENT_ROUTING_DECISIONS, LEGACY_AGENT_ACTIONS } from '@shared/topics';
+import { TOPIC_OMNICLAUDE_ROUTING_DECISIONS, TOPIC_OMNICLAUDE_AGENT_ACTIONS } from '@shared/topics';
 
 /**
  * Mock Event Generator for Kafka Topics
@@ -276,7 +276,7 @@ class MockEventGenerator {
     };
 
     await this.producer!.send({
-      topic: LEGACY_AGENT_ROUTING_DECISIONS,
+      topic: TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
       messages: [{ value: JSON.stringify(event) }],
     });
   }
@@ -303,7 +303,7 @@ class MockEventGenerator {
     };
 
     await this.producer!.send({
-      topic: LEGACY_AGENT_ACTIONS,
+      topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
       messages: [{ value: JSON.stringify(event) }],
     });
   }

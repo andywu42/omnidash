@@ -24,10 +24,10 @@ import {
   buildSubscriptionTopics,
   ENVIRONMENT_PREFIXES,
   extractSuffix,
-  LEGACY_AGENT_ROUTING_DECISIONS,
-  LEGACY_AGENT_ACTIONS,
-  LEGACY_AGENT_TRANSFORMATION_EVENTS,
-  LEGACY_ROUTER_PERFORMANCE_METRICS,
+  TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
+  TOPIC_OMNICLAUDE_AGENT_ACTIONS,
+  TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION,
+  TOPIC_OMNICLAUDE_PERFORMANCE_METRICS,
   SUFFIX_NODE_INTROSPECTION,
   SUFFIX_NODE_REGISTRATION,
   SUFFIX_REQUEST_INTROSPECTION,
@@ -1373,8 +1373,8 @@ export class EventConsumer extends EventEmitter {
                   }
 
                   switch (topic) {
-                    // Legacy agent topics
-                    case LEGACY_AGENT_ROUTING_DECISIONS:
+                    // Canonical ONEX agent topics
+                    case TOPIC_OMNICLAUDE_ROUTING_DECISIONS:
                       if (isDebug) {
                         intentLogger.debug(
                           `Processing routing decision for agent: ${event.selected_agent || event.selectedAgent}`
@@ -1382,7 +1382,7 @@ export class EventConsumer extends EventEmitter {
                       }
                       this.handleRoutingDecision(event);
                       break;
-                    case LEGACY_AGENT_ACTIONS:
+                    case TOPIC_OMNICLAUDE_AGENT_ACTIONS:
                       if (isDebug) {
                         intentLogger.debug(
                           `Processing action: ${event.action_type || event.actionType} from ${event.agent_name || event.agentName}`
@@ -1390,7 +1390,7 @@ export class EventConsumer extends EventEmitter {
                       }
                       this.handleAgentAction(event);
                       break;
-                    case LEGACY_AGENT_TRANSFORMATION_EVENTS:
+                    case TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION:
                       if (isDebug) {
                         intentLogger.debug(
                           `Processing transformation: ${event.source_agent || event.sourceAgent} → ${event.target_agent || event.targetAgent}`
@@ -1398,7 +1398,7 @@ export class EventConsumer extends EventEmitter {
                       }
                       this.handleTransformationEvent(event);
                       break;
-                    case LEGACY_ROUTER_PERFORMANCE_METRICS:
+                    case TOPIC_OMNICLAUDE_PERFORMANCE_METRICS:
                       if (isDebug) {
                         intentLogger.debug(
                           `Processing performance metric: ${event.routing_duration_ms || event.routingDurationMs}ms`
@@ -4309,17 +4309,17 @@ export class EventConsumer extends EventEmitter {
           );
           break;
 
-        case LEGACY_AGENT_ROUTING_DECISIONS:
+        case TOPIC_OMNICLAUDE_ROUTING_DECISIONS:
         case 'routing-decision':
           this.handleRoutingDecision(event as RawRoutingDecisionEvent);
           break;
 
-        case LEGACY_AGENT_ACTIONS:
+        case TOPIC_OMNICLAUDE_AGENT_ACTIONS:
         case 'action':
           this.handleAgentAction(event as RawAgentActionEvent);
           break;
 
-        case LEGACY_AGENT_TRANSFORMATION_EVENTS:
+        case TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION:
         case 'transformation':
           this.handleTransformationEvent(event as RawTransformationEvent);
           break;
@@ -4366,7 +4366,7 @@ export class EventConsumer extends EventEmitter {
           this.handleIntentClassified(event as RawIntentClassifiedEvent);
           break;
 
-        case LEGACY_ROUTER_PERFORMANCE_METRICS:
+        case TOPIC_OMNICLAUDE_PERFORMANCE_METRICS:
         case 'performance-metric':
           // Route through the same handler as live Kafka events for consistent state updates
           this.handlePerformanceMetric(event as RawPerformanceMetricEvent);

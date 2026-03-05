@@ -1,9 +1,9 @@
 import { Kafka, Producer, Consumer } from 'kafkajs';
 import { randomUUID } from 'crypto';
 import {
-  LEGACY_INTELLIGENCE_CODE_ANALYSIS_REQUESTED,
-  LEGACY_INTELLIGENCE_CODE_ANALYSIS_COMPLETED,
-  LEGACY_INTELLIGENCE_CODE_ANALYSIS_FAILED,
+  SUFFIX_INTELLIGENCE_CODE_ANALYSIS_CMD,
+  SUFFIX_INTELLIGENCE_CODE_ANALYSIS_COMPLETED,
+  SUFFIX_INTELLIGENCE_CODE_ANALYSIS_FAILED,
 } from '@shared/topics';
 
 /**
@@ -73,15 +73,14 @@ export class IntelligenceEventAdapter {
     }
   > = new Map();
 
-  // Default topics aligned with OmniArchon/OmniClaude patterns.
-  // Uses legacy archon-intelligence topic names (see shared/topics.ts).
-  // Override via env vars for canonical ONEX migration.
+  // Default topics use canonical ONEX names (see shared/topics.ts).
+  // Override via env vars if needed.
   public readonly TOPIC_REQUEST =
-    process.env.INTEL_REQUEST_TOPIC || LEGACY_INTELLIGENCE_CODE_ANALYSIS_REQUESTED;
+    process.env.INTEL_REQUEST_TOPIC || SUFFIX_INTELLIGENCE_CODE_ANALYSIS_CMD;
   public readonly TOPIC_COMPLETED =
-    process.env.INTEL_COMPLETED_TOPIC || LEGACY_INTELLIGENCE_CODE_ANALYSIS_COMPLETED;
+    process.env.INTEL_COMPLETED_TOPIC || SUFFIX_INTELLIGENCE_CODE_ANALYSIS_COMPLETED;
   public readonly TOPIC_FAILED =
-    process.env.INTEL_FAILED_TOPIC || LEGACY_INTELLIGENCE_CODE_ANALYSIS_FAILED;
+    process.env.INTEL_FAILED_TOPIC || SUFFIX_INTELLIGENCE_CODE_ANALYSIS_FAILED;
 
   constructor(
     private readonly brokers: string[] = (() => {

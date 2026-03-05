@@ -10,11 +10,10 @@
 import type { DashboardConfig } from '@/lib/dashboard-schema';
 import { DashboardTheme } from '@/lib/dashboard-schema';
 import {
-  LEGACY_AGENT_ROUTING_DECISIONS,
-  LEGACY_AGENT_TRANSFORMATION_EVENTS,
-  LEGACY_ROUTER_PERFORMANCE_METRICS,
-  LEGACY_AGENT_ACTIONS,
-  LEGACY_AGENT_MANIFEST_INJECTIONS,
+  TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
+  TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION,
+  TOPIC_OMNICLAUDE_PERFORMANCE_METRICS,
+  TOPIC_OMNICLAUDE_AGENT_ACTIONS,
   SUFFIX_NODE_INTROSPECTION,
   SUFFIX_NODE_REGISTRATION,
   SUFFIX_NODE_HEARTBEAT,
@@ -98,13 +97,13 @@ export interface EventHeaders {
 // ============================================================================
 
 /**
- * Agent topics - core agent functionality events (legacy flat names)
+ * Agent topics - core agent functionality events (canonical ONEX names)
  */
 export const AGENT_TOPICS = [
-  LEGACY_AGENT_ROUTING_DECISIONS,
-  LEGACY_AGENT_TRANSFORMATION_EVENTS,
-  LEGACY_ROUTER_PERFORMANCE_METRICS,
-  LEGACY_AGENT_ACTIONS,
+  TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
+  TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION,
+  TOPIC_OMNICLAUDE_PERFORMANCE_METRICS,
+  TOPIC_OMNICLAUDE_AGENT_ACTIONS,
 ] as const;
 
 /**
@@ -208,23 +207,23 @@ export const TOPIC_METADATA: Record<
   string,
   { label: string; description: string; category: string }
 > = {
-  // Agent topics (legacy flat names)
-  [LEGACY_AGENT_ROUTING_DECISIONS]: {
+  // Agent topics (canonical ONEX names)
+  [TOPIC_OMNICLAUDE_ROUTING_DECISIONS]: {
     label: 'Routing Decisions',
     description: 'Agent selection and routing decisions with confidence scores',
     category: 'routing',
   },
-  [LEGACY_AGENT_TRANSFORMATION_EVENTS]: {
+  [TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION]: {
     label: 'Transformations',
     description: 'Polymorphic agent transformation events',
     category: 'transformation',
   },
-  [LEGACY_ROUTER_PERFORMANCE_METRICS]: {
+  [TOPIC_OMNICLAUDE_PERFORMANCE_METRICS]: {
     label: 'Performance',
     description: 'Routing performance metrics and cache statistics',
     category: 'performance',
   },
-  [LEGACY_AGENT_ACTIONS]: {
+  [TOPIC_OMNICLAUDE_AGENT_ACTIONS]: {
     label: 'Agent Actions',
     description: 'Tool calls, decisions, errors, and successes',
     category: 'actions',
@@ -404,11 +403,8 @@ export const TOPIC_METADATA: Record<
     category: 'agent',
   },
   // OmniClaude extended topics
-  [SUFFIX_OMNICLAUDE_ROUTING_DECISION]: {
-    label: 'Routing Decision',
-    description: 'OmniClaude agent routing decision event',
-    category: 'omniclaude',
-  },
+  // Note: SUFFIX_OMNICLAUDE_ROUTING_DECISION is the same topic as
+  // TOPIC_OMNICLAUDE_ROUTING_DECISIONS (already defined above).
   [SUFFIX_OMNICLAUDE_SESSION_OUTCOME]: {
     label: 'Session Outcome',
     description: 'OmniClaude session outcome summary',
@@ -674,10 +670,9 @@ export const eventBusDashboardConfig: DashboardConfig = {
  * Maps raw event type strings to human-readable short labels.
  */
 export const EVENT_TYPE_METADATA: Record<string, { label: string; description?: string }> = {
-  // Agent event types (legacy flat names)
-  [LEGACY_AGENT_ROUTING_DECISIONS]: { label: 'Routing Decision' },
-  [LEGACY_AGENT_MANIFEST_INJECTIONS]: { label: 'Manifest Injection' },
-  [LEGACY_AGENT_TRANSFORMATION_EVENTS]: { label: 'Transformation' },
+  // Agent event types (canonical ONEX names)
+  [TOPIC_OMNICLAUDE_ROUTING_DECISIONS]: { label: 'Routing Decision' },
+  [TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION]: { label: 'Transformation' },
   routing: { label: 'Routing' },
   transformation: { label: 'Transformation' },
   performance: { label: 'Performance' },
@@ -1122,9 +1117,9 @@ export function generateEventBusMockData(): Record<string, unknown> {
     eventCount:
       topic === SUFFIX_NODE_HEARTBEAT
         ? Math.floor(Math.random() * 500) + 200
-        : topic === LEGACY_AGENT_ACTIONS
+        : topic === TOPIC_OMNICLAUDE_AGENT_ACTIONS
           ? Math.floor(Math.random() * 300) + 100
-          : topic === LEGACY_AGENT_ROUTING_DECISIONS
+          : topic === TOPIC_OMNICLAUDE_ROUTING_DECISIONS
             ? Math.floor(Math.random() * 150) + 50
             : Math.floor(Math.random() * 100) + 30,
   }));
@@ -1177,9 +1172,9 @@ export function generateEventBusMockData(): Record<string, unknown> {
     const eventCount = topicBreakdownData.find((t) => t.topic === topic)?.eventCount || 0;
     let status: string;
 
-    if (topic === SUFFIX_NODE_HEARTBEAT || topic === LEGACY_AGENT_ACTIONS) {
+    if (topic === SUFFIX_NODE_HEARTBEAT || topic === TOPIC_OMNICLAUDE_AGENT_ACTIONS) {
       status = eventCount > 100 ? 'healthy' : eventCount > 50 ? 'warning' : 'error';
-    } else if (topic === LEGACY_AGENT_ROUTING_DECISIONS) {
+    } else if (topic === TOPIC_OMNICLAUDE_ROUTING_DECISIONS) {
       status = eventCount > 50 ? 'healthy' : eventCount > 20 ? 'warning' : 'offline';
     } else {
       status = eventCount > 10 ? 'healthy' : eventCount > 0 ? 'warning' : 'offline';
@@ -1220,19 +1215,24 @@ export function generateEventBusMockData(): Record<string, unknown> {
 
 function getEventTypeForTopic(topic: string): string {
   const eventTypes: Record<string, string[]> = {
-    // Agent topics
-    [LEGACY_AGENT_ROUTING_DECISIONS]: [
+    // Agent topics (canonical ONEX names)
+    [TOPIC_OMNICLAUDE_ROUTING_DECISIONS]: [
       'routing.decision',
       'agent.selected',
       'confidence.evaluated',
     ],
-    [LEGACY_AGENT_TRANSFORMATION_EVENTS]: [
+    [TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION]: [
       'transformation.started',
       'transformation.completed',
       'agent.transformed',
     ],
-    [LEGACY_ROUTER_PERFORMANCE_METRICS]: ['cache.hit', 'cache.miss', 'routing.timed'],
-    [LEGACY_AGENT_ACTIONS]: ['tool.called', 'decision.made', 'action.completed', 'error.occurred'],
+    [TOPIC_OMNICLAUDE_PERFORMANCE_METRICS]: ['cache.hit', 'cache.miss', 'routing.timed'],
+    [TOPIC_OMNICLAUDE_AGENT_ACTIONS]: [
+      'tool.called',
+      'decision.made',
+      'action.completed',
+      'error.occurred',
+    ],
     // Node topics (canonical ONEX suffixes)
     [SUFFIX_NODE_INTROSPECTION]: [
       'node.introspected',
@@ -1271,20 +1271,20 @@ function generateCorrelationId(): string {
 
 function generatePayloadPreview(topic: string): string {
   const previews: Record<string, string[]> = {
-    // Agent topics
-    [LEGACY_AGENT_ROUTING_DECISIONS]: [
+    // Agent topics (canonical ONEX names)
+    [TOPIC_OMNICLAUDE_ROUTING_DECISIONS]: [
       '{"selected_agent": "api-architect", "confidence": 0.95}',
       '{"routing_time_ms": 45, "strategy": "keyword"}',
     ],
-    [LEGACY_AGENT_TRANSFORMATION_EVENTS]: [
+    [TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION]: [
       '{"source": "polymorphic", "target": "api-architect"}',
       '{"transformation_duration_ms": 120, "success": true}',
     ],
-    [LEGACY_ROUTER_PERFORMANCE_METRICS]: [
+    [TOPIC_OMNICLAUDE_PERFORMANCE_METRICS]: [
       '{"cache_hit": true, "candidates_evaluated": 5}',
       '{"routing_duration_ms": 23, "strategy": "semantic"}',
     ],
-    [LEGACY_AGENT_ACTIONS]: [
+    [TOPIC_OMNICLAUDE_AGENT_ACTIONS]: [
       '{"action_type": "tool_call", "tool": "Read"}',
       '{"action_type": "decision", "agent": "debug"}',
     ],

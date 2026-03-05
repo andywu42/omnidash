@@ -85,7 +85,7 @@ vi.mock('../storage', () => ({
 }));
 
 import { EventConsumer } from '../event-consumer';
-import { LEGACY_AGENT_ACTIONS } from '@shared/topics';
+import { TOPIC_OMNICLAUDE_AGENT_ACTIONS } from '@shared/topics';
 
 describe('INITIAL_STATE freshness', () => {
   let consumer: InstanceType<typeof EventConsumer>;
@@ -208,7 +208,7 @@ describe('INITIAL_STATE freshness', () => {
       // Simulate events from different topics
       const events = [
         {
-          topic: LEGACY_AGENT_ACTIONS,
+          topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
           event: {
             event_type: 'agent-action',
             event_id: 'evt-action-001',
@@ -370,7 +370,7 @@ describe('INITIAL_STATE freshness', () => {
       };
 
       await capturedEachMessage({
-        topic: LEGACY_AGENT_ACTIONS,
+        topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         partition: 0,
         message: {
           value: Buffer.from(JSON.stringify(legacyEvent)),
@@ -386,7 +386,7 @@ describe('INITIAL_STATE freshness', () => {
 
       // The captured event should have the topic as event_type fallback
       const captured = events[0];
-      expect(captured.topic).toBe(LEGACY_AGENT_ACTIONS);
+      expect(captured.topic).toBe(TOPIC_OMNICLAUDE_AGENT_ACTIONS);
       // For flat events, the entire event becomes the payload
       expect(captured.payload.action_type).toBe('tool_call');
       expect(captured.payload.agent_name).toBe('polymorphic-agent');

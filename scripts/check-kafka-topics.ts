@@ -10,7 +10,7 @@
  */
 
 import { Kafka } from 'kafkajs';
-import { LEGACY_AGENT_TOPICS } from '@shared/topics';
+import { OMNICLAUDE_AGENT_TOPICS } from '@shared/topics';
 
 const brokers = process.env.KAFKA_BROKERS || process.env.KAFKA_BOOTSTRAP_SERVERS;
 if (!brokers) {
@@ -27,7 +27,7 @@ const kafka = new Kafka({
   clientId: 'omnidash-topic-checker',
 });
 
-const TOPICS_TO_CHECK = [...LEGACY_AGENT_TOPICS];
+const TOPICS_TO_CHECK = [...OMNICLAUDE_AGENT_TOPICS];
 
 const CONSUMER_GROUP = 'omnidash-consumers-v2';
 

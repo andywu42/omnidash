@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
-import { LEGACY_AGENT_ACTIONS } from '@shared/topics';
+import { TOPIC_OMNICLAUDE_AGENT_ACTIONS } from '@shared/topics';
 
 // Define mock types
 interface MockPlaybackService {
@@ -946,14 +946,14 @@ describe('Playback Routes', () => {
 
       // Simulate an event being emitted
       const testEvent = {
-        topic: LEGACY_AGENT_ACTIONS,
+        topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         value: { action: 'test', timestamp: '2024-01-01T00:00:00Z' },
       };
       eventHandler(testEvent);
 
       // Verify the event was injected into PlaybackDataSource
       expect(mockPlaybackDataSource.injectPlaybackEvent).toHaveBeenCalledWith(
-        LEGACY_AGENT_ACTIONS,
+        TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         {
           action: 'test',
           timestamp: '2024-01-01T00:00:00Z',

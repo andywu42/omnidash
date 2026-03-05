@@ -445,63 +445,8 @@ export const OMNICLAUDE_AGENT_TOPICS = [
 ] as const;
 
 // ============================================================================
-// Legacy Agent Topics (flat names, no ONEX convention)
-// These do NOT get an env prefix — used as-is.
-// Kept for backward compatibility with the event-consumer.ts in-memory
-// aggregation path and existing DB rows that were stored with these topic names.
-// ============================================================================
-
-/** Routing decision events emitted by the agent router. */
-export const LEGACY_AGENT_ROUTING_DECISIONS = 'agent-routing-decisions';
-/** Tool calls, decisions, errors, and successes from agent execution. */
-export const LEGACY_AGENT_ACTIONS = 'agent-actions';
-/** Polymorphic agent transformation lifecycle events. */
-export const LEGACY_AGENT_TRANSFORMATION_EVENTS = 'agent-transformation-events';
-/** Routing performance metrics and cache statistics. */
-export const LEGACY_ROUTER_PERFORMANCE_METRICS = 'router-performance-metrics';
-/** Manifest injection snapshots (offline capture only, not in live consumer). */
-export const LEGACY_AGENT_MANIFEST_INJECTIONS = 'agent-manifest-injections';
-
-// ============================================================================
-// Legacy Archon-Intelligence Topics (pre-ONEX naming convention)
-//
-// These use `{env}.archon-intelligence.intelligence.<event-name>.v1` format,
-// which predates the canonical ONEX convention. The upstream omniintelligence
-// service still produces to these topics. Once the producer migrates to ONEX
-// canonical names (onex.cmd/evt.omniintelligence.*), these should be removed.
-//
-// The `dev.` prefix is intentionally hardcoded here because the upstream
-// producer (omniintelligence) always emits to `dev.*` regardless of
-// environment. These are not routed through resolveTopicName() since they
-// match a fixed external topic, not our own ONEX-convention topics.
-//
-// Canonical ONEX equivalents already exist above as:
-//   SUFFIX_INTELLIGENCE_CODE_ANALYSIS_CMD       (request)
-//   SUFFIX_INTELLIGENCE_CODE_ANALYSIS_COMPLETED  (completed)
-//   SUFFIX_INTELLIGENCE_CODE_ANALYSIS_FAILED     (failed)
-// ============================================================================
-
-/** Intelligence code analysis request (pre-ONEX format, env-prefixed). */
-export const LEGACY_INTELLIGENCE_CODE_ANALYSIS_REQUESTED =
-  'dev.archon-intelligence.intelligence.code-analysis-requested.v1';
-/** Intelligence code analysis completed (pre-ONEX format, env-prefixed). */
-export const LEGACY_INTELLIGENCE_CODE_ANALYSIS_COMPLETED =
-  'dev.archon-intelligence.intelligence.code-analysis-completed.v1';
-/** Intelligence code analysis failed (pre-ONEX format, env-prefixed). */
-export const LEGACY_INTELLIGENCE_CODE_ANALYSIS_FAILED =
-  'dev.archon-intelligence.intelligence.code-analysis-failed.v1';
-
-// ============================================================================
 // Topic Groups (for subscription lists)
 // ============================================================================
-
-/** Legacy agent topics (no env prefix) */
-export const LEGACY_AGENT_TOPICS = [
-  LEGACY_AGENT_ROUTING_DECISIONS,
-  LEGACY_AGENT_ACTIONS,
-  LEGACY_AGENT_TRANSFORMATION_EVENTS,
-  LEGACY_ROUTER_PERFORMANCE_METRICS,
-] as const;
 
 /** Platform node topic suffixes consumed by the dashboard */
 export const PLATFORM_NODE_SUFFIXES = [
@@ -596,21 +541,15 @@ export const VALIDATION_SUFFIXES = [
 
 /**
  * Build the complete subscription topic list for the event consumer.
- * Legacy agent topics use flat names (e.g. `agent-actions`).
- * Canonical ONEX topics are subscribed by their canonical name directly
- * (e.g. `onex.evt.platform.node-heartbeat.v1`).
- *
- * Note: LEGACY_AGENT_MANIFEST_INJECTIONS is deliberately excluded from the live
- * consumer subscription (it is not consumed at runtime). The recording script
- * (scripts/record-events.ts) manually appends it for offline capture/replay.
+ * All topics use canonical ONEX names (e.g. `onex.evt.omniclaude.agent-actions.v1`).
  *
  * @returns Array of topic strings suitable for passing to Kafka `consumer.subscribe()`
  */
 export function buildSubscriptionTopics(): string[] {
   return [
-    // Legacy agent topics (flat names, no prefix)
-    ...LEGACY_AGENT_TOPICS,
-    // Canonical ONEX topics (subscribed by canonical name)
+    // Canonical ONEX agent topics
+    ...OMNICLAUDE_AGENT_TOPICS,
+    // Canonical ONEX platform/lifecycle topics
     ...PLATFORM_NODE_SUFFIXES,
     SUFFIX_INTELLIGENCE_CLAUDE_HOOK,
     SUFFIX_INTELLIGENCE_TOOL_CONTENT,

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { LEGACY_AGENT_ROUTING_DECISIONS, LEGACY_AGENT_ACTIONS } from '@shared/topics';
+import { TOPIC_OMNICLAUDE_ROUTING_DECISIONS, TOPIC_OMNICLAUDE_AGENT_ACTIONS } from '@shared/topics';
 
 // Ensure NODE_ENV and VITEST are set for these tests
 process.env.NODE_ENV = 'test';
@@ -63,8 +63,8 @@ describe('MockEventGenerator', () => {
     await generator.publishRandomEvents();
 
     expect(sendMock).toHaveBeenCalledTimes(2);
-    expect(sendMock.mock.calls[0][0].topic).toBe(LEGACY_AGENT_ROUTING_DECISIONS);
-    expect(sendMock.mock.calls[1][0].topic).toBe(LEGACY_AGENT_ACTIONS);
+    expect(sendMock.mock.calls[0][0].topic).toBe(TOPIC_OMNICLAUDE_ROUTING_DECISIONS);
+    expect(sendMock.mock.calls[1][0].topic).toBe(TOPIC_OMNICLAUDE_AGENT_ACTIONS);
   });
 
   it('clears interval and disconnects on stop', async () => {

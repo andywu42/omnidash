@@ -23,10 +23,10 @@ import {
   SUFFIX_NODE_HEARTBEAT,
   SUFFIX_NODE_INTROSPECTION,
   SUFFIX_VALIDATION_RUN_STARTED,
-  LEGACY_AGENT_ACTIONS,
-  LEGACY_AGENT_ROUTING_DECISIONS,
-  LEGACY_AGENT_TRANSFORMATION_EVENTS,
-  LEGACY_ROUTER_PERFORMANCE_METRICS,
+  TOPIC_OMNICLAUDE_AGENT_ACTIONS,
+  TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
+  TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION,
+  TOPIC_OMNICLAUDE_PERFORMANCE_METRICS,
 } from '@shared/topics';
 
 // ---------------------------------------------------------------------------
@@ -131,10 +131,10 @@ describe('Layer 2: Topic Resolution', () => {
   it('buildSubscriptionTopics includes legacy flat agent topics', () => {
     const topics = buildSubscriptionTopics();
 
-    expect(topics).toContain(LEGACY_AGENT_ACTIONS);
-    expect(topics).toContain(LEGACY_AGENT_ROUTING_DECISIONS);
-    expect(topics).toContain(LEGACY_AGENT_TRANSFORMATION_EVENTS);
-    expect(topics).toContain(LEGACY_ROUTER_PERFORMANCE_METRICS);
+    expect(topics).toContain(TOPIC_OMNICLAUDE_AGENT_ACTIONS);
+    expect(topics).toContain(TOPIC_OMNICLAUDE_ROUTING_DECISIONS);
+    expect(topics).toContain(TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION);
+    expect(topics).toContain(TOPIC_OMNICLAUDE_PERFORMANCE_METRICS);
   });
 
   it('buildSubscriptionTopics includes canonical ONEX topics', () => {
@@ -159,7 +159,9 @@ describe('Layer 2: Topic Resolution', () => {
     );
 
     // staging prefix (on a legacy flat topic name that happens to be prefixed)
-    expect(extractSuffix(`staging.${LEGACY_AGENT_ACTIONS}`)).toBe(LEGACY_AGENT_ACTIONS);
+    expect(extractSuffix(`staging.${TOPIC_OMNICLAUDE_AGENT_ACTIONS}`)).toBe(
+      TOPIC_OMNICLAUDE_AGENT_ACTIONS
+    );
 
     // prod prefix
     expect(extractSuffix('prod.onex.evt.platform.node-heartbeat.v1')).toBe(
@@ -201,13 +203,15 @@ describe('Layer 2: Topic Resolution', () => {
   });
 
   it('extractSuffix passes through legacy flat topic names unchanged', () => {
-    expect(extractSuffix(LEGACY_AGENT_ACTIONS)).toBe(LEGACY_AGENT_ACTIONS);
-    expect(extractSuffix(LEGACY_AGENT_ROUTING_DECISIONS)).toBe(LEGACY_AGENT_ROUTING_DECISIONS);
-    expect(extractSuffix(LEGACY_AGENT_TRANSFORMATION_EVENTS)).toBe(
-      LEGACY_AGENT_TRANSFORMATION_EVENTS
+    expect(extractSuffix(TOPIC_OMNICLAUDE_AGENT_ACTIONS)).toBe(TOPIC_OMNICLAUDE_AGENT_ACTIONS);
+    expect(extractSuffix(TOPIC_OMNICLAUDE_ROUTING_DECISIONS)).toBe(
+      TOPIC_OMNICLAUDE_ROUTING_DECISIONS
     );
-    expect(extractSuffix(LEGACY_ROUTER_PERFORMANCE_METRICS)).toBe(
-      LEGACY_ROUTER_PERFORMANCE_METRICS
+    expect(extractSuffix(TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION)).toBe(
+      TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION
+    );
+    expect(extractSuffix(TOPIC_OMNICLAUDE_PERFORMANCE_METRICS)).toBe(
+      TOPIC_OMNICLAUDE_PERFORMANCE_METRICS
     );
   });
 
@@ -303,7 +307,7 @@ describe('Layer 2: EventConsumer Processing', () => {
   it('processes agent-action events and stores them in getRecentActions()', () => {
     const consumer = new EventConsumer();
 
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ACTIONS, FIXTURE_AGENT_ACTION);
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_AGENT_ACTIONS, FIXTURE_AGENT_ACTION);
 
     const actions = consumer.getRecentActions();
     expect(actions).toHaveLength(1);
@@ -317,7 +321,7 @@ describe('Layer 2: EventConsumer Processing', () => {
   it('processes routing-decision events and stores them in getRoutingDecisions()', () => {
     const consumer = new EventConsumer();
 
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, FIXTURE_ROUTING_DECISION);
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, FIXTURE_ROUTING_DECISION);
 
     const decisions = consumer.getRoutingDecisions();
     expect(decisions).toHaveLength(1);
@@ -331,7 +335,7 @@ describe('Layer 2: EventConsumer Processing', () => {
   it('processes transformation events and stores them in getRecentTransformations()', () => {
     const consumer = new EventConsumer();
 
-    consumer.injectPlaybackEvent(LEGACY_AGENT_TRANSFORMATION_EVENTS, FIXTURE_TRANSFORMATION);
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION, FIXTURE_TRANSFORMATION);
 
     const transforms = consumer.getRecentTransformations();
     expect(transforms).toHaveLength(1);
@@ -345,7 +349,7 @@ describe('Layer 2: EventConsumer Processing', () => {
   it('processes performance-metric events and stores them in getPerformanceMetrics()', () => {
     const consumer = new EventConsumer();
 
-    consumer.injectPlaybackEvent(LEGACY_ROUTER_PERFORMANCE_METRICS, FIXTURE_PERFORMANCE_METRIC);
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_PERFORMANCE_METRICS, FIXTURE_PERFORMANCE_METRIC);
 
     const metrics = consumer.getPerformanceMetrics();
     expect(metrics).toHaveLength(1);
@@ -386,17 +390,17 @@ describe('Layer 2: EventConsumer Processing', () => {
     const consumer = new EventConsumer();
 
     // Inject decisions for different agents
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, {
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, {
       ...FIXTURE_ROUTING_DECISION,
       id: 'decision-a',
       selected_agent: 'api-architect',
     });
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, {
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, {
       ...FIXTURE_ROUTING_DECISION,
       id: 'decision-b',
       selected_agent: 'debug',
     });
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, {
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, {
       ...FIXTURE_ROUTING_DECISION,
       id: 'decision-c',
       selected_agent: 'api-architect',
@@ -416,12 +420,12 @@ describe('Layer 2: EventConsumer Processing', () => {
   it('getRoutingDecisions filters by minimum confidence', () => {
     const consumer = new EventConsumer();
 
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, {
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, {
       ...FIXTURE_ROUTING_DECISION,
       id: 'hi',
       confidence_score: 0.95,
     });
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, {
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, {
       ...FIXTURE_ROUTING_DECISION,
       id: 'lo',
       confidence_score: 0.3,
@@ -436,7 +440,7 @@ describe('Layer 2: EventConsumer Processing', () => {
     const consumer = new EventConsumer();
 
     for (let i = 0; i < 10; i++) {
-      consumer.injectPlaybackEvent(LEGACY_AGENT_ACTIONS, {
+      consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_AGENT_ACTIONS, {
         ...FIXTURE_AGENT_ACTION,
         id: `action-${i}`,
       });
@@ -450,13 +454,13 @@ describe('Layer 2: EventConsumer Processing', () => {
   it('getAgentMetrics returns metrics after processing routing decisions', () => {
     const consumer = new EventConsumer();
 
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, {
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, {
       ...FIXTURE_ROUTING_DECISION,
       selected_agent: 'code-quality-analyzer',
       confidence_score: 0.85,
       routing_time_ms: 40,
     });
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, {
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, {
       ...FIXTURE_ROUTING_DECISION,
       id: 'decision-002',
       selected_agent: 'code-quality-analyzer',
@@ -475,12 +479,12 @@ describe('Layer 2: EventConsumer Processing', () => {
   it('getPerformanceStats returns aggregated performance data', () => {
     const consumer = new EventConsumer();
 
-    consumer.injectPlaybackEvent(LEGACY_ROUTER_PERFORMANCE_METRICS, {
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_PERFORMANCE_METRICS, {
       ...FIXTURE_PERFORMANCE_METRIC,
       routing_duration_ms: 20,
       cache_hit: true,
     });
-    consumer.injectPlaybackEvent(LEGACY_ROUTER_PERFORMANCE_METRICS, {
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_PERFORMANCE_METRICS, {
       ...FIXTURE_PERFORMANCE_METRIC,
       id: 'perf-002',
       routing_duration_ms: 40,
@@ -496,8 +500,8 @@ describe('Layer 2: EventConsumer Processing', () => {
   it('getPlaybackStats tracks injection counts', () => {
     const consumer = new EventConsumer();
 
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ACTIONS, FIXTURE_AGENT_ACTION);
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, FIXTURE_ROUTING_DECISION);
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_AGENT_ACTIONS, FIXTURE_AGENT_ACTION);
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, FIXTURE_ROUTING_DECISION);
 
     const stats = consumer.getPlaybackStats();
     expect(stats.injected).toBe(2);
@@ -509,10 +513,10 @@ describe('Layer 2: EventConsumer Processing', () => {
     const consumer = new EventConsumer();
 
     // Populate
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ACTIONS, FIXTURE_AGENT_ACTION);
-    consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, FIXTURE_ROUTING_DECISION);
-    consumer.injectPlaybackEvent(LEGACY_AGENT_TRANSFORMATION_EVENTS, FIXTURE_TRANSFORMATION);
-    consumer.injectPlaybackEvent(LEGACY_ROUTER_PERFORMANCE_METRICS, FIXTURE_PERFORMANCE_METRIC);
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_AGENT_ACTIONS, FIXTURE_AGENT_ACTION);
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, FIXTURE_ROUTING_DECISION);
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION, FIXTURE_TRANSFORMATION);
+    consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_PERFORMANCE_METRICS, FIXTURE_PERFORMANCE_METRIC);
 
     // Verify populated
     expect(consumer.getRecentActions().length).toBeGreaterThan(0);
@@ -541,7 +545,7 @@ describe('Layer 2: EventConsumer Processing', () => {
     // Inject more than the limit
     const count = 1050;
     for (let i = 0; i < count; i++) {
-      consumer.injectPlaybackEvent(LEGACY_AGENT_ACTIONS, {
+      consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_AGENT_ACTIONS, {
         ...FIXTURE_AGENT_ACTION,
         id: `action-${i}`,
         agent_name: `agent-${i}`,
@@ -559,7 +563,7 @@ describe('Layer 2: EventConsumer Processing', () => {
 
     const count = 1050;
     for (let i = 0; i < count; i++) {
-      consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, {
+      consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, {
         ...FIXTURE_ROUTING_DECISION,
         id: `decision-${i}`,
       });
@@ -576,7 +580,7 @@ describe('Layer 2: EventConsumer Processing', () => {
 
     const count = 150;
     for (let i = 0; i < count; i++) {
-      consumer.injectPlaybackEvent(LEGACY_AGENT_TRANSFORMATION_EVENTS, {
+      consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION, {
         ...FIXTURE_TRANSFORMATION,
         id: `transform-${i}`,
       });
@@ -592,7 +596,7 @@ describe('Layer 2: EventConsumer Processing', () => {
 
     const count = 250;
     for (let i = 0; i < count; i++) {
-      consumer.injectPlaybackEvent(LEGACY_ROUTER_PERFORMANCE_METRICS, {
+      consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_PERFORMANCE_METRICS, {
         ...FIXTURE_PERFORMANCE_METRIC,
         id: `perf-${i}`,
       });
@@ -616,7 +620,7 @@ describe('Layer 2: EventConsumer Processing', () => {
         resolve();
       });
 
-      consumer.injectPlaybackEvent(LEGACY_AGENT_ACTIONS, FIXTURE_AGENT_ACTION);
+      consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_AGENT_ACTIONS, FIXTURE_AGENT_ACTION);
     }));
 
   it('emits routingUpdate when processing routing decisions', () =>
@@ -628,7 +632,7 @@ describe('Layer 2: EventConsumer Processing', () => {
         resolve();
       });
 
-      consumer.injectPlaybackEvent(LEGACY_AGENT_ROUTING_DECISIONS, FIXTURE_ROUTING_DECISION);
+      consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_ROUTING_DECISIONS, FIXTURE_ROUTING_DECISION);
     }));
 
   it('emits transformationUpdate when processing transformations', () =>
@@ -641,7 +645,7 @@ describe('Layer 2: EventConsumer Processing', () => {
         resolve();
       });
 
-      consumer.injectPlaybackEvent(LEGACY_AGENT_TRANSFORMATION_EVENTS, FIXTURE_TRANSFORMATION);
+      consumer.injectPlaybackEvent(TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION, FIXTURE_TRANSFORMATION);
     }));
 
   it('emits performanceUpdate when processing performance metrics', () =>
@@ -654,7 +658,10 @@ describe('Layer 2: EventConsumer Processing', () => {
         resolve();
       });
 
-      consumer.injectPlaybackEvent(LEGACY_ROUTER_PERFORMANCE_METRICS, FIXTURE_PERFORMANCE_METRIC);
+      consumer.injectPlaybackEvent(
+        TOPIC_OMNICLAUDE_PERFORMANCE_METRICS,
+        FIXTURE_PERFORMANCE_METRIC
+      );
     }));
 });
 
@@ -730,7 +737,7 @@ describe.skipIf(!INTEGRATION_ENABLED)('Layer 2: EventConsumer Kafka Integration'
     };
 
     await producer.send({
-      topic: LEGACY_AGENT_ACTIONS,
+      topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
       messages: [{ value: JSON.stringify(testAction) }],
     });
 
@@ -778,7 +785,7 @@ describe.skipIf(!INTEGRATION_ENABLED)('Layer 2: EventConsumer Kafka Integration'
 
     // Send a routing decision and an action
     await producer.send({
-      topic: LEGACY_AGENT_ROUTING_DECISIONS,
+      topic: TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
       messages: [
         {
           value: JSON.stringify({
@@ -791,7 +798,7 @@ describe.skipIf(!INTEGRATION_ENABLED)('Layer 2: EventConsumer Kafka Integration'
     });
 
     await producer.send({
-      topic: LEGACY_AGENT_ACTIONS,
+      topic: TOPIC_OMNICLAUDE_AGENT_ACTIONS,
       messages: [
         {
           value: JSON.stringify({

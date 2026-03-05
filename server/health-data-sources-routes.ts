@@ -56,9 +56,6 @@ import {
   TOPIC_OMNICLAUDE_AGENT_ACTIONS,
   TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
   TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION,
-  LEGACY_AGENT_ACTIONS,
-  LEGACY_AGENT_ROUTING_DECISIONS,
-  LEGACY_AGENT_TRANSFORMATION_EVENTS,
 } from '../shared/topics';
 
 // ============================================================================
@@ -380,14 +377,14 @@ async function probeExecutionGraph(): Promise<DataSourceInfo> {
       // Match both canonical onex.evt.omniclaude.* topics (new producers) and
       // legacy flat topic names (existing DB rows stored before OMN-2760).
       event_types: [
-        // Canonical omniclaude agent topics (OMN-2760)
+        // Canonical omniclaude agent topics
         TOPIC_OMNICLAUDE_AGENT_ACTIONS,
         TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
         TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION,
-        // Legacy flat topic names (pre-OMN-2760 DB rows)
-        LEGACY_AGENT_ACTIONS,
-        LEGACY_AGENT_ROUTING_DECISIONS,
-        LEGACY_AGENT_TRANSFORMATION_EVENTS,
+        // Legacy flat topic names (match pre-OMN-2760 DB rows)
+        'agent-actions',
+        'agent-routing-decisions',
+        'agent-transformation-events',
         // Payload event_type field values (producer-set, not topic-derived)
         'AGENT_ACTION',
         'ROUTING_DECISION',

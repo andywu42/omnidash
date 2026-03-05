@@ -10,13 +10,13 @@
  * - Idempotent: duplicate events are safely ignored via ON CONFLICT
  * - Graceful degradation: if DB is unavailable, events are skipped (Kafka retains them)
  *
- * Topics consumed:
- * - agent-routing-decisions -> agent_routing_decisions table
- * - agent-actions -> agent_actions table
- * - agent-transformation-events -> agent_transformation_events table
+ * Topics consumed (canonical ONEX names):
+ * - onex.evt.omniclaude.routing-decision.v1 -> agent_routing_decisions table
+ * - onex.evt.omniclaude.agent-actions.v1 -> agent_actions table
+ * - onex.evt.omniclaude.agent-transformation.v1 -> agent_transformation_events table
  *
- * Note: router-performance-metrics is handled by EventConsumer in
- * event-consumer.ts (in-memory aggregation only, no table needed).
+ * Note: onex.evt.omniclaude.performance-metrics.v1 is handled by EventConsumer
+ * in event-consumer.ts (in-memory aggregation only, no table needed).
  *
  * The consumer runs alongside the existing EventConsumer (which handles
  * in-memory aggregation for real-time WebSocket delivery). This consumer
