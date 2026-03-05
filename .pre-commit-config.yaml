@@ -14,6 +14,14 @@ repos:
 
   - repo: local
     hooks:
+      - id: no-env-file
+        name: Reject committed .env files (except .env.example)
+        entry: bash -c 'git diff --cached --name-only | grep -E "(^|/)\\.env([._-].+)?$" | grep -vE "\\.env\\.example" | grep -q . && { echo "BLOCKED: .env staged — use ~/.omnibase/.env instead. Run: git reset HEAD <file>"; exit 1; }'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       - id: no-planning-docs
         name: Block planning docs (belong in omni_home/docs/plans/)
         entry: >-
