@@ -122,11 +122,8 @@ const meRouter = Router();
 
 meRouter.get('/me', (req: Request, res: Response) => {
   if (!isAuthEnabled()) {
-    // When auth is disabled, treat everyone as authenticated
-    return res.json({
-      authenticated: true,
-      user: { sub: 'dev', email: 'dev@localhost', name: 'Developer', preferred_username: 'dev' },
-    });
+    // Auth-disabled contract: signal that auth is not configured
+    return res.json({ authEnabled: false });
   }
 
   if (req.session.user && req.session.tokenSet) {

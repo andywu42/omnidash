@@ -350,6 +350,77 @@ describe('Service Health Checks', () => {
     });
   });
 
+  describe('checkKeycloak', () => {
+    it('should return configured: false when KEYCLOAK_ISSUER is not set', async () => {
+      delete process.env.KEYCLOAK_ISSUER;
+
+      const results = await checkAllServices();
+      const keycloak = results.find((r) => r.service === 'Keycloak');
+
+      expect(keycloak).toBeDefined();
+      expect(keycloak!.status).toBe('down');
+      expect(keycloak!.details?.configured).toBe(false);
+    });
+
+    it('should return up when OIDC discovery succeeds', async () => {
+      process.env.KEYCLOAK_ISSUER = 'http://localhost:8080/realms/test';
+
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({
+          issuer: 'http://localhost:8080/realms/test',
+          authorization_endpoint: 'http://localhost:8080/realms/test/protocol/openid-connect/auth',
+        }),
+      } as any);
+
+      // Need other mocks for checkAllServices
+      vi.mocked(mockDb.execute).mockResolvedValue([{ check: 1 }] as any);
+      const mockAdmin = {
+        connect: vi.fn().mockResolvedValue(undefined),
+        listTopics: vi.fn().mockResolvedValue([]),
+        disconnect: vi.fn().mockResolvedValue(undefined),
+      };
+      vi.mocked(Kafka).mockImplementation(() => ({ admin: () => mockAdmin }) as any);
+      vi.mocked(eventConsumer.getHealthStatus).mockReturnValue({ status: 'healthy' } as any);
+
+      const results = await checkAllServices();
+      const keycloak = results.find((r) => r.service === 'Keycloak');
+
+      expect(keycloak).toBeDefined();
+      expect(keycloak!.status).toBe('up');
+      expect(keycloak!.details?.configured).toBe(true);
+      expect(keycloak!.details?.issuer).toBe('http://localhost:8080/realms/test');
+
+      delete process.env.KEYCLOAK_ISSUER;
+    });
+
+    it('should return down when OIDC discovery fails', async () => {
+      process.env.KEYCLOAK_ISSUER = 'http://localhost:8080/realms/test';
+
+      vi.mocked(global.fetch).mockRejectedValue(new Error('Connection refused'));
+
+      vi.mocked(mockDb.execute).mockResolvedValue([{ check: 1 }] as any);
+      const mockAdmin = {
+        connect: vi.fn().mockResolvedValue(undefined),
+        listTopics: vi.fn().mockResolvedValue([]),
+        disconnect: vi.fn().mockResolvedValue(undefined),
+      };
+      vi.mocked(Kafka).mockImplementation(() => ({ admin: () => mockAdmin }) as any);
+      vi.mocked(eventConsumer.getHealthStatus).mockReturnValue({ status: 'healthy' } as any);
+
+      const results = await checkAllServices();
+      const keycloak = results.find((r) => r.service === 'Keycloak');
+
+      expect(keycloak).toBeDefined();
+      expect(keycloak!.status).toBe('down');
+      expect(keycloak!.details?.configured).toBe(true);
+      expect(keycloak!.error).toBe('Connection refused');
+
+      delete process.env.KEYCLOAK_ISSUER;
+    });
+  });
+
   describe('checkAllServices', () => {
     it('should check all services and return array of results', async () => {
       // Mock all service checks
@@ -381,10 +452,11 @@ describe('Service Health Checks', () => {
       const results = await checkAllServices();
 
       expect(Array.isArray(results)).toBe(true);
-      expect(results.length).toBe(3);
+      expect(results.length).toBe(4);
       expect(results[0].service).toBe('PostgreSQL');
       expect(results[1].service).toBe('Kafka/Redpanda');
       expect(results[2].service).toBe('Event Consumer');
+      expect(results[3].service).toBe('Keycloak');
     });
   });
 });

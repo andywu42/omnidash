@@ -35,6 +35,7 @@
     "check-topics": "tsx scripts/check-kafka-topics.ts",
     "record-events": "tsx scripts/record-events.ts",
     "record-events:5min": "tsx scripts/record-events.ts --duration 300",
+    "test:auth-smoke": "bash scripts/auth-smoke-test.sh",
     "clean:screenshots": "bash scripts/clean-screenshots.sh",
     "postinstall": "patch-package",
     "prepare": "husky"

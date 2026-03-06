@@ -28,6 +28,9 @@ export async function checkAllServices(): Promise<ServiceHealthCheck[]> {
   // 3. Event Consumer Check
   checks.push(await checkEventConsumer());
 
+  // 4. Keycloak/OIDC Check
+  checks.push(await checkKeycloak());
+
   return checks;
 }
 
@@ -163,6 +166,64 @@ async function checkKafka(): Promise<ServiceHealthCheck> {
       details: {
         brokers: brokers,
       },
+    };
+  }
+}
+
+async function checkKeycloak(): Promise<ServiceHealthCheck> {
+  const issuerUrl = process.env.KEYCLOAK_ISSUER;
+
+  if (!issuerUrl) {
+    return {
+      service: 'Keycloak',
+      status: 'down',
+      details: {
+        configured: false,
+        message: 'KEYCLOAK_ISSUER not set -- auth disabled (dev mode)',
+      },
+    };
+  }
+
+  const startTime = Date.now();
+  const discoveryUrl = `${issuerUrl}/.well-known/openid-configuration`;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(discoveryUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    const latencyMs = Date.now() - startTime;
+
+    if (!response.ok) {
+      return {
+        service: 'Keycloak',
+        status: 'down',
+        latencyMs,
+        error: `OIDC discovery returned HTTP ${response.status}`,
+        details: { configured: true },
+      };
+    }
+
+    const config = (await response.json()) as Record<string, unknown>;
+
+    return {
+      service: 'Keycloak',
+      status: 'up',
+      latencyMs,
+      details: {
+        configured: true,
+        issuer: config.issuer,
+      },
+    };
+  } catch (error) {
+    return {
+      service: 'Keycloak',
+      status: 'down',
+      latencyMs: Date.now() - startTime,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      details: { configured: true },
     };
   }
 }
