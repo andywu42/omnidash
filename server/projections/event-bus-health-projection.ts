@@ -2,7 +2,7 @@
  * EventBusHealthProjection — In-memory projection for Redpanda topic health (OMN-3192)
  *
  * Data source: Polled from Redpanda Admin API:
- *   GET http://localhost:9644/v1/topics
+ *   GET http://localhost:9644/v1/partitions
  *   GET http://localhost:9644/v1/brokers
  *   GET http://localhost:9644/v1/groups/{group}/offsets
  *

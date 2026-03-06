@@ -5,7 +5,7 @@
  * then feeds results into the EventBusHealthProjection singleton.
  *
  * Redpanda Admin API used:
- *   GET http://localhost:9644/v1/topics
+ *   GET http://localhost:9644/v1/partitions
  *   GET http://localhost:9644/v1/brokers
  *   GET http://localhost:9644/v1/groups/{group}/offsets
  *
@@ -71,8 +71,11 @@ const DLQ_SUFFIX_RE = /\.(dlq)$|-dlq$/i;
 // Types (Redpanda Admin API response shapes)
 // ============================================================================
 
-interface RedpandaTopic {
-  name: string;
+interface RedpandaPartition {
+  ns: string;
+  topic: string;
+  partition_id: number;
+  [key: string]: unknown;
 }
 
 interface RedpandaGroupOffset {
@@ -153,13 +156,19 @@ async function pollEventBusHealth(): Promise<void> {
   }
 }
 
-async function fetchTopicNames(): Promise<string[]> {
-  const url = `${REDPANDA_ADMIN_URL}/v1/topics`;
+export async function fetchTopicNames(): Promise<string[]> {
+  const url = `${REDPANDA_ADMIN_URL}/v1/partitions`;
   const res = await fetch(url, { signal: AbortSignal.timeout(5_000) });
   if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
-  const json = (await res.json()) as RedpandaTopic[] | { topics?: RedpandaTopic[] };
-  const arr = Array.isArray(json) ? json : (json.topics ?? []);
-  return arr.map((t) => t.name).filter((n) => typeof n === 'string');
+  const raw = await res.json();
+  const json = Array.isArray(raw) ? (raw as RedpandaPartition[]) : [];
+  const topicSet = new Set<string>();
+  for (const p of json) {
+    if (typeof p.topic === 'string' && p.ns !== 'redpanda') {
+      topicSet.add(p.topic);
+    }
+  }
+  return [...topicSet];
 }
 
 async function fetchGroupOffsets(group: string): Promise<RedpandaGroupOffset[]> {
