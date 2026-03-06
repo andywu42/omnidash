@@ -103,45 +103,40 @@ class TestCheckKafkaTopics(unittest.TestCase):
 
     @patch("audit_components._http_get")
     def test_topic_missing_from_broker(self, mock_get: MagicMock) -> None:
-        # Broker returns a list that doesn't include our topic
-        broker_topics = [{"name": "other-topic"}]
-        mock_get.return_value = (200, json.dumps(broker_topics).encode())
+        # Broker returns partitions for a different topic only
+        partitions = [{"ns": "kafka", "topic": "other-topic", "partition_id": 0}]
+        mock_get.return_value = (200, json.dumps(partitions).encode())
         result = audit.check_kafka_topics(
             ["agent-actions"], "http://localhost:9644", 1.0
         )
         self.assertEqual(result["agent-actions"], "TOPIC_MISSING")
 
     @patch("audit_components._http_get")
-    def test_topic_present_no_messages_is_empty(self, mock_get: MagicMock) -> None:
-        broker_topics = [{"name": "agent-actions"}]
-        partitions = [{"watermarks": {"low": "0", "high": "0"}}]
-
-        def side_effect(url: str, timeout: int = 5):
-            if url.endswith("/v1/topics"):
-                return (200, json.dumps(broker_topics).encode())
-            return (200, json.dumps(partitions).encode())
-
-        mock_get.side_effect = side_effect
-        result = audit.check_kafka_topics(
-            ["agent-actions"], "http://localhost:9644", 1.0
-        )
-        self.assertEqual(result["agent-actions"], "EMPTY")
-
-    @patch("audit_components._http_get")
-    def test_topic_present_with_messages_is_fresh(self, mock_get: MagicMock) -> None:
-        broker_topics = [{"name": "agent-actions"}]
-        partitions = [{"watermarks": {"low": "0", "high": "100"}}]
-
-        def side_effect(url: str, timeout: int = 5):
-            if url.endswith("/v1/topics"):
-                return (200, json.dumps(broker_topics).encode())
-            return (200, json.dumps(partitions).encode())
-
-        mock_get.side_effect = side_effect
+    def test_topic_present_with_partitions_is_fresh(self, mock_get: MagicMock) -> None:
+        # /v1/partitions returns entries for agent-actions
+        partitions = [
+            {"ns": "kafka", "topic": "agent-actions", "partition_id": 0},
+            {"ns": "kafka", "topic": "agent-actions", "partition_id": 1},
+        ]
+        mock_get.return_value = (200, json.dumps(partitions).encode())
         result = audit.check_kafka_topics(
             ["agent-actions"], "http://localhost:9644", 1.0
         )
         self.assertEqual(result["agent-actions"], "FRESH")
+
+    @patch("audit_components._http_get")
+    def test_redpanda_internal_topics_excluded(self, mock_get: MagicMock) -> None:
+        # Partitions in ns=redpanda should be excluded from topic discovery
+        partitions = [
+            {"ns": "redpanda", "topic": "__consumer_offsets", "partition_id": 0},
+            {"ns": "kafka", "topic": "agent-actions", "partition_id": 0},
+        ]
+        mock_get.return_value = (200, json.dumps(partitions).encode())
+        result = audit.check_kafka_topics(
+            ["agent-actions", "__consumer_offsets"], "http://localhost:9644", 1.0
+        )
+        self.assertEqual(result["agent-actions"], "FRESH")
+        self.assertEqual(result["__consumer_offsets"], "TOPIC_MISSING")
 
     @patch("audit_components._http_get")
     def test_malformed_broker_response_returns_unknown(

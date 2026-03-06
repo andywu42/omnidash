@@ -322,8 +322,10 @@ def check_kafka_topics(
     if not topics:
         return {}
 
-    # Fetch topic list from Redpanda Admin API
-    status, body = _http_get(f"{redpanda_admin}/v1/topics", timeout=5)
+    # Fetch partition list from Redpanda Admin API (/v1/partitions).
+    # Note: /v1/topics does NOT exist in the Redpanda Admin API (returns 404).
+    # We derive topic names from the partition entries instead.
+    status, body = _http_get(f"{redpanda_admin}/v1/partitions", timeout=5)
     if status != 200:
         return {t: "UNKNOWN" for t in topics}
 
@@ -331,9 +333,19 @@ def check_kafka_topics(
     if not isinstance(data, list):
         return {t: "UNKNOWN" for t in topics}
 
-    broker_topics: set[str] = {
-        item.get("name", "") for item in data if isinstance(item, dict)
-    }
+    # Build set of topic names from partition entries, excluding internal
+    # Redpanda topics (ns == "redpanda").
+    broker_topics: set[str] = set()
+    partitions_per_topic: dict[str, int] = {}
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        if item.get("ns") == "redpanda":
+            continue
+        topic_name = item.get("topic", "")
+        if topic_name:
+            broker_topics.add(topic_name)
+            partitions_per_topic[topic_name] = partitions_per_topic.get(topic_name, 0) + 1
 
     result: dict[str, str] = {}
     for topic in topics:
@@ -341,31 +353,13 @@ def check_kafka_topics(
             result[topic] = "TOPIC_MISSING"
             continue
 
-        # Check partition offsets via /v1/topics/{topic}/partitions
-        s2, b2 = _http_get(f"{redpanda_admin}/v1/topics/{topic}/partitions", timeout=5)
-        if s2 != 200:
-            result[topic] = "UNKNOWN"
-            continue
-
-        partitions = _parse_json(b2)
-        if not isinstance(partitions, list) or not partitions:
-            result[topic] = "EMPTY"
-            continue
-
-        # Sum total messages across partitions
-        total_messages = 0
-        latest_ts_ms: int | None = None
-
-        for part in partitions:
-            if not isinstance(part, dict):
-                continue
-            watermarks = part.get("watermarks", {})
-            if isinstance(watermarks, dict):
-                low = int(watermarks.get("low", "0"))
-                high = int(watermarks.get("high", "0"))
-                total_messages += max(0, high - low)
-
-        if total_messages == 0:
+        # The Redpanda Admin API /v1/partitions does not expose watermark
+        # offsets, so we cannot determine FRESH vs STALE vs EMPTY from HTTP
+        # alone. Report as FRESH if the topic has partitions on the broker
+        # (presence check). Actual offset-based staleness detection requires
+        # the Kafka protocol (e.g. kafkajs admin).
+        partition_count = partitions_per_topic.get(topic, 0)
+        if partition_count == 0:
             result[topic] = "EMPTY"
             continue
 

@@ -151,7 +151,7 @@ function TopicTable({ topics, isLoading }: { topics: TopicHealthSummary[]; isLoa
         </CardTitle>
         <CardDescription>
           Polled from Redpanda Admin API at{' '}
-          <code className="text-xs">localhost:9644/v1/topics</code>
+          <code className="text-xs">localhost:9644/v1/partitions</code>
         </CardDescription>
       </CardHeader>
       <CardContent>
