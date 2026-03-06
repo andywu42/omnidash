@@ -14,6 +14,15 @@ repos:
 
   - repo: local
     hooks:
+      # OMN-3777: Block cloud bus references in source code
+      - id: no-cloud-bus
+        name: Block cloud bus references
+        entry: bash scripts/check_no_cloud_bus_wrapper.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       - id: no-env-file
         name: Reject committed .env files (except .env.example)
         entry: bash -c 'git diff --cached --name-only | grep -E "(^|/)\\.env([._-].+)?$" | grep -vE "\\.env\\.example" | grep -q . && { echo "BLOCKED: .env staged — use ~/.omnibase/.env instead. Run: git reset HEAD <file>"; exit 1; }'
