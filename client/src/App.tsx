@@ -64,6 +64,8 @@ import PipelineHealthDashboard from '@/pages/PipelineHealthDashboard';
 import EventBusHealthDashboard from '@/pages/EventBusHealthDashboard';
 // Plan reviewer dashboard (OMN-3324)
 import PlanReviewer from '@/pages/PlanReviewer';
+// Model Efficiency Index dashboard (OMN-3941)
+import ModelEfficiencyDashboard from '@/pages/ModelEfficiencyDashboard';
 // Runtime health dashboard (OMN-3598)
 import WorkerHealthPage from '@/components/worker-health/WorkerHealthPage';
 
@@ -174,6 +176,9 @@ function Router() {
 
       {/* Runtime Health — container status + restart counts (OMN-3598) */}
       <Route path="/worker-health" component={WorkerHealthPage} />
+
+      {/* Model Efficiency Index dashboard (OMN-3941) */}
+      <Route path="/model-efficiency" component={ModelEfficiencyDashboard} />
 
       {/* Preview routes */}
       <Route path="/preview/analytics" component={EnhancedAnalytics} />

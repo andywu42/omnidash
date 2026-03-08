@@ -1694,3 +1694,50 @@ export const routingConfig = pgTable('routing_config', {
 export const insertRoutingConfigSchema = createInsertSchema(routingConfig);
 export type RoutingConfigRow = typeof routingConfig.$inferSelect;
 export type InsertRoutingConfig = typeof routingConfig.$inferInsert;
+
+/**
+ * Model Efficiency Rollups Table (migration 0017)
+ * PR validation rollup events for the Model Efficiency Index (MEI) dashboard.
+ * MEI is defined only over rollup_status='final' rows.
+ */
+export const modelEfficiencyRollups = pgTable(
+  'model_efficiency_rollups',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    runId: text('run_id').notNull().unique(),
+    repoId: text('repo_id').notNull(),
+    prId: text('pr_id').default(''),
+    prUrl: text('pr_url').default(''),
+    ticketId: text('ticket_id').default(''),
+    modelId: text('model_id').notNull(),
+    producerKind: text('producer_kind').notNull().default('unknown'),
+    rollupStatus: text('rollup_status').notNull().default('final'),
+    metricVersion: text('metric_version').notNull().default('v1'),
+    filesChanged: integer('files_changed').notNull().default(0),
+    linesChanged: integer('lines_changed').notNull().default(0),
+    moduleTags: jsonb('module_tags').default(sql`'[]'::jsonb`),
+    blockingFailures: integer('blocking_failures').notNull().default(0),
+    warnFindings: integer('warn_findings').notNull().default(0),
+    reruns: integer('reruns').notNull().default(0),
+    validatorRuntimeMs: integer('validator_runtime_ms').notNull().default(0),
+    humanEscalations: integer('human_escalations').notNull().default(0),
+    autofixSuccesses: integer('autofix_successes').notNull().default(0),
+    timeToGreenMs: integer('time_to_green_ms').notNull().default(0),
+    vts: doublePrecision('vts').notNull().default(0),
+    vtsPerKloc: doublePrecision('vts_per_kloc').notNull().default(0),
+    phaseCount: integer('phase_count').notNull().default(0),
+    missingFields: jsonb('missing_fields').default(sql`'[]'::jsonb`),
+    emittedAt: timestamp('emitted_at', { withTimezone: true }).notNull(),
+    projectedAt: timestamp('projected_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_mer_model_id').on(table.modelId),
+    index('idx_mer_repo_id').on(table.repoId),
+    index('idx_mer_emitted_at').on(table.emittedAt),
+    index('idx_mer_rollup_status').on(table.rollupStatus),
+  ]
+);
+
+export const insertModelEfficiencyRollupSchema = createInsertSchema(modelEfficiencyRollups);
+export type ModelEfficiencyRollupRow = typeof modelEfficiencyRollups.$inferSelect;
+export type InsertModelEfficiencyRollup = typeof modelEfficiencyRollups.$inferInsert;

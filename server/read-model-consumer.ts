@@ -41,6 +41,7 @@ import {
   delegationShadowComparisons,
   patternLearningArtifacts,
   planReviewRuns,
+  modelEfficiencyRollups,
 } from '@shared/intelligence-schema';
 import type {
   InsertAgentRoutingDecision,
@@ -79,6 +80,7 @@ import {
   SUFFIX_INTELLIGENCE_PATTERN_LIFECYCLE_TRANSITIONED,
   SUFFIX_INTELLIGENCE_PATTERN_LEARNING_CMD,
   TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED,
+  SUFFIX_OMNICLAUDE_PR_VALIDATION_ROLLUP,
 } from '@shared/topics';
 import type { LlmRoutingDecisionEvent } from '@shared/llm-routing-types';
 import type { TaskDelegatedEvent, DelegationShadowComparisonEvent } from '@shared/delegation-types';
@@ -248,6 +250,7 @@ export const READ_MODEL_TOPICS = [
   SUFFIX_INTELLIGENCE_PATTERN_LEARNING_CMD,
   // OMN-3324: Plan reviewer strategy run completions from omniintelligence.
   TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED,
+  SUFFIX_OMNICLAUDE_PR_VALIDATION_ROLLUP,
 ] as const;
 
 type ReadModelTopic = (typeof READ_MODEL_TOPICS)[number];
@@ -780,6 +783,10 @@ export class ReadModelConsumer {
         // OMN-3324: Plan reviewer strategy run completions
         case TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED:
           projected = await this.projectPlanReviewStrategyRunEvent(parsed, fallbackId);
+          break;
+        // OMN-3933: PR validation rollup events for MEI dashboard
+        case SUFFIX_OMNICLAUDE_PR_VALIDATION_ROLLUP:
+          projected = await this.projectPrValidationRollup(parsed);
           break;
         default:
           console.warn(
@@ -3004,6 +3011,81 @@ export class ReadModelConsumer {
     } catch (err) {
       console.error('[plan-reviewer] projection error:', err);
       return false;
+    }
+  }
+
+  /**
+   * Project a PR validation rollup event into the `model_efficiency_rollups`
+   * table (OMN-3933).
+   *
+   * Each event represents one PR validation run's aggregate metrics. The
+   * run_id is used as the unique key; duplicate events are silently dropped
+   * via ON CONFLICT DO NOTHING.
+   *
+   * Returns true when written (or silently skipped due to conflict), false
+   * when the DB is unavailable or the table does not exist yet.
+   */
+  private async projectPrValidationRollup(data: Record<string, unknown>): Promise<boolean> {
+    const db = tryGetIntelligenceDb();
+    if (!db) return false;
+
+    const runId = (data.run_id as string) || (data.runId as string);
+    if (!runId) {
+      console.warn('[ReadModelConsumer] pr-validation-rollup missing run_id — skipping');
+      return true;
+    }
+
+    const ext = (data.extensions ?? data.ext ?? {}) as Record<string, unknown>;
+    const missingFields = ext.missing_fields ?? data.missing_fields ?? [];
+
+    try {
+      await db
+        .insert(modelEfficiencyRollups)
+        .values({
+          runId,
+          repoId: (data.repo_id as string) || (data.repoId as string) || 'unknown',
+          prId: (data.pr_id as string) || (data.prId as string) || '',
+          prUrl: (data.pr_url as string) || (data.prUrl as string) || '',
+          ticketId: (data.ticket_id as string) || (data.ticketId as string) || '',
+          modelId: (data.model_id as string) || (data.modelId as string) || 'unknown',
+          producerKind:
+            (data.producer_kind as string) || (data.producerKind as string) || 'unknown',
+          rollupStatus: (data.rollup_status as string) || (data.rollupStatus as string) || 'final',
+          metricVersion: (data.metric_version as string) || (data.metricVersion as string) || 'v1',
+          filesChanged: typeof data.files_changed === 'number' ? data.files_changed : 0,
+          linesChanged: typeof data.lines_changed === 'number' ? data.lines_changed : 0,
+          moduleTags: Array.isArray(data.module_tags) ? data.module_tags : [],
+          blockingFailures: typeof data.blocking_failures === 'number' ? data.blocking_failures : 0,
+          warnFindings: typeof data.warn_findings === 'number' ? data.warn_findings : 0,
+          reruns: typeof data.reruns === 'number' ? data.reruns : 0,
+          validatorRuntimeMs:
+            typeof data.validator_runtime_ms === 'number' ? data.validator_runtime_ms : 0,
+          humanEscalations: typeof data.human_escalations === 'number' ? data.human_escalations : 0,
+          autofixSuccesses: typeof data.autofix_successes === 'number' ? data.autofix_successes : 0,
+          timeToGreenMs: typeof data.time_to_green_ms === 'number' ? data.time_to_green_ms : 0,
+          vts: typeof data.vts === 'number' ? data.vts : 0,
+          vtsPerKloc: typeof data.vts_per_kloc === 'number' ? data.vts_per_kloc : 0,
+          phaseCount: typeof data.phase_count === 'number' ? data.phase_count : 0,
+          missingFields: Array.isArray(missingFields) ? missingFields : [],
+          emittedAt: safeParseDate(data.emitted_at ?? data.emittedAt ?? data.timestamp),
+        })
+        .onConflictDoNothing();
+
+      return true;
+    } catch (err) {
+      const pgCode = (err as { code?: string }).code;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        pgCode === '42P01' ||
+        (msg.includes('model_efficiency_rollups') && msg.includes('does not exist'))
+      ) {
+        console.warn(
+          '[ReadModelConsumer] model_efficiency_rollups table not yet created -- ' +
+            'run migrations to enable MEI projection'
+        );
+        return true;
+      }
+      throw err;
     }
   }
 }

@@ -75,6 +75,12 @@ const EXEMPT_FILES = new Set([
   // Routing config CRUD requires direct DB writes (not yet event-sourced).
   // TODO(OMN-3445-followup): migrate to event-sourced projection.
   'routing-config-routes.ts',
+
+  // Model Efficiency Index reads VTS metrics from model_efficiency_snapshots.
+  // Table is populated by a backend reducer (OMN-3923). Once a ProjectionService
+  // view is defined for this domain, migrate off direct DB access.
+  // TODO(OMN-3923-followup): migrate to ProjectionService view.
+  'model-efficiency-routes.ts',
 ]);
 
 /**

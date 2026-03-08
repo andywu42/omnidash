@@ -46,6 +46,8 @@ import routingConfigRoutes from './routing-config-routes';
 import workerHealthRoutes from './worker-health-routes';
 // Schema health endpoint (OMN-3751)
 import schemaHealthRoutes from './schema-health';
+// Model Efficiency Index routes (OMN-3937)
+import modelEfficiencyRoutes from './model-efficiency-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -153,6 +155,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Schema health endpoint (OMN-3751)
   app.use('/api/health', schemaHealthRoutes);
+
+  // Model Efficiency Index routes (OMN-3937)
+  app.use('/api/model-efficiency', modelEfficiencyRoutes);
 
   // Conditionally mount golden path test routes (OMN-2079)
   // Only enabled when ENABLE_TEST_ROUTES=true AND (NODE_ENV=test OR OMNIDASH_TEST_MODE=true)

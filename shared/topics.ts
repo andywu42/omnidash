@@ -373,6 +373,11 @@ export const SUFFIX_INTELLIGENCE_PATTERN_PROJECTION =
 export const TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED =
   'onex.evt.omniintelligence.plan-review-strategy-run-completed.v1';
 
+/** PR validation rollup events for the Model Efficiency Index (MEI) dashboard (OMN-3933).
+ * Emitted by omniclaude pr-validation pipeline after a PR run completes.
+ * Consumed only by the read-model-consumer via READ_MODEL_TOPICS. */
+export const SUFFIX_OMNICLAUDE_PR_VALIDATION_ROLLUP = 'onex.evt.omniclaude.pr-validation-rollup.v1';
+
 // ============================================================================
 // Miscellaneous Topics
 // ============================================================================

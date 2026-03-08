@@ -25,6 +25,7 @@ import {
   Server,
   FileSearch,
   Container,
+  BarChart3,
 } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import {
@@ -205,6 +206,13 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         url: '/plan-reviewer',
         icon: FileSearch,
         description: 'Plan-review strategy comparison and model accuracy leaderboard (OMN-3324)',
+      },
+      {
+        title: 'Model Efficiency',
+        url: '/model-efficiency',
+        icon: BarChart3,
+        description:
+          'Model Efficiency Index (MEI) — VTS per kLoC comparison across models (OMN-3941)',
       },
     ],
   },
