@@ -502,7 +502,8 @@ export interface NodeStateChangeEvent {
 
 /**
  * Raw routing decision event from Kafka (snake_case)
- * Topic: agent-routing-decisions
+ * Topic: onex.evt.omniclaude.routing-decision.v1 (TOPIC_OMNICLAUDE_ROUTING_DECISIONS)
+ * @deprecated Legacy comment: was "agent-routing-decisions" (flat, pre-ONEX)
  */
 export interface RawRoutingDecisionEvent {
   id?: string;
@@ -527,7 +528,8 @@ export interface RawRoutingDecisionEvent {
 
 /**
  * Raw agent action event from Kafka (snake_case)
- * Topic: agent-actions
+ * Topic: onex.evt.omniclaude.agent-actions.v1 (TOPIC_OMNICLAUDE_AGENT_ACTIONS)
+ * @deprecated Legacy comment: was "agent-actions" (flat, pre-ONEX)
  */
 export interface RawAgentActionEvent {
   id?: string;
@@ -552,7 +554,8 @@ export interface RawAgentActionEvent {
 
 /**
  * Raw transformation event from Kafka (snake_case)
- * Topic: agent-transformation-events
+ * Topic: onex.evt.omniclaude.agent-transformation.v1 (TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION)
+ * @deprecated Legacy comment: was "agent-transformation-events" (flat, pre-ONEX)
  */
 export interface RawTransformationEvent {
   id?: string;
@@ -574,7 +577,8 @@ export interface RawTransformationEvent {
 
 /**
  * Raw performance metric event from Kafka (snake_case)
- * Topic: router-performance-metrics
+ * Topic: onex.evt.omniclaude.performance-metrics.v1 (TOPIC_OMNICLAUDE_PERFORMANCE_METRICS)
+ * @deprecated Legacy comment: was "router-performance-metrics" (flat, pre-ONEX)
  */
 export interface RawPerformanceMetricEvent {
   id?: string;
@@ -1328,7 +1332,9 @@ export class EventConsumer extends EventEmitter {
 
                   // Strip legacy env prefix (e.g. "dev.onex.evt..." -> "onex.evt...")
                   // so topics match canonical names used by the switch cases below.
-                  // Legacy flat topics like "agent-actions" have no dot-prefix and pass through.
+                  // Legacy flat topics (e.g. "agent-actions") are no longer subscribed; all active
+                  // topics use canonical ONEX names (onex.evt.omniclaude.*). Pass-through is retained
+                  // for any historical records that may still exist in the database.
                   const topic = extractSuffix(rawTopic);
 
                   // Capture Kafka events into the live event bus buffer so new
@@ -2084,7 +2090,9 @@ export class EventConsumer extends EventEmitter {
 
           // Strip legacy env prefix (e.g. "dev.onex.evt..." -> "onex.evt...") so topics
           // match canonical names used by injectPlaybackEvent handlers.
-          // Legacy flat topics like "agent-actions" have no prefix and pass through.
+          // Legacy flat topics (e.g. "agent-actions") are no longer subscribed; all active
+          // topics use canonical ONEX names (onex.evt.omniclaude.*). Pass-through is retained
+          // for any historical records that may still exist in the database.
           const topic = extractSuffix(row.topic);
 
           this.injectPlaybackEvent(
