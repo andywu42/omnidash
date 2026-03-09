@@ -121,7 +121,7 @@ export class EventBusDataSource extends EventEmitter {
     // ONEX canonical topics — prefix is optional (matches both dev.onex.* and onex.*)
     /^(?:[^.]+\.)?onex\..*\.v\d+$/,
     // omninode domain topics (prefixed: {env}.omninode.{domain}.*.v{N})
-    /^[^.]+\.omninode\.(?:intelligence|agent|metadata|code|node|database|consul|vault|bridge|service|kafka|logging|token|pattern|p2p|metacontext)\..*\.v\d+$/,
+    /^[^.]+\.omninode\.(?:intelligence|agent|metadata|code|node|database|vault|bridge|service|kafka|logging|token|pattern|p2p|metacontext)\..*\.v\d+$/,
     // omniclaude / omniintelligence / omnimemory (prefixed: {env}.omniclaude.*.v{N})
     /^[^.]+\.omni(?:claude|intelligence|memory)\..*\.v\d+$/,
     // archon-intelligence (prefixed: {env}.archon-intelligence.*.v{N})

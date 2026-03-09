@@ -134,11 +134,8 @@ export class EventBusMockGenerator {
     } else if (chainType < 0.85) {
       // Database query chain (10%)
       await this.generateDatabaseQueryChain();
-    } else if (chainType < 0.92) {
-      // Consul service chain (7%)
-      await this.generateConsulServiceChain();
     } else {
-      // Vault secret chain (8%)
+      // Vault secret chain (15%)
       await this.generateVaultSecretChain();
     }
   }
@@ -484,58 +481,6 @@ export class EventBusMockGenerator {
         duration_ms: Math.floor(10 + Math.random() * 50),
       },
       topic: `${this.tenantId}.omninode.database.v1`,
-      partition: 0,
-      offset: this.getNextOffset(),
-      processed_at: new Date(),
-    });
-  }
-
-  /**
-   * Generate Consul service event chain
-   */
-  private async generateConsulServiceChain(): Promise<void> {
-    const correlationId = randomUUID();
-    const serviceName = `service-${Math.floor(Math.random() * 10)}`;
-    const source = 'consul-adapter';
-
-    const requestedEventId = randomUUID();
-    await this.emitEvent({
-      event_type: 'omninode.consul.service.register.requested.v1',
-      event_id: requestedEventId,
-      timestamp: new Date().toISOString(),
-      tenant_id: this.tenantId,
-      namespace: this.namespace,
-      source,
-      correlation_id: correlationId,
-      schema_ref: 'registry://omninode/consul/service_register_requested/v1',
-      payload: {
-        service_name: serviceName,
-        service_address: '192.168.1.100',
-        service_port: 8080,
-      },
-      topic: `${this.tenantId}.omninode.consul.v1`,
-      partition: 0,
-      offset: this.getNextOffset(),
-      processed_at: new Date(),
-    });
-
-    await this.sleep(50);
-
-    await this.emitEvent({
-      event_type: 'omninode.consul.service.registered.v1',
-      event_id: randomUUID(),
-      timestamp: new Date().toISOString(),
-      tenant_id: this.tenantId,
-      namespace: this.namespace,
-      source,
-      correlation_id: correlationId,
-      causation_id: requestedEventId, // Reference the previous event
-      schema_ref: 'registry://omninode/consul/service_registered/v1',
-      payload: {
-        service_name: serviceName,
-        service_id: randomUUID(),
-      },
-      topic: `${this.tenantId}.omninode.consul.v1`,
       partition: 0,
       offset: this.getNextOffset(),
       processed_at: new Date(),

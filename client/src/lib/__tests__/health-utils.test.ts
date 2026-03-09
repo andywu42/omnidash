@@ -10,14 +10,11 @@ import {
   getHealthTextClass,
   getHealthBgClass,
   getHealthBadgeClass,
-  consulToSemantic,
-  semanticToConsul,
   isHealthy,
   isCritical,
   isWarning,
   sortByHealthSeverity,
   type SemanticHealthLevel,
-  type ConsulHealthStatus,
 } from '../health-utils';
 
 describe('health-utils', () => {
@@ -162,34 +159,6 @@ describe('health-utils', () => {
       expect(result).toContain('bg-gray-500/10');
       expect(result).toContain('text-gray-500');
     });
-  });
-
-  describe('consulToSemantic', () => {
-    it.each([
-      ['passing', 'healthy'],
-      ['warning', 'warning'],
-      ['critical', 'critical'],
-      ['unknown', 'unknown'],
-    ] as [ConsulHealthStatus, SemanticHealthLevel][])(
-      'should convert "%s" to "%s"',
-      (consul, semantic) => {
-        expect(consulToSemantic(consul)).toBe(semantic);
-      }
-    );
-  });
-
-  describe('semanticToConsul', () => {
-    it.each([
-      ['healthy', 'passing'],
-      ['warning', 'warning'],
-      ['critical', 'critical'],
-      ['unknown', 'unknown'],
-    ] as [SemanticHealthLevel, ConsulHealthStatus][])(
-      'should convert "%s" to "%s"',
-      (semantic, consul) => {
-        expect(semanticToConsul(semantic)).toBe(consul);
-      }
-    );
   });
 
   describe('isHealthy', () => {

@@ -344,7 +344,7 @@ export const queryKeys = {
    * });
    * ```
    *
-   * @example Update services after Consul sync
+   * @example Update services after registry sync
    * ```ts
    * queryClient.invalidateQueries({ queryKey: queryKeys.registry.services() });
    * ```

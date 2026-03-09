@@ -12,7 +12,6 @@ import {
   Bot,
   Code,
   Database,
-  Network,
   Lock,
   Workflow,
   CheckCircle2,
@@ -49,7 +48,6 @@ function getDomainColor(domain: string): string {
     code: 'bg-purple-500/10 text-purple-600 border-purple-500/20 hover:bg-purple-500/20',
     metadata: 'bg-orange-500/10 text-orange-600 border-orange-500/20 hover:bg-orange-500/20',
     database: 'bg-teal-500/10 text-teal-600 border-teal-500/20 hover:bg-teal-500/20',
-    consul: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20 hover:bg-cyan-500/20',
     vault: 'bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/20',
     bridge: 'bg-pink-500/10 text-pink-600 border-pink-500/20 hover:bg-pink-500/20',
   };
@@ -64,7 +62,6 @@ function getDomainIcon(domain: string) {
     code: Code,
     metadata: Database,
     database: Database,
-    consul: Network,
     vault: Lock,
     bridge: Workflow,
   };

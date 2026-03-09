@@ -2,7 +2,7 @@
  * Registry Discovery Dashboard Configuration
  *
  * Contract-driven dashboard showing registered nodes and live service instances
- * from Consul service discovery. Displays node metadata, health status, and
+ * from the service registry. Displays node metadata, health status, and
  * real-time instance information.
  *
  * Data source: /api/registry/discovery

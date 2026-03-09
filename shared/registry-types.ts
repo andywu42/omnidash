@@ -174,11 +174,9 @@ export interface RegistryHealthResponse {
   status: ServiceHealth;
   services: {
     postgres: ServiceHealth;
-    consul: ServiceHealth;
   };
   latency_ms: {
     postgres: number | null;
-    consul: number | null;
   };
 }
 

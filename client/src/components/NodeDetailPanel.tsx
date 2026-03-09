@@ -20,11 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { formatRelativeTime } from '@/lib/date-utils';
-import {
-  normalizeHealthStatus,
-  consulToSemantic as _consulToSemantic,
-  type SemanticHealthLevel,
-} from '@/lib/health-utils';
+import { normalizeHealthStatus, type SemanticHealthLevel } from '@/lib/health-utils';
 import {
   Zap,
   Cpu,

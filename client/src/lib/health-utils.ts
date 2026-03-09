@@ -2,21 +2,18 @@
  * Centralized health status mapping utility
  *
  * Standardizes health terminology across the codebase:
- * - Consul-style: passing, warning, critical, unknown
- * - Semantic-style: healthy, warning, critical
+ * - Semantic-style: healthy, warning, critical, unknown
+ * - Service-style: passing, up, online, degraded, unhealthy
  * - Mock data: healthy, degraded, unhealthy
  */
 
 /** Canonical semantic health levels (for UI display) */
 export type SemanticHealthLevel = 'healthy' | 'warning' | 'critical' | 'unknown';
 
-/** Consul-style health statuses (from API) */
-export type ConsulHealthStatus = 'passing' | 'warning' | 'critical' | 'unknown';
-
 /** All possible health status strings that might be encountered */
 export type AnyHealthStatus =
   | SemanticHealthLevel
-  | ConsulHealthStatus
+  | 'passing'
   | 'up'
   | 'online'
   | 'degraded'
@@ -168,26 +165,6 @@ export function getHealthBadgeClass(status: SemanticHealthLevel): string {
     unknown: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
   };
   return classes[status];
-}
-
-/**
- * Convert Consul health status to semantic level
- */
-export function consulToSemantic(status: ConsulHealthStatus): SemanticHealthLevel {
-  if (status === 'passing') {
-    return 'healthy';
-  }
-  return status;
-}
-
-/**
- * Convert semantic health level to Consul status
- */
-export function semanticToConsul(status: SemanticHealthLevel): ConsulHealthStatus {
-  if (status === 'healthy') {
-    return 'passing';
-  }
-  return status;
 }
 
 /**

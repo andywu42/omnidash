@@ -315,7 +315,6 @@ test.describe('Event Bus Verification', () => {
         /([^.]+\.)?omninode\.metadata\..*\.v\d+/,
         /([^.]+\.)?omninode\.code\..*\.v\d+/,
         /([^.]+\.)?omninode\.database\..*\.v\d+/,
-        /([^.]+\.)?omninode\.consul\..*\.v\d+/,
         /([^.]+\.)?omninode\.vault\..*\.v\d+/,
         /([^.]+\.)?omninode\.bridge\..*\.v\d+/,
         /([^.]+\.)?omninode\.service\..*\.v\d+/,
