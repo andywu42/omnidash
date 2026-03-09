@@ -59,9 +59,12 @@ const EXPECTED_TOPICS: string[] = [
   'onex.evt.omniintelligence.pattern-refined.v1',
   'onex.evt.omniintelligence.intent-classified.v1',
   'onex.evt.omnimemory.document-ingested.v1',
-  'agent-actions',
-  'agent.routing.requested.v1',
-  'agent.routing.completed.v1',
+  // Canonical ONEX topic names (OMN-4083: replaced legacy flat names)
+  // Legacy: 'agent-actions' → omniclaude no longer produces to this topic
+  'onex.evt.omniclaude.agent-actions.v1',
+  // Legacy: 'agent.routing.requested.v1' / 'agent.routing.completed.v1'
+  'onex.cmd.omninode.routing-requested.v1',
+  'onex.evt.omninode.routing-completed.v1',
 ];
 
 /** DLQ topic suffix pattern — topics ending with .dlq or -dlq. */
