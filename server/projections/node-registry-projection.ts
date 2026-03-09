@@ -66,6 +66,37 @@ function displayTimestamp(eventTimeMs: number): string {
   return new Date(eventTimeMs || Date.now()).toISOString();
 }
 
+// ============================================================================
+// Normalization helpers for cloud-sourced introspection payloads (OMN-4098)
+// ============================================================================
+
+/**
+ * Convert a node_version value to a semver string.
+ * Python ModelSemVer serializes as { major, minor, patch }; plain strings are
+ * passed through unchanged.
+ */
+function toVersionString(v: unknown): string {
+  if (typeof v === 'string') return v;
+  if (v != null && typeof v === 'object') {
+    const sv = v as { major?: number; minor?: number; patch?: number };
+    if (sv.major !== undefined) {
+      return `${sv.major}.${sv.minor ?? 0}.${sv.patch ?? 0}`;
+    }
+  }
+  return '1.0.0';
+}
+
+/**
+ * Normalize a node_type value to the uppercase NodeType union.
+ * Python EnumNodeKind serializes as lowercase ("effect", "compute", etc.).
+ */
+function normalizeNodeType(value: unknown): NodeType {
+  if (typeof value !== 'string') return 'COMPUTE';
+  const upper = value.toUpperCase() as NodeType;
+  const valid: NodeType[] = ['EFFECT', 'COMPUTE', 'REDUCER', 'ORCHESTRATOR'];
+  return valid.includes(upper) ? upper : 'COMPUTE';
+}
+
 /** Event types this view handles */
 const HANDLED_EVENT_TYPES = new Set([
   'node-introspection',
@@ -319,18 +350,12 @@ export class NodeRegistryProjection implements ProjectionView<NodeRegistryPayloa
 
     const node: NodeState = {
       nodeId,
-      nodeType: (payload.nodeType ??
-        payload.node_type ??
-        existing?.nodeType ??
-        'COMPUTE') as NodeType,
+      nodeType: normalizeNodeType(payload.nodeType ?? payload.node_type ?? existing?.nodeType),
       state: (payload.currentState ??
-        payload.current_state ??
+        (payload.current_state !== null ? payload.current_state : undefined) ??
         existing?.state ??
         'pending_registration') as RegistrationState,
-      version: (payload.nodeVersion ??
-        payload.node_version ??
-        existing?.version ??
-        '1.0.0') as string,
+      version: toVersionString(payload.nodeVersion ?? payload.node_version ?? existing?.version),
       uptimeSeconds: existing?.uptimeSeconds ?? 0,
       lastSeen: displayTimestamp(event.eventTimeMs),
       memoryUsageMb: existing?.memoryUsageMb,
@@ -484,9 +509,9 @@ export class NodeRegistryProjection implements ProjectionView<NodeRegistryPayloa
 
       const node: NodeState = {
         nodeId,
-        nodeType: (raw.nodeType ?? raw.node_type ?? 'COMPUTE') as NodeType,
+        nodeType: normalizeNodeType(raw.nodeType ?? raw.node_type),
         state: (raw.state ?? 'pending_registration') as RegistrationState,
-        version: (raw.version ?? '1.0.0') as string,
+        version: toVersionString(raw.version),
         uptimeSeconds: (raw.uptimeSeconds ?? raw.uptime_seconds ?? 0) as number,
         lastSeen: raw.lastSeen
           ? raw.lastSeen instanceof Date

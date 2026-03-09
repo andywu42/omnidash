@@ -145,10 +145,23 @@ export const NodeLivenessExpiredPayloadSchema = z.object({
 export type NodeLivenessExpiredPayload = z.infer<typeof NodeLivenessExpiredPayloadSchema>;
 
 // node-introspection payload
+// node_version may arrive as a plain semver string or as a Python ModelSemVer
+// object { major, minor, patch } — accept both shapes (OMN-4098).
 export const NodeIntrospectionPayloadSchema = z.object({
   node_id: z.string().uuid(),
   node_type: z.string().optional(),
-  node_version: z.string().optional(),
+  node_version: z
+    .union([
+      z.string(),
+      z.object({
+        major: z.number(),
+        minor: z.number(),
+        patch: z.number(),
+      }),
+    ])
+    .optional(),
   capabilities: NodeCapabilitiesSchema.optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  current_state: z.string().nullable().optional(),
 });
 export type NodeIntrospectionPayload = z.infer<typeof NodeIntrospectionPayloadSchema>;

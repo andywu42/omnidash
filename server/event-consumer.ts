@@ -455,6 +455,8 @@ export type OnexNodeState = NodeState;
 export interface CanonicalOnexNode {
   node_id: string;
   state: OnexNodeState;
+  node_type?: string;
+  node_version?: string;
   capabilities?: Record<string, unknown>;
   activated_at?: number;
   last_heartbeat_at?: number;
@@ -3040,11 +3042,21 @@ export class EventConsumer extends EventEmitter {
   private syncCanonicalToRegistered(canonicalNode: CanonicalOnexNode): void {
     const existing = this.registeredNodes.get(canonicalNode.node_id);
 
+    // Normalize the node type from the canonical node, falling back to the
+    // existing registered value and then to COMPUTE (OMN-4098).
+    const rawType = canonicalNode.node_type ?? existing?.nodeType;
+    const validTypes: NodeType[] = ['EFFECT', 'COMPUTE', 'REDUCER', 'ORCHESTRATOR'];
+    let nodeType: NodeType = 'COMPUTE';
+    if (typeof rawType === 'string') {
+      const upper = rawType.toUpperCase() as NodeType;
+      if (validTypes.includes(upper)) nodeType = upper;
+    }
+
     const node: RegisteredNode = {
       nodeId: canonicalNode.node_id,
-      nodeType: existing?.nodeType ?? 'COMPUTE',
+      nodeType,
       state: this.mapCanonicalState(canonicalNode.state),
-      version: existing?.version ?? '1.0.0',
+      version: canonicalNode.node_version ?? existing?.version ?? '1.0.0',
       uptimeSeconds: existing?.uptimeSeconds ?? 0,
       lastSeen: new Date(canonicalNode.last_event_at || Date.now()),
       memoryUsageMb: existing?.memoryUsageMb,
@@ -3196,16 +3208,37 @@ export class EventConsumer extends EventEmitter {
       return;
     }
 
+    // Normalize node_version: Python may send a { major, minor, patch } object (OMN-4098)
+    const rawVersion = payload.node_version;
+    let nodeVersion: string | undefined;
+    if (typeof rawVersion === 'string') {
+      nodeVersion = rawVersion;
+    } else if (rawVersion != null && typeof rawVersion === 'object') {
+      const sv = rawVersion as { major?: number; minor?: number; patch?: number };
+      nodeVersion = `${sv.major ?? 0}.${sv.minor ?? 0}.${sv.patch ?? 0}`;
+    }
+
+    // Resolve state: use payload.current_state when non-null, otherwise keep existing (OMN-4098)
+    const resolvedState: OnexNodeState =
+      payload.current_state != null
+        ? (payload.current_state as OnexNodeState)
+        : (existing?.state ?? 'PENDING');
+
     // Update or create canonical node
     const node: CanonicalOnexNode = existing
       ? {
           ...existing,
+          state: resolvedState,
+          node_type: payload.node_type ?? existing.node_type,
+          node_version: nodeVersion ?? existing.node_version,
           capabilities: payload.capabilities || existing.capabilities,
           last_event_at: emittedAtMs,
         }
       : {
           node_id: payload.node_id,
-          state: 'PENDING',
+          state: resolvedState,
+          node_type: payload.node_type,
+          node_version: nodeVersion,
           capabilities: payload.capabilities,
           last_event_at: emittedAtMs,
         };
