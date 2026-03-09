@@ -31,7 +31,7 @@ import {
 // atomic cutover that requires coordinated deployment.
 //
 // Old format: onex.validation.cross_repo.run.started.v1 (non-canonical)
-// New format: dev.onex.evt.validation.cross-repo-run-started.v1 (canonical)
+// New format: onex.evt.validation.cross-repo-run-started.v1 (canonical, no env prefix)
 //
 // See platform_topic_suffixes.py for the matching producer-side suffixes.
 // ============================================================================

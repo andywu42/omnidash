@@ -4,6 +4,20 @@ import path from 'path';
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
 export default defineConfig({
+  define: {
+    // OMN-4085: Inject TOPIC_ENV_PREFIX for browser bundles.
+    // Vite does not pass process.env.* to the browser bundle by default — only VITE_* vars
+    // are available via import.meta.env. Without this define block, getTopicEnvPrefix() in
+    // shared/topics.ts always returns 'dev' (the hard-coded fallback), causing all
+    // resolveTopicName() calls in the browser to produce 'dev.onex...' topic names that
+    // do not match canonical ONEX topic names emitted by producers.
+    //
+    // Default: empty string (canonical names, no env prefix). Override via env var:
+    //   VITE_TOPIC_ENV_PREFIX=staging npm run build
+    'process.env.TOPIC_ENV_PREFIX': JSON.stringify(
+      process.env.VITE_TOPIC_ENV_PREFIX ?? process.env.TOPIC_ENV_PREFIX ?? ''
+    ),
+  },
   plugins: [
     react(),
     runtimeErrorOverlay(),

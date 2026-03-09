@@ -39,11 +39,13 @@ export type EnvironmentPrefix = (typeof ENVIRONMENT_PREFIXES)[number];
 
 /**
  * Get the topic environment prefix from environment variables.
- * Defaults to 'dev' if not specified.
+ * Defaults to empty string (canonical ONEX topic names, no prefix).
  *
- * **Client-side (browser)**: Vite replaces `process.env.*` at build time.
- * Since TOPIC_ENV_PREFIX / ONEX_ENV are not in the Vite define list,
- * the browser bundle always resolves to `'dev'`.
+ * **Client-side (browser)**: Vite injects `process.env.TOPIC_ENV_PREFIX` at
+ * build time via the `define` block in vite.config.ts (OMN-4085). The injected
+ * value defaults to empty string so browser bundles use canonical topic names.
+ * Set `VITE_TOPIC_ENV_PREFIX=staging` (or `TOPIC_ENV_PREFIX=staging`) in the
+ * build environment to override for non-production deployments.
  *
  * **Server-side**: Reads from `TOPIC_ENV_PREFIX` or `ONEX_ENV` env vars.
  * These must be set BEFORE any module that imports from this file is evaluated,
@@ -52,23 +54,30 @@ export type EnvironmentPrefix = (typeof ENVIRONMENT_PREFIXES)[number];
 export function getTopicEnvPrefix(): string {
   if (typeof process !== 'undefined' && process.env !== undefined) {
     const prefix = process.env.TOPIC_ENV_PREFIX ?? process.env.ONEX_ENV;
-    return prefix !== undefined && prefix !== '' ? prefix : 'dev';
+    return prefix !== undefined && prefix !== '' ? prefix : '';
   }
-  return 'dev';
+  return '';
 }
 
 /**
- * Build a legacy-format topic name by prepending the environment prefix.
- * Only needed for compatibility with older producers/consumers that expect
- * the `{env}.{topic}` format. New code should use the canonical name directly.
+ * Build a topic name by prepending the environment prefix (if any).
+ * When the prefix is empty (the default since OMN-4085), returns the canonical
+ * ONEX topic name unchanged. Only needed for deployments that use env-prefixed
+ * topic names (e.g. `staging.onex.evt...`).
  *
  * @example
+ * // Default (empty prefix, canonical name):
  * resolveTopicName('onex.evt.platform.node-heartbeat.v1')
- * // => 'dev.onex.evt.platform.node-heartbeat.v1'  (legacy format)
+ * // => 'onex.evt.platform.node-heartbeat.v1'
+ *
+ * // With explicit prefix override:
+ * resolveTopicName('onex.evt.platform.node-heartbeat.v1', 'staging')
+ * // => 'staging.onex.evt.platform.node-heartbeat.v1'
  */
 export function resolveTopicName(suffix: string, envPrefix?: string): string {
   const prefix = envPrefix ?? getTopicEnvPrefix();
-  return `${prefix}.${suffix}`;
+  // When prefix is empty, return the canonical name unchanged (no leading dot).
+  return prefix !== '' ? `${prefix}.${suffix}` : suffix;
 }
 
 // ============================================================================
