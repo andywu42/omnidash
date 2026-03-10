@@ -5,9 +5,9 @@
   "license": "MIT",
   "scripts": {
     "kill-port": "bash scripts/kill-server.sh",
-    "dev": "npm run kill-port && PORT=3000 NODE_ENV=development tsx server/index.ts",
+    "dev": "npm run kill-port && PORT=3000 NODE_ENV=development scripts/dev.sh tsx server/index.ts",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "start": "npm run kill-port && PORT=3000 NODE_ENV=production node dist/index.js",
+    "start": "npm run kill-port && PORT=3000 NODE_ENV=production scripts/dev.sh node dist/index.js",
     "check": "tsc",
     "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",

@@ -27,7 +27,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const BROKER =
-  process.env.KAFKA_BROKERS ?? process.env.KAFKA_BOOTSTRAP_SERVERS ?? 'localhost:29092';
+  process.env.KAFKA_BROKERS ?? process.env.KAFKA_BOOTSTRAP_SERVERS ?? 'localhost:29092'; // # cloud-bus-ok OMN-4494
 
 const kafka = new Kafka({
   brokers: BROKER.split(','),

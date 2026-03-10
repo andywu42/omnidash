@@ -771,7 +771,7 @@ describe('DatabaseAdapter - Connection Management', () => {
   });
 
   it('constructor succeeds with Kafka environment variables set', () => {
-    process.env.KAFKA_BROKERS = '192.168.86.200:29092';
+    process.env.KAFKA_BROKERS = '192.168.86.200:29092'; // # cloud-bus-ok OMN-4494
     expect(() => new PostgresAdapter()).not.toThrow();
     delete process.env.KAFKA_BROKERS;
   });

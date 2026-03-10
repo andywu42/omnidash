@@ -13,7 +13,7 @@
  * Run:
  *   npx tsx scripts/check-kafka-health.ts
  *   # or with explicit broker:
- *   KAFKA_BROKERS=192.168.86.200:29092 npx tsx scripts/check-kafka-health.ts
+ *   KAFKA_BROKERS=192.168.86.200:29092 npx tsx scripts/check-kafka-health.ts // # cloud-bus-ok OMN-4494
  */
 
 import 'dotenv/config';
@@ -33,7 +33,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const BROKER =
-  process.env.KAFKA_BROKERS ?? process.env.KAFKA_BOOTSTRAP_SERVERS ?? '192.168.86.200:29092';
+  process.env.KAFKA_BROKERS ?? process.env.KAFKA_BOOTSTRAP_SERVERS ?? '192.168.86.200:29092'; // # cloud-bus-ok OMN-4494
 
 const kafka = new Kafka({
   brokers: BROKER.split(','),

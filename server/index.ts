@@ -1,6 +1,15 @@
-// Load environment variables from .env file FIRST before any other imports
+// Hard precedence order (all calls use override: false — earlier wins, no exceptions):
+// 1. Shell env (highest) — set by scripts/dev.sh sourcing ~/.omnibase/.env,
+//    or by ~/.zshrc at session start, or by K8s-injected vars in cloud
+// 2. Local .env — service-specific non-secret defaults only
+//    (PORT, KAFKA_CONSUMER_GROUP_ID, ENABLE_REAL_TIME_EVENTS, etc.)
+// 3. ~/.omnibase/.env — platform shared config; fills only vars missing from 1 and 2
+// Cloud containers: paths 2 and 3 don't exist; K8s-injected vars (path 1) are the only source.
 import { config } from 'dotenv';
-config();
+import { homedir } from 'os';
+import { join } from 'path';
+config({ override: false });
+config({ path: join(homedir(), '.omnibase', '.env'), override: false });
 
 import { writeFileSync, unlinkSync } from 'fs';
 const SERVER_PID_FILE = '.server.pid';

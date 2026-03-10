@@ -34,8 +34,8 @@ const {
 } = vi.hoisted(() => {
   // Set env vars immediately (must use a clearly-fake broker so tests
   // never accidentally connect to a real Kafka instance)
-  process.env.KAFKA_BROKERS = 'test-broker:29092';
-  process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092';
+  process.env.KAFKA_BROKERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
+  process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
 
   const mockEmitIntentStored = vi.fn();
   const mockIntentEventEmitter = {
@@ -112,8 +112,8 @@ describe('EventConsumer Intent Forwarding', () => {
     vi.useRealTimers();
 
     // Reset environment variables (keep in sync with vi.hoisted values)
-    process.env.KAFKA_BROKERS = 'test-broker:29092';
-    process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092';
+    process.env.KAFKA_BROKERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
+    process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
     process.env.ENABLE_EVENT_PRELOAD = 'false';
 
     // Create new consumer instance

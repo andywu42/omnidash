@@ -333,7 +333,7 @@ class TestScriptRunsWithoutCrash(unittest.TestCase):
         args = argparse.Namespace(
             dashboard_url="http://localhost:3000",
             redpanda_admin="http://localhost:9644",
-            broker="192.168.86.200:29092",
+            broker="192.168.86.200:29092",  # cloud-bus-ok OMN-4494
             stale_threshold_hours=1.0,
             create_tickets=False,
             team_id="team-id",

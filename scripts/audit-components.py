@@ -32,7 +32,7 @@ Usage:
     python3 scripts/audit-components.py \\
         --dashboard-url http://localhost:3000 \\
         --redpanda-admin http://localhost:9644 \\
-        --broker 192.168.86.200:29092 \\
+        --broker 192.168.86.200:29092 \\  # cloud-bus-ok OMN-4494
         --stale-threshold-hours 2 \\
         --create-tickets \\
         --team-id <linear-team-id>
@@ -803,7 +803,7 @@ def parse_args() -> argparse.Namespace:
         "--broker",
         default=os.environ.get(
             "KAFKA_BROKERS",
-            os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "192.168.86.200:29092"),
+            os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "192.168.86.200:29092"),  # cloud-bus-ok OMN-4494
         ),
         help="Kafka broker address (used for documentation only; actual probing via admin API)",
     )

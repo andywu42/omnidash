@@ -10,7 +10,7 @@
  *
  * Environment variables:
  *   KAFKA_BROKERS / KAFKA_BOOTSTRAP_SERVERS are set to a clearly-fake
- *   test broker ('test-broker:29092') inside vi.hoisted() so the module
+ *   test broker ('test-broker:29092') inside vi.hoisted() so the module // # cloud-bus-ok OMN-4494
  *   can load without error.  beforeEach() resets them to the same fake
  *   value to keep every test isolated.
  */
@@ -20,8 +20,8 @@ import { EventEmitter } from 'events';
 // Use vi.hoisted to set environment variables and create mocks before module loading
 // Create mock functions using vi.hoisted() so they're available during module loading
 vi.hoisted(() => {
-  process.env.KAFKA_BROKERS = 'test-broker:29092';
-  process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092';
+  process.env.KAFKA_BROKERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
+  process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
 });
 
 // Create mock functions for Kafka operations
@@ -117,8 +117,8 @@ describe('EventConsumer', () => {
     vi.useRealTimers(); // Ensure real timers for most tests
 
     // Reset environment variables to clearly-fake test broker
-    process.env.KAFKA_BROKERS = 'test-broker:29092';
-    process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092';
+    process.env.KAFKA_BROKERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
+    process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
     process.env.ENABLE_EVENT_PRELOAD = 'false';
 
     // Create new consumer instance for each test
