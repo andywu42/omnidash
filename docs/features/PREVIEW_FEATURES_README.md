@@ -265,6 +265,6 @@ As features mature, they will be integrated with real data sources:
 
 ---
 
-**Last Updated**: 2025-10-28  
-**Version**: 1.0  
+**Last Updated**: 2025-10-28
+**Version**: 1.0
 **Status**: Active Development

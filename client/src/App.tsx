@@ -14,6 +14,7 @@ import { DemoModeToggle } from '@/components/DemoModeToggle';
 import { DemoControlPanel } from '@/components/DemoControlPanel';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useAuth } from '@/hooks/useAuth';
+import { useHealthProbe, type HealthProbeStatus } from '@/hooks/useHealthProbe';
 import LoginPage from '@/pages/LoginPage';
 
 // Archived legacy pages (OMN-1377)
@@ -202,6 +203,42 @@ function Router() {
   );
 }
 
+/**
+ * System health indicator for the global top bar (OMN-4515).
+ * Polls /api/health-probe which is public (no auth required) so it works
+ * in k8s without a user session.
+ */
+function SystemHealthIndicator({ status }: { status: HealthProbeStatus }) {
+  const dotClass =
+    status === 'up'
+      ? 'bg-emerald-500'
+      : status === 'degraded'
+        ? 'bg-amber-500'
+        : status === 'down'
+          ? 'bg-red-500'
+          : 'bg-gray-400';
+
+  const label =
+    status === 'up'
+      ? 'Healthy'
+      : status === 'degraded'
+        ? 'Degraded'
+        : status === 'down'
+          ? 'Down'
+          : 'Unknown';
+
+  return (
+    <div
+      className="flex items-center gap-1.5"
+      title={`System health: ${label}`}
+      data-testid="system-health-indicator"
+    >
+      <span className={`h-2 w-2 rounded-full ${dotClass}`} />
+      <span className="text-xs text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
 function Dashboard() {
   const style = {
     '--sidebar-width': '16rem',
@@ -214,6 +251,10 @@ function Dashboard() {
   const { isConnected, connectionStatus } = useWebSocket({
     debug: false,
   });
+
+  // System health probe — polls public /api/health-probe (no auth required,
+  // works in k8s without a user session). OMN-4515.
+  const { status: healthStatus } = useHealthProbe();
 
   // Bus identity badge — reflects server's env at startup (does not hot-reload)
   const [runtimeEnv, setRuntimeEnv] = useState<{
@@ -259,6 +300,8 @@ function Dashboard() {
 
             <div className="flex items-center gap-4">
               <DemoModeToggle />
+              {/* System health indicator (OMN-4515) — polls public /api/health-probe */}
+              <SystemHealthIndicator status={healthStatus} />
               <div className="flex items-center gap-2">
                 <div
                   className={`h-2 w-2 rounded-full transition-colors duration-300 ${

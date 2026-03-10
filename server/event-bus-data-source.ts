@@ -228,33 +228,33 @@ export class EventBusDataSource extends EventEmitter {
 
       // Create indexes for common queries
       await getIntelligenceDb().execute(sql`
-        CREATE INDEX IF NOT EXISTS idx_event_bus_events_event_type 
+        CREATE INDEX IF NOT EXISTS idx_event_bus_events_event_type
         ON event_bus_events(event_type)
       `);
 
       await getIntelligenceDb().execute(sql`
-        CREATE INDEX IF NOT EXISTS idx_event_bus_events_tenant_id 
+        CREATE INDEX IF NOT EXISTS idx_event_bus_events_tenant_id
         ON event_bus_events(tenant_id)
       `);
 
       await getIntelligenceDb().execute(sql`
-        CREATE INDEX IF NOT EXISTS idx_event_bus_events_correlation_id 
+        CREATE INDEX IF NOT EXISTS idx_event_bus_events_correlation_id
         ON event_bus_events(correlation_id)
       `);
 
       await getIntelligenceDb().execute(sql`
-        CREATE INDEX IF NOT EXISTS idx_event_bus_events_timestamp 
+        CREATE INDEX IF NOT EXISTS idx_event_bus_events_timestamp
         ON event_bus_events(timestamp)
       `);
 
       await getIntelligenceDb().execute(sql`
-        CREATE INDEX IF NOT EXISTS idx_event_bus_events_namespace 
+        CREATE INDEX IF NOT EXISTS idx_event_bus_events_namespace
         ON event_bus_events(namespace)
       `);
 
       // Composite index for common query patterns
       await getIntelligenceDb().execute(sql`
-        CREATE INDEX IF NOT EXISTS idx_event_bus_events_type_tenant_time 
+        CREATE INDEX IF NOT EXISTS idx_event_bus_events_type_tenant_time
         ON event_bus_events(event_type, tenant_id, timestamp)
       `);
 
@@ -663,7 +663,7 @@ export class EventBusDataSource extends EventEmitter {
       // Build final query
       // Note: Must quote "offset" column name as it's a reserved keyword
       const query = sql`
-        SELECT 
+        SELECT
           id, event_type, event_id, timestamp, tenant_id, namespace, source,
           correlation_id, causation_id, schema_ref, payload,
           topic, partition, "offset" as offset, processed_at, stored_at, created_at
@@ -710,7 +710,7 @@ export class EventBusDataSource extends EventEmitter {
 
       // Get total events and time range
       const totalQuery = sql`
-        SELECT 
+        SELECT
           COUNT(*) as total_events,
           MIN(timestamp) as oldest_event,
           MAX(timestamp) as newest_event
@@ -720,7 +720,7 @@ export class EventBusDataSource extends EventEmitter {
 
       // Get events by type
       const typeQuery = sql`
-        SELECT 
+        SELECT
           event_type,
           COUNT(*) as count
         FROM event_bus_events
@@ -730,7 +730,7 @@ export class EventBusDataSource extends EventEmitter {
 
       // Get events by tenant
       const tenantQuery = sql`
-        SELECT 
+        SELECT
           tenant_id,
           COUNT(*) as count
         FROM event_bus_events
