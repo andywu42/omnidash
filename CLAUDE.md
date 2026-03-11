@@ -80,6 +80,23 @@ npm run check-topics             # Check Kafka topic health and consumer lag
 node scripts/seed-events.ts      # Direct script execution
 ```
 
+**Prometheus Metrics** (OMN-4609, OMN-4598):
+
+```bash
+# Prometheus-compatible /metrics endpoint — no auth required
+curl http://localhost:3000/metrics
+# Exposes: omnidash_data_sources_live_count, _mock_count, _error_count, _offline_count
+# PrometheusRule OmnidashDataSourceHealthBelowThreshold alerts when live_count < 11
+# See: server/metrics-routes.ts, omninode_infra/k8s/onex-dev/runtime/prometheusrule-omnidash-health.yaml
+```
+
+**Health Regression Prevention** (OMN-4598, 2026-03-11):
+- Root cause of OMN-4383: `BUS_ID` missing from omnidash Deployment → fixed via `envFrom: onex-runtime-config` (OMN-4606)
+- Prevention plan: `omni_home/docs/plans/2026-03-11-dashboard-health-regression-prevention.md`
+- Kafka topic preflight: `omninode_infra/scripts/verify-kafka-topics.sh` (OMN-4610)
+- Topic manifest: `omninode_infra/k8s/onex-dev/runtime/required-kafka-topics.yaml`
+- Post-deploy CI gate: `omninode_infra/.github/workflows/deploy-onex-dev.yml` (health check step)
+
 **Dashboard URLs** (always port 3000):
 
 Category Dashboards (default):
