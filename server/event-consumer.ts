@@ -122,6 +122,8 @@ import { addDecisionRecord } from './decision-records-routes';
 import { isGitHubPRStatusEvent, isGitHookEvent, isLinearSnapshotEvent } from '@shared/status-types';
 import { statusProjection } from './projections/status-projection';
 import { emitStatusInvalidate } from './status-events';
+// Kafka topic preflight: crash-loop on missing required topics (OMN-4607)
+import { assertTopicsExist } from './lib/kafka-topic-preflight';
 
 const isTestEnv = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
 const DEBUG_CANONICAL_EVENTS = process.env.DEBUG_CANONICAL_EVENTS === 'true' || isTestEnv;
@@ -1255,6 +1257,22 @@ export class EventConsumer extends EventEmitter {
       // fall through to buildSubscriptionTopics() as the hardcoded fallback.
       // -----------------------------------------------------------------------
       const subscriptionTopics = await this.fetchCatalogTopics();
+
+      // Kafka topic preflight (OMN-4607): assert required skill-lifecycle topics
+      // exist before subscribing. Crash-loop is the correct operator signal if
+      // required topics are missing — do not soften to a warning.
+      // These topics are required for the omninode-skill-lifecycle-consumer to
+      // function; missing topics indicate the data-plane Redpanda is not seeded.
+      if (!isTestEnv) {
+        const preflightAdmin = this.kafka.admin();
+        await assertTopicsExist(preflightAdmin, [
+          'onex.evt.omniclaude.skill-started.v1',
+          'onex.evt.omniclaude.skill-completed.v1',
+        ]);
+        intentLogger.info(
+          '[EventConsumer] Kafka topic preflight passed: required skill-lifecycle topics exist'
+        );
+      }
 
       // Phase B: Subscribe at committed consumer-group offsets, NOT from the
       // beginning. Historical data is already covered by the Phase A DB preload.
