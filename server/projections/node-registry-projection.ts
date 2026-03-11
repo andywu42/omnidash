@@ -348,13 +348,22 @@ export class NodeRegistryProjection implements ProjectionView<NodeRegistryPayloa
     // Extract introspection reason
     const reason = (payload.reason ?? existing?.reason) as IntrospectionReason | undefined;
 
+    // Nodes emitting introspection events are by definition running. When the
+    // runtime emits node-introspection with current_state: null (no explicit FSM
+    // state set), treat the node as 'active' rather than 'pending_registration'.
+    // 'pending_registration' is only appropriate when the node is in the initial
+    // handshake phase — a null current_state from an introspection event means the
+    // runtime hasn't wired the FSM, not that the node is waiting to be registered.
+    const resolvedState =
+      payload.currentState ??
+      (payload.current_state !== null ? payload.current_state : undefined) ??
+      existing?.state ??
+      'active';
+
     const node: NodeState = {
       nodeId,
       nodeType: normalizeNodeType(payload.nodeType ?? payload.node_type ?? existing?.nodeType),
-      state: (payload.currentState ??
-        (payload.current_state !== null ? payload.current_state : undefined) ??
-        existing?.state ??
-        'pending_registration') as RegistrationState,
+      state: resolvedState as RegistrationState,
       version: toVersionString(payload.nodeVersion ?? payload.node_version ?? existing?.version),
       uptimeSeconds: existing?.uptimeSeconds ?? 0,
       lastSeen: displayTimestamp(event.eventTimeMs),
