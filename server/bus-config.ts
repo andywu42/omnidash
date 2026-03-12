@@ -31,18 +31,73 @@
  *   - No site is aware of BUS_MODE or cloud vs local distinction
  *
  * Correct precedence (implemented below in resolveBrokers()):
- *   KAFKA_BROKERS > KAFKA_BOOTSTRAP_SERVERS > KAFKA_LOCAL_BOOTSTRAP_SERVERS > localhost:19092
+ *   KAFKA_BOOTSTRAP_SERVERS > KAFKA_BROKERS > (throw)
  *
  * Note: KAFKA_BROKERS is the omnidash-specific var set by dev.sh / npm run dev.
  *       KAFKA_BOOTSTRAP_SERVERS is the platform-wide standard (in ~/.omnibase/.env).
- *       KAFKA_LOCAL_BOOTSTRAP_SERVERS is the explicit local bus fallback.
  *
  * ──────────────────────────────────────────────────────────────────────────────
- *
- * Implementation: see Task 2 (OMN-4771) — bus-config.ts singleton body.
  */
 
-// Placeholder: full implementation added in Task 2 (OMN-4771).
-// This file is created in Task 1 to hold the audit findings above.
+/**
+ * Bus mode inferred from broker address port.
+ * - 'local'   → port 19092 (local Docker Redpanda)
+ * - 'cloud'   → port 29092 (cloud bus tunnel) # cloud-bus-ok OMN-4771
+ * - 'unknown' → any other port
+ */
+export type BusMode = 'local' | 'cloud' | 'unknown';
 
-export {};
+/**
+ * Infer bus mode from a broker string (single broker address or comma-separated list).
+ * Uses the port of the first broker to determine mode.
+ */
+export function getBusMode(brokerString: string): BusMode {
+  const firstBroker = brokerString.split(',')[0].trim();
+  const portMatch = firstBroker.match(/:(\d+)$/);
+  if (!portMatch) return 'unknown';
+  const port = parseInt(portMatch[1], 10);
+  if (port === 19092) return 'local';
+  if (port === 29092) return 'cloud'; // # cloud-bus-ok OMN-4771
+  return 'unknown';
+}
+
+/**
+ * Resolve Kafka broker list from environment variables.
+ *
+ * Precedence: KAFKA_BOOTSTRAP_SERVERS > KAFKA_BROKERS
+ *
+ * Throws if neither is set — broker configuration is required infrastructure.
+ * The error message always contains 'KAFKA_BOOTSTRAP_SERVERS' so callers can
+ * detect the missing-config case reliably.
+ */
+export function resolveBrokers(): string[] {
+  const brokerString = process.env.KAFKA_BOOTSTRAP_SERVERS ?? process.env.KAFKA_BROKERS;
+  if (!brokerString) {
+    throw new Error(
+      'KAFKA_BOOTSTRAP_SERVERS (or KAFKA_BROKERS) environment variable is required. ' +
+        'Set it in .env file or export it before starting the server. ' +
+        'Example: KAFKA_BOOTSTRAP_SERVERS=localhost:19092'
+    );
+  }
+  return brokerString
+    .split(',')
+    .map((b) => b.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Return the raw broker string (first-broker-wins, not split).
+ * Returns 'not configured' instead of throwing when neither var is set.
+ * Useful for logging and health-check endpoints.
+ */
+export function getBrokerString(): string {
+  return process.env.KAFKA_BOOTSTRAP_SERVERS ?? process.env.KAFKA_BROKERS ?? 'not configured';
+}
+
+/**
+ * Return the current bus mode inferred from resolved broker address.
+ * Returns 'unknown' when brokers are not configured.
+ */
+export function getCurrentBusMode(): BusMode {
+  return getBusMode(getBrokerString());
+}
