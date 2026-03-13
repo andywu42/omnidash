@@ -2846,6 +2846,16 @@ export class EventConsumer extends EventEmitter {
         timestamp: new Date().toISOString(),
       });
 
+      // OMN-4957: Emit intentUpdate so projection-bootstrap wires intent events
+      // through the same consumerEventNames pipeline as other event types.
+      this.emit('intentUpdate', {
+        ...intentEvent,
+        topic: INTENT_CLASSIFIED_TOPIC,
+        type: 'intent-classified',
+        actionType: 'intent-classified',
+        timestamp: new Date().toISOString(),
+      });
+
       // Forward to IntentEventEmitter for new WebSocket subscription pattern
       // Use type guard for validation before emitting
       if (isIntentClassifiedEvent(event)) {
@@ -2900,6 +2910,7 @@ export class EventConsumer extends EventEmitter {
 
   private handleIntentStored(event: RawIntentStoredEvent): void {
     try {
+      const intentEventId = event.id || crypto.randomUUID();
       // Validate and sanitize timestamp
       const createdAt = sanitizeTimestamp(
         event.timestamp || event.created_at || event.createdAt,
@@ -2910,13 +2921,25 @@ export class EventConsumer extends EventEmitter {
       this.emit('intent-event', {
         topic: INTENT_STORED_TOPIC,
         payload: {
-          id: event.id || crypto.randomUUID(),
+          id: intentEventId,
           intentId: event.intent_id || event.intentId,
           intentType: event.intent_type || event.intentType,
           storageLocation: event.storage_location || event.storageLocation,
           correlationId: event.correlation_id || event.correlationId,
           createdAt,
         },
+        timestamp: new Date().toISOString(),
+      });
+
+      // OMN-4957: Emit intentUpdate so projection-bootstrap wires intent events
+      // through the same consumerEventNames pipeline as other event types.
+      this.emit('intentUpdate', {
+        id: intentEventId,
+        topic: INTENT_STORED_TOPIC,
+        type: 'intent-stored',
+        actionType: 'intent-stored',
+        intentId: event.intent_id || event.intentId,
+        intentType: event.intent_type || event.intentType,
         timestamp: new Date().toISOString(),
       });
 
