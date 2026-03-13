@@ -33,10 +33,13 @@ export async function initOidcClient(): Promise<void> {
   const clientSecret = process.env.KEYCLOAK_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    console.error(
-      '[oidc] KEYCLOAK_ISSUER is set but KEYCLOAK_CLIENT_ID or KEYCLOAK_CLIENT_SECRET is missing'
+    // OMN-4960: Graceful degradation instead of process.exit(1).
+    // Missing credentials are a config issue, not a crash-worthy failure.
+    console.warn(
+      '[oidc] KEYCLOAK_ISSUER is set but KEYCLOAK_CLIENT_ID or KEYCLOAK_CLIENT_SECRET is missing — auth disabled'
     );
-    process.exit(1);
+    authEnabled = false;
+    return;
   }
 
   try {
@@ -54,7 +57,10 @@ export async function initOidcClient(): Promise<void> {
     authEnabled = true;
     console.log('[oidc] OIDC client initialized successfully');
   } catch (error) {
-    console.error('[oidc] Failed to discover OIDC issuer:', error);
-    process.exit(1);
+    // OMN-4960: Graceful degradation instead of process.exit(1).
+    // Unreachable Keycloak should not crash the server — disable auth
+    // and let HTTP endpoints work without authentication.
+    console.warn('[oidc] Failed to discover OIDC issuer — auth disabled:', error);
+    authEnabled = false;
   }
 }
