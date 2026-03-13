@@ -24,6 +24,7 @@
     "test:snapshots:ui": "playwright test --ui",
     "test:snapshots:debug": "playwright test --debug",
     "test:snapshots:report": "playwright show-report",
+    "check:bus-parity": "tsx scripts/check-bus-parity.ts",
     "db:push": "echo 'ERROR: db:push is disabled. SQL migrations are canonical. Use npm run db:migrate instead. See CLAUDE.md for details.' && exit 1",
     "db:migrate": "tsx scripts/run-migrations.ts",
     "db:check-parity": "tsx scripts/check-migration-parity.ts",

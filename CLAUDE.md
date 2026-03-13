@@ -24,10 +24,28 @@ Key values specific to this repository (all sourced from `.env`):
 **Development**:
 
 ```bash
-PORT=3000 npm run dev  # Start development server (port 3000)
+# Explicit bus selection (recommended — avoids silent misconfiguration):
+npm run dev:local   # Local Docker bus (localhost:19092) — use with `infra-up`
+npm run dev:cloud   # Cloud bus (localhost:29092) — requires launchd tunnel ai.omninode.cloud-bus-tunnel
+
+# Legacy (inherits KAFKA_BOOTSTRAP_SERVERS from ~/.omnibase/.env — default: cloud bus):
+PORT=3000 npm run dev
+
 npm run check          # TypeScript type checking across client/server/shared
 npm run build          # Build frontend (Vite) and backend (esbuild) for production
 PORT=3000 npm start    # Run production build on port 3000
+```
+
+**Bus Policy** (dev machines):
+
+* `npm run dev:local` → local Docker Redpanda (`localhost:19092`) — empty tables until `infra-up` + emitter runs
+* `npm run dev:cloud` → cloud bus tunnel (`localhost:29092`) — live data from production sessions
+* Startup banner printed at boot shows which bus is active and warns on misconfiguration
+
+**Bus Parity Check**:
+
+```bash
+npm run check:bus-parity   # Compare topic watermarks across both buses
 ```
 
 **Testing**:
