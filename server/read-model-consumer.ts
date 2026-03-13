@@ -147,7 +147,7 @@ function sanitizeSessionId(
   }
   // Check for control characters or non-printable content that indicates
   // a corrupted or unexpected value.
-  // eslint-disable-next-line no-control-regex
+
   if (/[\x00-\x1f\x7f]/.test(trimmed)) {
     console.warn('[read-model-consumer] session_id contains control characters — writing null', {
       rawLength: raw.length,
@@ -423,15 +423,27 @@ export class ReadModelConsumer {
         // for the dynamic topic list, filtered to READ_MODEL_TOPICS. Falls
         // back to READ_MODEL_TOPICS if catalog does not respond.
         // -----------------------------------------------------------------------
-        const useCatalog = process.env.OMNIDASH_READ_MODEL_USE_CATALOG !== 'false';
+        // Catalog is enabled when:
+        //   1. Explicitly set: OMNIDASH_READ_MODEL_USE_CATALOG=true
+        //   2. Not explicitly disabled AND not running in k8s (local dev default)
+        // Catalog is disabled when:
+        //   1. Explicitly set: OMNIDASH_READ_MODEL_USE_CATALOG=false
+        //   2. Running in k8s without explicit opt-in (prevents rebalance storms)
+        const catalogEnv = process.env.OMNIDASH_READ_MODEL_USE_CATALOG;
+        const useCatalog =
+          catalogEnv === 'true' || (catalogEnv !== 'false' && !process.env.KUBERNETES_SERVICE_HOST);
         let finalTopics: string[];
 
         if (!useCatalog) {
           this.catalogSource = 'static';
           this.stats.catalogSource = 'static';
           finalTopics = [...READ_MODEL_TOPICS];
+          const reason =
+            catalogEnv === 'false'
+              ? 'OMNIDASH_READ_MODEL_USE_CATALOG=false'
+              : 'k8s detected (KUBERNETES_SERVICE_HOST set)';
           console.info(
-            `[ReadModelConsumer] source=static subscribed=${finalTopics.length} (catalog disabled via OMNIDASH_READ_MODEL_USE_CATALOG=false)`
+            `[read-model] topic source: static (${reason}, subscribed=${finalTopics.length})`
           );
         } else {
           const catalogTopics = await this.fetchCatalogTopics();
@@ -443,10 +455,10 @@ export class ReadModelConsumer {
           this.stats.catalogSource = this.catalogSource;
 
           const startupLogMsg =
-            `[ReadModelConsumer] source=${this.catalogSource} ` +
-            `subscribed=${subscribeTopics.length} ` +
+            `[read-model] topic source: ${this.catalogSource} ` +
+            `(subscribed=${subscribeTopics.length} ` +
             `catalog_size=${catalogTopics.length} ` +
-            `unsupported=${unsupportedCatalogTopics.length}`;
+            `unsupported=${unsupportedCatalogTopics.length})`;
           if (this.catalogSource === 'fallback') {
             console.warn(startupLogMsg);
           } else {
