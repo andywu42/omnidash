@@ -57,6 +57,9 @@ import {
   TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
   TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION,
 } from '../shared/topics';
+import { READ_MODEL_TOPICS } from './read-model-consumer';
+import { EXPECTED_TOPICS } from './event-bus-health-poller';
+import { readModelConsumer } from './read-model-consumer';
 
 // ============================================================================
 // Types
@@ -470,6 +473,61 @@ function probeEnvSync(): DataSourceInfo {
   }
 }
 
+/**
+ * Probe topic subscription parity (OMN-4964).
+ *
+ * Compares three topic lists at runtime:
+ *   1. READ_MODEL_TOPICS — what the read-model consumer intends to subscribe to
+ *   2. EXPECTED_TOPICS — what the health poller expects to find on the broker
+ *   3. Actual subscribed topics — what the consumer actually subscribed to after startup
+ *
+ * Returns healthy when all lists are consistent, degraded with specifics otherwise.
+ */
+function probeTopicParity(): DataSourceInfo & { missing?: string[]; extra?: string[] } {
+  try {
+    const readModelSet = new Set(READ_MODEL_TOPICS as readonly string[]);
+    const expectedSet = new Set(EXPECTED_TOPICS as readonly string[]);
+
+    // Get actually subscribed topics from consumer stats (topicStats keys)
+    const stats = readModelConsumer.getStats();
+    const subscribedSet = new Set(Object.keys(stats.topicStats));
+
+    // Check 1: EXPECTED_TOPICS that are not in READ_MODEL_TOPICS
+    // (broker-level expectation not backed by a consumer subscription)
+    const expectedNotSubscribed = [...expectedSet].filter((t) => !readModelSet.has(t));
+
+    // Check 2: If consumer is running, check for topics in READ_MODEL_TOPICS
+    // that failed to subscribe (present in intent but absent from actual)
+    const failedToSubscribe: string[] = [];
+    if (stats.isRunning && subscribedSet.size > 0) {
+      for (const topic of READ_MODEL_TOPICS) {
+        if (!subscribedSet.has(topic)) {
+          failedToSubscribe.push(topic);
+        }
+      }
+    }
+
+    const missing = [...expectedNotSubscribed, ...failedToSubscribe].sort();
+    const extra = [...subscribedSet].filter((t) => !readModelSet.has(t)).sort();
+
+    if (missing.length === 0 && extra.length === 0) {
+      return {
+        status: 'live',
+        lastEvent: new Date().toISOString(),
+      };
+    }
+
+    return {
+      status: 'mock',
+      reason: `topic_parity_drift: ${missing.length} missing, ${extra.length} extra`,
+      missing,
+      extra,
+    };
+  } catch {
+    return { status: 'error', reason: 'probe_threw' };
+  }
+}
+
 // ============================================================================
 // Router
 // ============================================================================
@@ -571,6 +629,7 @@ router.get('/data-sources', async (_req, res) => {
           executionGraph,
           enforcement,
           envSync: probeEnvSync(),
+          topicParity: probeTopicParity(),
         };
 
         const counts = Object.values(dataSources).reduce(

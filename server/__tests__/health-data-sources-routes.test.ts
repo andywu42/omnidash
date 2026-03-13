@@ -41,6 +41,42 @@ vi.mock('../event-bus-data-source', () => ({
 }));
 
 // ============================================================================
+// Mock read-model-consumer (OMN-4964: topic parity probe)
+// ============================================================================
+
+vi.mock('../read-model-consumer', () => ({
+  READ_MODEL_TOPICS: [
+    'onex.evt.omniclaude.agent-actions.v1',
+    'onex.evt.omniclaude.routing-decision.v1',
+  ] as const,
+  readModelConsumer: {
+    getStats: vi.fn().mockReturnValue({
+      isRunning: true,
+      eventsProjected: 0,
+      errorsCount: 0,
+      lastProjectedAt: null,
+      topicStats: {
+        'onex.evt.omniclaude.agent-actions.v1': { projected: 0, errors: 0 },
+        'onex.evt.omniclaude.routing-decision.v1': { projected: 0, errors: 0 },
+      },
+      catalogSource: 'static',
+      unsupportedCatalogTopics: [],
+    }),
+  },
+}));
+
+// ============================================================================
+// Mock event-bus-health-poller (OMN-4964: topic parity probe)
+// ============================================================================
+
+vi.mock('../event-bus-health-poller', () => ({
+  EXPECTED_TOPICS: [
+    'onex.evt.omniclaude.agent-actions.v1',
+    'onex.evt.omniclaude.routing-decision.v1',
+  ],
+}));
+
+// ============================================================================
 // Import mocks after vi.mock declarations
 // ============================================================================
 
@@ -329,12 +365,12 @@ describe('GET /api/health/data-sources', () => {
 
     expect(res.status).toBe(200);
     const { summary } = res.body;
-    // 3 live sources (event-bus, validation, correlationTrace)
-    expect(summary.live).toBe(3);
-    expect(summary.live + summary.mock + summary.error + (summary.offline ?? 0)).toBe(14); // 14 total sources
+    // 4 live sources (event-bus, validation, correlationTrace, topicParity)
+    expect(summary.live).toBe(4);
+    expect(summary.live + summary.mock + summary.error + (summary.offline ?? 0)).toBe(15); // 15 total sources (OMN-4964: +topicParity)
   });
 
-  it('includes all 14 expected data sources', async () => {
+  it('includes all 15 expected data sources', async () => {
     vi.mocked(projectionService.getView).mockReturnValue(null);
     setupEmptyDb();
 
@@ -358,11 +394,12 @@ describe('GET /api/health/data-sources', () => {
       'executionGraph',
       'enforcement',
       'envSync',
+      'topicParity',
     ];
     for (const key of expectedKeys) {
       expect(keys).toContain(key);
     }
-    expect(keys.length).toBe(14);
+    expect(keys.length).toBe(15);
   });
 
   it('returns status: offline with reason for empty baselines projection', async () => {

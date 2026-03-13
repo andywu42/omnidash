@@ -49,7 +49,7 @@ const WATCHED_CONSUMER_GROUPS: string[] = [
  *
  * Derived from the omnidash topic catalog.
  */
-const EXPECTED_TOPICS: string[] = [
+export const EXPECTED_TOPICS: string[] = [
   'onex.evt.omniclaude.gate-decision.v1',
   'onex.evt.omniclaude.epic-run-updated.v1',
   'onex.evt.omniclaude.pr-watch-updated.v1',
