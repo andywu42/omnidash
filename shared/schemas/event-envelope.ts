@@ -144,9 +144,44 @@ export const NodeLivenessExpiredPayloadSchema = z.object({
 });
 export type NodeLivenessExpiredPayload = z.infer<typeof NodeLivenessExpiredPayloadSchema>;
 
+// ---------------------------------------------------------------------------
+// Event bus topic entry — describes a single topic a node publishes/subscribes
+// to, as declared in its ONEX contract's event_bus section.
+//
+// Mirrors the Python ModelEventBusTopicEntry from omnibase_core.
+// ---------------------------------------------------------------------------
+
+export const EventBusTopicEntrySchema = z.object({
+  /** Canonical ONEX topic name (e.g. 'onex.evt.platform.node-heartbeat.v1') */
+  topic: z.string(),
+  /** Direction: 'publish' or 'subscribe' */
+  direction: z.enum(['publish', 'subscribe']).optional(),
+  /** Optional schema reference for the payload */
+  schema_ref: z.string().optional(),
+  /** Optional description */
+  description: z.string().optional(),
+});
+export type EventBusTopicEntry = z.infer<typeof EventBusTopicEntrySchema>;
+
+/**
+ * Node event bus configuration — the full event_bus block from an ONEX contract.
+ * Contains lists of topics the node publishes and/or subscribes to.
+ */
+export const NodeEventBusConfigSchema = z.object({
+  /** Topics this node publishes to */
+  publish_topics: z.array(EventBusTopicEntrySchema).optional(),
+  /** Topics this node subscribes to */
+  subscribe_topics: z.array(EventBusTopicEntrySchema).optional(),
+});
+export type NodeEventBusConfig = z.infer<typeof NodeEventBusConfigSchema>;
+
 // node-introspection payload
 // node_version may arrive as a plain semver string or as a Python ModelSemVer
 // object { major, minor, patch } — accept both shapes (OMN-4098).
+//
+// event_bus (OMN-5023): optional block carrying the node's declared publish/subscribe
+// topics from its ONEX contract. Backward-compatible — absent for nodes that have
+// not yet been updated to emit event_bus data in their introspection payload.
 export const NodeIntrospectionPayloadSchema = z.object({
   node_id: z.string().uuid(),
   node_type: z.string().optional(),
@@ -163,5 +198,6 @@ export const NodeIntrospectionPayloadSchema = z.object({
   capabilities: NodeCapabilitiesSchema.optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
   current_state: z.string().nullable().optional(),
+  event_bus: NodeEventBusConfigSchema.optional(),
 });
 export type NodeIntrospectionPayload = z.infer<typeof NodeIntrospectionPayloadSchema>;

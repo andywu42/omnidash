@@ -235,9 +235,11 @@ export const SUFFIX_NODE_REGISTRATION_ACK_TIMED_OUT =
 export const SUFFIX_REGISTRY_REQUEST_INTROSPECTION =
   'onex.evt.platform.registry-request-introspection.v1';
 
-/** Topic catalog query/response topics (OMN-2315) */
+/** @deprecated (OMN-5030) Topic catalog query/response topics (OMN-2315) — replaced by registry-driven discovery */
 export const SUFFIX_PLATFORM_TOPIC_CATALOG_QUERY = 'onex.cmd.platform.topic-catalog-query.v1';
+/** @deprecated (OMN-5030) */
 export const SUFFIX_PLATFORM_TOPIC_CATALOG_RESPONSE = 'onex.evt.platform.topic-catalog-response.v1';
+/** @deprecated (OMN-5030) */
 export const SUFFIX_PLATFORM_TOPIC_CATALOG_CHANGED = 'onex.evt.platform.topic-catalog-changed.v1';
 
 // ============================================================================
@@ -447,6 +449,12 @@ export const TOPIC_OMNICLAUDE_AGENT_TRANSFORMATION = 'onex.evt.omniclaude.agent-
 export const TOPIC_OMNICLAUDE_PERFORMANCE_METRICS = 'onex.evt.omniclaude.performance-metrics.v1';
 
 /**
+ * @deprecated (OMN-5031) Grouped topic arrays are being replaced by:
+ *   - EventConsumer: TopicRegistryService (registry-driven discovery)
+ *   - ReadModelConsumer: topics.yaml manifest
+ * These arrays are retained for backward compatibility with scripts and
+ * tests during the migration period.
+ *
  * Canonical omniclaude agent topics consumed by the read-model-consumer.
  * Use this array as the single source of truth for agent-related subscriptions.
  * The regression test verifies every topic in this array has a handler in the switch.
@@ -460,9 +468,11 @@ export const OMNICLAUDE_AGENT_TOPICS = [
 
 // ============================================================================
 // Topic Groups (for subscription lists)
+// @deprecated (OMN-5031) — replaced by registry-driven discovery and topics.yaml manifest.
+// Retained for backward compatibility with scripts/tests during migration.
 // ============================================================================
 
-/** Platform node topic suffixes consumed by the dashboard */
+/** @deprecated (OMN-5031) Platform node topic suffixes consumed by the dashboard */
 export const PLATFORM_NODE_SUFFIXES = [
   SUFFIX_NODE_INTROSPECTION,
   SUFFIX_NODE_REGISTRATION,
@@ -555,6 +565,10 @@ export const VALIDATION_SUFFIXES = [
 ] as const;
 
 /**
+ * @deprecated (OMN-5031) Replaced by TopicDiscoveryCoordinator for EventConsumer.
+ * EventConsumer now uses BOOTSTRAP_TOPICS + TopicRegistryService.getAllEvtTopics().
+ * Retained only as a last-resort fallback during the migration period.
+ *
  * Build the complete subscription topic list for the event consumer.
  * All topics use canonical ONEX names (e.g. `onex.evt.omniclaude.agent-actions.v1`).
  *

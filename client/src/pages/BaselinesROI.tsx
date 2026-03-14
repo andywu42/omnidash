@@ -40,7 +40,6 @@ import {
   BarChart3,
   AlertTriangle,
 } from 'lucide-react';
-import { DataSourceEmptyState } from '@/components/EmptyState';
 import {
   ComposedChart,
   Line,
@@ -407,18 +406,6 @@ export default function BaselinesROI() {
           </div>
         </div>
       </div>
-
-      {/* Empty State: baselines producer has not run yet (OMN-4968) */}
-      {!summaryLoading &&
-        !summaryError &&
-        summary?.total_comparisons === 0 &&
-        (comparisons?.length ?? 0) === 0 && (
-          <DataSourceEmptyState
-            sourceName="Baselines & ROI"
-            producerName="Baselines batch compute (omniclaude)"
-            instructions="The baselines producer has not run yet. Run the baselines batch compute to populate this page with pattern comparison data."
-          />
-        )}
 
       {/* Error Banner */}
       {summaryError && (

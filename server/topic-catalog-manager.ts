@@ -1,4 +1,10 @@
 /**
+ * @deprecated (OMN-5030) Replaced by registry-driven topic discovery (OMN-5022).
+ * EventConsumer now uses TopicDiscoveryCoordinator + TopicRegistryService.
+ * ReadModelConsumer now uses topics.yaml manifest via TopicManifestLoader.
+ * This file is retained only for the legacy fallback path and will be deleted
+ * once registry-driven discovery is validated in production.
+ *
  * TopicCatalogManager (OMN-2315)
  *
  * Encapsulates the topic-catalog bootstrap protocol for the dashboard:

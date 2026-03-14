@@ -18,8 +18,16 @@ import {
 } from '@shared/intent-types';
 // Import intentEventEmitter for WebSocket broadcasting of intent events
 import { getIntentEventEmitter } from './intent-events';
-// Import topic catalog manager (OMN-2315)
+// @deprecated (OMN-5030) TopicCatalogManager — retained only for legacy fallback
+// path (OMNIDASH_USE_REGISTRY_DISCOVERY=false). Will be fully removed once
+// registry-driven discovery is validated in production.
 import { TopicCatalogManager } from './topic-catalog-manager';
+// Registry-driven topic discovery (OMN-5027)
+import { getTopicRegistryService } from './services/topic-registry-service';
+import {
+  TopicDiscoveryCoordinator,
+  BOOTSTRAP_TOPICS,
+} from './services/topic-discovery-coordinator';
 // Import canonical topic constants
 import {
   buildSubscriptionTopics,
@@ -910,11 +918,15 @@ export class EventConsumer extends EventEmitter {
   private playbackEventsInjected: number = 0;
   private playbackEventsFailed: number = 0;
 
-  // Topic catalog state (OMN-2315)
+  // Topic catalog state (OMN-2315) — retained for catalog fallback path
   private catalogTopics: string[] = [];
   private catalogWarnings: string[] = [];
   private catalogSource: 'catalog' | 'fallback' = 'fallback';
   private catalogManager: TopicCatalogManager | null = null;
+
+  // Registry-driven topic discovery (OMN-5027)
+  private topicSource: 'registry' | 'catalog' | 'fallback' = 'fallback';
+  private discoveryCoordinator: TopicDiscoveryCoordinator | null = null;
 
   // Raw event bus event rows loaded during preloadFromDatabase().
   // Exposed via getPreloadedEventBusEvents() so WebSocket INITIAL_STATE
@@ -1242,15 +1254,67 @@ export class EventConsumer extends EventEmitter {
       }
 
       // -----------------------------------------------------------------------
-      // Topic Catalog Bootstrap (OMN-2315)
+      // Topic Discovery (OMN-5027 — registry-driven, replaces OMN-2315 catalog)
       //
-      // Query the platform topic-catalog service to get the dynamic topic list.
-      // If the catalog responds within CATALOG_TIMEOUT_MS, subscribe to those
-      // topics instead of the hardcoded fallback list.  If the catalog does not
-      // respond in time (or Kafka is unavailable for the catalog consumer),
-      // fall through to buildSubscriptionTopics() as the hardcoded fallback.
+      // Two modes controlled by OMNIDASH_USE_REGISTRY_DISCOVERY:
+      //   true  (default): Use TopicDiscoveryCoordinator for registry-driven
+      //                    discovery via introspection events.
+      //   false:           Fall back to legacy TopicCatalogManager (OMN-2315).
+      //
+      // Registry discovery: BOOTSTRAP_TOPICS are always subscribed. After
+      // introspection events arrive and stabilize (debounce), the full topic
+      // set is BOOTSTRAP_TOPICS + registry-discovered evt topics.
       // -----------------------------------------------------------------------
-      const subscriptionTopics = await this.fetchCatalogTopics();
+      const useRegistryDiscovery = process.env.OMNIDASH_USE_REGISTRY_DISCOVERY !== 'false';
+
+      let subscriptionTopics: string[];
+
+      if (useRegistryDiscovery) {
+        // Wire TopicRegistryService to NodeRegistryProjection (OMN-5025)
+        const topicRegistry = getTopicRegistryService();
+        this.discoveryCoordinator = new TopicDiscoveryCoordinator(topicRegistry);
+
+        // Phase 1: Subscribe to bootstrap topics first so introspection events flow
+        await this.consumer.subscribe({
+          topics: [...BOOTSTRAP_TOPICS],
+          fromBeginning: false,
+        });
+        intentLogger.info(
+          `[EventConsumer] Phase 1: Subscribed to ${BOOTSTRAP_TOPICS.length} bootstrap topics for discovery`
+        );
+
+        // Start the consumer briefly to receive introspection events
+        // The discovery coordinator will stabilize after debounce
+        const discoveryResult = await this.discoveryCoordinator.waitForDiscovery();
+
+        this.topicSource = discoveryResult.source === 'registry' ? 'registry' : 'fallback';
+        subscriptionTopics = discoveryResult.topics;
+
+        if (discoveryResult.degraded) {
+          intentLogger.warn(
+            `[EventConsumer] Topic discovery degraded after ${discoveryResult.durationMs}ms — ` +
+              `proceeding with ${discoveryResult.registryTopicCount} registry topics + bootstrap`
+          );
+        } else {
+          intentLogger.info(
+            `[EventConsumer] Topic discovery stabilized in ${discoveryResult.durationMs}ms — ` +
+              `${discoveryResult.registryTopicCount} registry topics from ${discoveryResult.nodeCount} nodes`
+          );
+        }
+
+        // If registry found no topics beyond bootstrap, fall back to buildSubscriptionTopics()
+        // to ensure we don't miss events during initial deployment before nodes report event_bus
+        if (discoveryResult.registryTopicCount === 0) {
+          intentLogger.info(
+            '[EventConsumer] No registry topics discovered — falling back to buildSubscriptionTopics()'
+          );
+          subscriptionTopics = buildSubscriptionTopics();
+          this.topicSource = 'fallback';
+        }
+      } else {
+        // Legacy path: TopicCatalogManager (OMN-2315)
+        subscriptionTopics = await this.fetchCatalogTopics();
+      }
 
       // Kafka topic preflight (OMN-4607): assert required skill-lifecycle topics
       // exist before subscribing. Crash-loop is the correct operator signal if
@@ -1278,12 +1342,15 @@ export class EventConsumer extends EventEmitter {
       // consumer was down. This is intentional — the DB preload covers history.
       // TRADE-OFF: If downtime exceeds PRELOAD_WINDOW_MINUTES, events in the
       // gap (after preload cutoff but before consumer reconnects) will be missed.
+      // Phase B: Final subscription with full topic set.
+      // If registry discovery was used, the consumer was already subscribed to
+      // BOOTSTRAP_TOPICS in Phase 1. Re-subscribing replaces the subscription.
       await this.consumer.subscribe({
         topics: subscriptionTopics,
         fromBeginning: false,
       });
       intentLogger.info(
-        `Phase B: Kafka subscription started (source=${this.catalogSource}, topics=${subscriptionTopics.length})`
+        `Phase B: Kafka subscription started (source=${this.topicSource}, topics=${subscriptionTopics.length})`
       );
 
       this.isRunning = true;
@@ -4327,14 +4394,25 @@ export class EventConsumer extends EventEmitter {
   }
 
   /**
-   * Return the current catalog status for the REST endpoint.
+   * Return the current catalog/discovery status for the REST endpoint.
    */
   public getCatalogStatus(): {
     topics: string[];
     warnings: string[];
-    source: 'catalog' | 'fallback';
+    source: 'registry' | 'catalog' | 'fallback';
     instanceUuid: string | null;
   } {
+    // Registry-driven path (OMN-5027)
+    if (this.topicSource === 'registry' && this.discoveryCoordinator) {
+      return {
+        topics: this.discoveryCoordinator.getCurrentTopics(),
+        warnings: this.catalogWarnings,
+        source: 'registry',
+        instanceUuid: null,
+      };
+    }
+
+    // Legacy catalog path
     return {
       topics: this.catalogSource === 'catalog' ? this.catalogTopics : buildSubscriptionTopics(),
       warnings: this.catalogWarnings,

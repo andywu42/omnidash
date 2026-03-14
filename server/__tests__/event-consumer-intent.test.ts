@@ -1,3 +1,4 @@
+// no-migration: OMN-5022 test-only changes, no schema impact
 /**
  * EventConsumer intent/action event processing tests.
  *
@@ -36,6 +37,7 @@ const {
   // never accidentally connect to a real Kafka instance)
   process.env.KAFKA_BROKERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
   process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
+  process.env.OMNIDASH_USE_REGISTRY_DISCOVERY = 'false'; // Use legacy path in unit tests
 
   const mockEmitIntentStored = vi.fn();
   const mockIntentEventEmitter = {
@@ -93,6 +95,28 @@ vi.mock('../storage', () => ({
   })),
 }));
 
+// Mock TopicCatalogManager so it immediately falls back (catalogTimeout)
+// without calling kafka.consumer() and polluting the shared consumer mock
+vi.mock('../topic-catalog-manager', async () => {
+  const { EventEmitter } = await import('events');
+  return {
+    TopicCatalogManager: vi.fn().mockImplementation(function () {
+      const emitter = new EventEmitter();
+      return {
+        bootstrap: vi.fn().mockImplementation(function () {
+          Promise.resolve().then(() => emitter.emit('catalogTimeout'));
+          return Promise.resolve();
+        }),
+        stop: vi.fn().mockResolvedValue(undefined),
+        once: emitter.once.bind(emitter),
+        on: emitter.on.bind(emitter),
+        instanceUuid: null,
+      };
+    }),
+    CATALOG_TIMEOUT_MS: 200,
+  };
+});
+
 // Mock the intent-events module
 vi.mock('../intent-events', () => ({
   getIntentEventEmitter: vi.fn(() => mockIntentEventEmitter),
@@ -117,6 +141,7 @@ describe('EventConsumer Intent Forwarding', () => {
     process.env.KAFKA_BROKERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
     process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
     process.env.ENABLE_EVENT_PRELOAD = 'false';
+    process.env.OMNIDASH_USE_REGISTRY_DISCOVERY = 'false'; // Use legacy path in unit tests
 
     // Create new consumer instance
     consumer = new EventConsumer();

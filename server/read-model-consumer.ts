@@ -27,7 +27,12 @@
 import crypto from 'node:crypto';
 import { Kafka, Consumer, EachMessagePayload, KafkaMessage } from 'kafkajs';
 import { resolveBrokers } from './bus-config.js';
+// @deprecated (OMN-5030) TopicCatalogManager — no longer used on primary path.
+// Retained for fetchCatalogTopics() legacy method. Will be fully removed once
+// manifest-driven loading is validated in production.
 import { TopicCatalogManager } from './topic-catalog-manager';
+// Manifest-driven topic loading (OMN-5029)
+import { loadManifestTopics } from './services/topic-manifest-loader';
 import { tryGetIntelligenceDb } from './storage';
 import { sql, eq } from 'drizzle-orm';
 import {
@@ -410,70 +415,30 @@ export class ReadModelConsumer {
         console.log('[ReadModelConsumer] Connected to Kafka');
 
         // -----------------------------------------------------------------------
-        // Topic subscription (OMN-2926, OMN-4587)
+        // Topic subscription (OMN-5029 — manifest-driven, replaces OMN-2926 catalog)
         //
-        // OMNIDASH_READ_MODEL_USE_CATALOG=false bypasses catalog-driven
-        // subscription and always uses the static READ_MODEL_TOPICS list.
-        // This prevents multi-replica rebalance storms where two pods racing
-        // through the catalog query can receive different topic subsets,
-        // causing their group memberships to diverge and trigger an infinite
-        // rebalance loop. Set to 'false' in production k8s deployments.
+        // Topic truth for ReadModelConsumer = topics.yaml manifest.
+        // Falls back to static READ_MODEL_TOPICS if manifest loading fails.
         //
-        // When enabled (default), queries the platform topic-catalog service
-        // for the dynamic topic list, filtered to READ_MODEL_TOPICS. Falls
-        // back to READ_MODEL_TOPICS if catalog does not respond.
+        // Legacy catalog path (OMNIDASH_READ_MODEL_USE_CATALOG) is no longer
+        // needed — the manifest is deterministic and identical across replicas,
+        // preventing the multi-replica rebalance storms that motivated OMN-4587.
         // -----------------------------------------------------------------------
-        // Catalog is enabled when:
-        //   1. Explicitly set: OMNIDASH_READ_MODEL_USE_CATALOG=true
-        //   2. Not explicitly disabled AND not running in k8s (local dev default)
-        // Catalog is disabled when:
-        //   1. Explicitly set: OMNIDASH_READ_MODEL_USE_CATALOG=false
-        //   2. Running in k8s without explicit opt-in (prevents rebalance storms)
-        const catalogEnv = process.env.OMNIDASH_READ_MODEL_USE_CATALOG;
-        const useCatalog =
-          catalogEnv === 'true' || (catalogEnv !== 'false' && !process.env.KUBERNETES_SERVICE_HOST);
         let finalTopics: string[];
 
-        if (!useCatalog) {
-          this.catalogSource = 'static';
-          this.stats.catalogSource = 'static';
-          finalTopics = [...READ_MODEL_TOPICS];
-          const reason =
-            catalogEnv === 'false'
-              ? 'OMNIDASH_READ_MODEL_USE_CATALOG=false'
-              : 'k8s detected (KUBERNETES_SERVICE_HOST set)';
-          console.info(
-            `[read-model] topic source: static (${reason}, subscribed=${finalTopics.length})`
+        try {
+          finalTopics = loadManifestTopics();
+          this.catalogSource = 'manifest' as 'catalog' | 'fallback';
+          this.stats.catalogSource = 'manifest' as typeof this.stats.catalogSource;
+          console.info(`[read-model] topic source: manifest (subscribed=${finalTopics.length})`);
+        } catch (manifestErr) {
+          console.warn(
+            '[ReadModelConsumer] Failed to load topics.yaml — falling back to READ_MODEL_TOPICS:',
+            manifestErr instanceof Error ? manifestErr.message : manifestErr
           );
-        } else {
-          const catalogTopics = await this.fetchCatalogTopics();
-          const supported = new Set(READ_MODEL_TOPICS as readonly string[]);
-          const subscribeTopics = catalogTopics.filter((t) => supported.has(t));
-          const unsupportedCatalogTopics = catalogTopics.filter((t) => !supported.has(t));
-
-          this.catalogSource = catalogTopics.length > 0 ? 'catalog' : 'fallback';
-          this.stats.catalogSource = this.catalogSource;
-
-          const startupLogMsg =
-            `[read-model] topic source: ${this.catalogSource} ` +
-            `(subscribed=${subscribeTopics.length} ` +
-            `catalog_size=${catalogTopics.length} ` +
-            `unsupported=${unsupportedCatalogTopics.length})`;
-          if (this.catalogSource === 'fallback') {
-            console.warn(startupLogMsg);
-          } else {
-            console.info(startupLogMsg);
-          }
-
-          if (unsupportedCatalogTopics.length > 0) {
-            console.warn(
-              `[ReadModelConsumer] DRIFT: catalog has handlers not in consumer: ${unsupportedCatalogTopics.join(', ')}`
-            );
-            // Surface in health endpoint so drift is visible without log scraping.
-            this.stats.unsupportedCatalogTopics = unsupportedCatalogTopics;
-          }
-
-          finalTopics = subscribeTopics.length > 0 ? subscribeTopics : [...READ_MODEL_TOPICS];
+          finalTopics = [...READ_MODEL_TOPICS];
+          this.catalogSource = 'fallback';
+          this.stats.catalogSource = 'fallback';
         }
 
         // Subscribe to all final topics individually so that a single

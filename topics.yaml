@@ -1,0 +1,71 @@
+# topics.yaml — Contract-first topic manifest for ReadModelConsumer (OMN-5028)
+#
+# This file is the single source of truth for topics that the ReadModelConsumer
+# subscribes to. Each entry corresponds to a topic that has a projection handler
+# in read-model-consumer.ts.
+#
+# Rules:
+#   - Only add topics that have a corresponding handler in the ReadModelConsumer
+#   - Topic names must be canonical ONEX format (onex.<kind>.<producer>.<event-name>.v<N>)
+#   - Keep entries sorted by producer, then by event-name
+#   - When adding a new projection, add the topic here AND wire the handler
+#
+# Used by: server/services/topic-manifest-loader.ts
+# Consumed by: server/read-model-consumer.ts (will replace READ_MODEL_TOPICS in OMN-5029)
+
+version: "1"
+
+read_model_topics:
+  # --- omniclaude agent topics ---
+  - topic: "onex.evt.omniclaude.agent-actions.v1"
+    handler: "projectAgentAction"
+  - topic: "onex.evt.omniclaude.agent-transformation.v1"
+    handler: "projectAgentTransformation"
+  - topic: "onex.evt.omniclaude.budget-cap-hit.v1"
+    handler: "projectBudgetCapHit"
+  - topic: "onex.evt.omniclaude.circuit-breaker-tripped.v1"
+    handler: "projectCircuitBreakerTripped"
+  - topic: "onex.evt.omniclaude.context-enrichment.v1"
+    handler: "projectContextEnrichment"
+  - topic: "onex.evt.omniclaude.delegation-shadow-comparison.v1"
+    handler: "projectDelegationShadowComparison"
+  - topic: "onex.evt.omniclaude.epic-run-updated.v1"
+    handler: "projectEpicRunUpdated"
+  - topic: "onex.evt.omniclaude.gate-decision.v1"
+    handler: "projectGateDecision"
+  - topic: "onex.evt.omniclaude.llm-routing-decision.v1"
+    handler: "projectLlmRoutingDecision"
+  - topic: "onex.evt.omniclaude.pattern-enforcement.v1"
+    handler: "projectPatternEnforcement"
+  - topic: "onex.evt.omniclaude.performance-metrics.v1"
+    handler: "projectPerformanceMetrics"
+  - topic: "onex.evt.omniclaude.pr-validation-rollup.v1"
+    handler: "projectPrValidationRollup"
+  - topic: "onex.evt.omniclaude.pr-watch-updated.v1"
+    handler: "projectPrWatchUpdated"
+  - topic: "onex.evt.omniclaude.routing-decision.v1"
+    handler: "projectRoutingDecision"
+  - topic: "onex.evt.omniclaude.task-delegated.v1"
+    handler: "projectTaskDelegated"
+
+  # --- omnibase-infra topics ---
+  - topic: "onex.evt.omnibase-infra.baselines-computed.v1"
+    handler: "projectBaselinesComputed"
+
+  # --- omniintelligence topics ---
+  - topic: "onex.evt.omniintelligence.llm-call-completed.v1"
+    handler: "projectLlmCostEvent"
+  - topic: "onex.evt.omniintelligence.pattern-lifecycle-transitioned.v1"
+    handler: "projectPatternLifecycleTransitioned"
+  - topic: "onex.evt.omniintelligence.pattern-projection.v1"
+    handler: "projectPatternProjection"
+  - topic: "onex.evt.omniintelligence.plan-review-strategy-run-completed.v1"
+    handler: "projectPlanReviewStrategyRunCompleted"
+
+  # --- omnimemory topics ---
+  - topic: "onex.evt.omnimemory.intent-stored.v1"
+    handler: "projectIntentStored"
+
+  # --- omniintelligence command topics (backfill source) ---
+  - topic: "onex.cmd.omniintelligence.pattern-learning.v1"
+    handler: "projectPatternLearningRequested"

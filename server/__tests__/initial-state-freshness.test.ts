@@ -17,6 +17,7 @@ vi.hoisted(() => {
   process.env.KAFKA_BROKERS = 'localhost:9092';
   process.env.KAFKA_BOOTSTRAP_SERVERS = 'localhost:9092';
   process.env.ENABLE_EVENT_PRELOAD = 'false'; // Disable auto-preload in tests
+  process.env.OMNIDASH_USE_REGISTRY_DISCOVERY = 'false'; // Use legacy path in unit tests
 });
 
 // Capture the eachMessage handler so we can simulate Kafka events
@@ -86,6 +87,28 @@ vi.mock('../storage', () => ({
   getIntelligenceDb: vi.fn(() => mockDb),
 }));
 
+// Mock TopicCatalogManager so it immediately falls back (catalogTimeout)
+// without calling kafka.consumer() and polluting the shared consumer mock
+vi.mock('../topic-catalog-manager', async () => {
+  const { EventEmitter } = await import('events');
+  return {
+    TopicCatalogManager: vi.fn().mockImplementation(function () {
+      const emitter = new EventEmitter();
+      return {
+        bootstrap: vi.fn().mockImplementation(function () {
+          Promise.resolve().then(() => emitter.emit('catalogTimeout'));
+          return Promise.resolve();
+        }),
+        stop: vi.fn().mockResolvedValue(undefined),
+        once: emitter.once.bind(emitter),
+        on: emitter.on.bind(emitter),
+        instanceUuid: null,
+      };
+    }),
+    CATALOG_TIMEOUT_MS: 200,
+  };
+});
+
 import { EventConsumer } from '../event-consumer';
 import { TOPIC_OMNICLAUDE_AGENT_ACTIONS } from '@shared/topics';
 
@@ -98,6 +121,7 @@ describe('INITIAL_STATE freshness', () => {
 
     process.env.KAFKA_BOOTSTRAP_SERVERS = 'localhost:9092';
     process.env.ENABLE_EVENT_PRELOAD = 'false';
+    process.env.OMNIDASH_USE_REGISTRY_DISCOVERY = 'false'; // Use legacy path in unit tests
 
     // Capture the eachMessage handler when consumer.run() is called
     mockConsumerRun.mockImplementation(async (config: any) => {

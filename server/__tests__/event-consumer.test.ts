@@ -22,6 +22,7 @@ import { EventEmitter } from 'events';
 vi.hoisted(() => {
   process.env.KAFKA_BROKERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
   process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
+  process.env.OMNIDASH_USE_REGISTRY_DISCOVERY = 'false'; // Use legacy path in unit tests
 });
 
 // Create mock functions for Kafka operations
@@ -122,6 +123,7 @@ describe('EventConsumer', () => {
     process.env.KAFKA_BROKERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
     process.env.KAFKA_BOOTSTRAP_SERVERS = 'test-broker:29092'; // # cloud-bus-ok OMN-4494
     process.env.ENABLE_EVENT_PRELOAD = 'false';
+    process.env.OMNIDASH_USE_REGISTRY_DISCOVERY = 'false'; // Use legacy path in unit tests
 
     // Create new consumer instance for each test
     consumer = new EventConsumer();

@@ -33,6 +33,7 @@ import type {
   IntrospectionReason,
 } from '@shared/projection-types';
 import { MonotonicMergeTracker, MISSING_TIMESTAMP_SENTINEL_MS } from '../monotonic-merge';
+import type { TopicRegistryService } from '../services/topic-registry-service';
 
 // Re-export shared types for consumers that import from this module
 export type {
@@ -195,6 +196,22 @@ export class NodeRegistryProjection implements ProjectionView<NodeRegistryPayloa
   private appliedEvents: ProjectionEvent[] = [];
   private cursor = 0;
   private mergeTracker = new MonotonicMergeTracker();
+
+  /**
+   * Optional TopicRegistryService — when set, handleIntrospection() feeds
+   * event_bus.publish_topics into the registry for dynamic topic discovery.
+   * Set via setTopicRegistry() after construction (OMN-5025).
+   */
+  private topicRegistry: TopicRegistryService | null = null;
+
+  /**
+   * Wire the TopicRegistryService so that introspection events feed topic
+   * discovery. This is the SOLE canonical site where introspection data
+   * flows into the topic registry (OMN-5025).
+   */
+  setTopicRegistry(registry: TopicRegistryService): void {
+    this.topicRegistry = registry;
+  }
 
   // Incremental stats — maintained on every node mutation to avoid O(n) recalc
   private stats: NodeRegistryStats = {
@@ -377,6 +394,25 @@ export class NodeRegistryProjection implements ProjectionView<NodeRegistryPayloa
 
     this.nodes.set(nodeId, node);
     this.updateStats(oldState, node.state, !existing);
+
+    // Feed topic registry from introspection event_bus data (OMN-5025).
+    // This is the SOLE canonical site for introspection → registry flow.
+    if (this.topicRegistry) {
+      const eventBus = payload.event_bus as
+        | {
+            publish_topics?: Array<{ topic: string; direction?: string; schema_ref?: string }>;
+            subscribe_topics?: Array<{ topic: string; direction?: string }>;
+          }
+        | undefined;
+
+      // Always call updateNode — nodes without event_bus get an empty topic set,
+      // which correctly tracks them as "present but missing event_bus data".
+      this.topicRegistry.updateNode({
+        node_id: nodeId,
+        publish_topics: eventBus?.publish_topics ?? [],
+        subscribe_topics: eventBus?.subscribe_topics,
+      });
+    }
 
     return true;
   }

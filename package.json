@@ -15,6 +15,7 @@
     "check": "tsc",
     "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "lint:topics": "bash scripts/lint-no-hardcoded-topics.sh",
     "test": "vitest",
     "test:ci": "vitest run --no-coverage --reporter=verbose",
     "test:ui": "vitest --ui",
