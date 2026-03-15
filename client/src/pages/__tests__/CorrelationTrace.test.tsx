@@ -49,8 +49,8 @@ describe('CorrelationTrace page', () => {
     fetchSpy.mockReset();
   });
 
-  it('renders recent traces panel with empty state and sample fallback', async () => {
-    // Mock the recent traces endpoint to return an empty array
+  it('renders trace explorer with empty state when no traces exist', async () => {
+    // Mock the recent traces endpoint (span-based) to return an empty array
     fetchSpy.mockResolvedValueOnce(
       new Response(JSON.stringify([]), {
         status: 200,
@@ -67,22 +67,22 @@ describe('CorrelationTrace page', () => {
       expect(screen.getByText('No recent traces found')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Recent Traces')).toBeInTheDocument();
-    expect(screen.getByText('Sample Data')).toBeInTheDocument();
+    expect(screen.getByText('Trace Explorer')).toBeInTheDocument();
 
     result.unmount();
   });
 
-  it('renders recent traces table when API returns data', async () => {
+  it('renders recent traces table when API returns span-based data', async () => {
     const recentTraces = [
       {
-        correlationId: 'abc-123-def-456',
-        selectedAgent: 'code-analyst',
-        confidenceScore: 0.95,
-        userRequest: 'Analyze the auth module',
-        routingTimeMs: 42,
-        createdAt: new Date().toISOString(),
-        eventCount: 3,
+        traceId: 'trace-abc-123',
+        correlationId: 'cor-abc-123',
+        sessionId: 'session-001',
+        spanCount: 5,
+        rootSpanName: 'session-prompt',
+        startedAt: new Date().toISOString(),
+        totalDurationMs: 1200,
+        errorCount: 0,
       },
     ];
 
@@ -98,10 +98,11 @@ describe('CorrelationTrace page', () => {
     const result = await renderWithClient(<CorrelationTrace />);
 
     await waitFor(() => {
-      expect(screen.getByText('code-analyst')).toBeInTheDocument();
+      expect(screen.getByText('session-prompt')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('95%')).toBeInTheDocument();
+    // Verify span count badge
+    expect(screen.getByText('5')).toBeInTheDocument();
 
     result.unmount();
   });

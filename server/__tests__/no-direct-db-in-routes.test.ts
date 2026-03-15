@@ -81,6 +81,12 @@ const EXEMPT_FILES = new Set([
   // view is defined for this domain, migrate off direct DB access.
   // TODO(OMN-3923-followup): migrate to ProjectionService view.
   'model-efficiency-routes.ts',
+
+  // Trace routes query correlation_trace_spans (populated by ReadModelConsumer
+  // projection via Kafka). Complex aggregation queries (session grouping,
+  // trace timelines) are not yet representable as a ProjectionService view.
+  // TODO(OMN-5047-followup): migrate to ProjectionService view.
+  'trace-routes.ts',
 ]);
 
 /**

@@ -1749,3 +1749,41 @@ export const modelEfficiencyRollups = pgTable(
 export const insertModelEfficiencyRollupSchema = createInsertSchema(modelEfficiencyRollups);
 export type ModelEfficiencyRollupRow = typeof modelEfficiencyRollups.$inferSelect;
 export type InsertModelEfficiencyRollup = typeof modelEfficiencyRollups.$inferInsert;
+
+/**
+ * Correlation Trace Spans Table (migration 0020, OMN-5047)
+ * Stores individual trace spans emitted by the omniclaude trace emitter.
+ * Each span represents a hop in the agent execution flow (routing, tool-call,
+ * manifest-injection, etc.) and belongs to a trace_id that groups all spans
+ * for a single end-to-end execution.
+ */
+export const correlationTraceSpans = pgTable(
+  'correlation_trace_spans',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    traceId: text('trace_id').notNull(),
+    spanId: text('span_id').notNull(),
+    parentSpanId: text('parent_span_id'),
+    correlationId: uuid('correlation_id').notNull(),
+    sessionId: text('session_id'),
+    spanKind: text('span_kind').notNull(),
+    spanName: text('span_name').notNull(),
+    status: text('status').notNull().default('ok'),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+    durationMs: integer('duration_ms'),
+    metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+    projectedAt: timestamp('projected_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('uq_trace_span').on(table.traceId, table.spanId),
+    index('idx_cts_trace_id').on(table.traceId),
+    index('idx_cts_correlation_id').on(table.correlationId),
+    index('idx_cts_session_id').on(table.sessionId),
+    index('idx_cts_started_at').on(table.startedAt),
+  ]
+);
+
+export const insertCorrelationTraceSpanSchema = createInsertSchema(correlationTraceSpans);
+export type CorrelationTraceSpanRow = typeof correlationTraceSpans.$inferSelect;
+export type InsertCorrelationTraceSpan = typeof correlationTraceSpans.$inferInsert;

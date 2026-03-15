@@ -48,6 +48,8 @@ import workerHealthRoutes from './worker-health-routes';
 import schemaHealthRoutes from './schema-health';
 // Model Efficiency Index routes (OMN-3937)
 import modelEfficiencyRoutes from './model-efficiency-routes';
+// Correlation trace span routes (OMN-5047)
+import traceRoutes from './trace-routes';
 // Prometheus metrics endpoint (OMN-4609)
 import { createMetricsRouter } from './metrics-routes';
 import type { DataSourcesHealthResponse } from './health-data-sources-routes';
@@ -161,6 +163,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Model Efficiency Index routes (OMN-3937)
   app.use('/api/model-efficiency', modelEfficiencyRoutes);
+
+  // Correlation trace span routes (OMN-5047)
+  app.use('/api/traces', traceRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.

@@ -285,6 +285,11 @@ export const SUFFIX_OMNICLAUDE_TRANSFORMATION_COMPLETED =
 export const TOPIC_OMNIINTELLIGENCE_LLM_CALL_COMPLETED =
   'onex.evt.omniintelligence.llm-call-completed.v1';
 
+/** Correlation trace span events emitted by the omniclaude trace emitter (OMN-5047).
+ * NOTE: Intentionally excluded from buildSubscriptionTopics() / subscription groups —
+ * consumed only by the read-model-consumer via READ_MODEL_TOPICS. */
+export const SUFFIX_OMNICLAUDE_CORRELATION_TRACE = 'onex.evt.omniclaude.correlation-trace.v1';
+
 /** Context enrichment events emitted per enrichment operation (OMN-2280).
  * NOTE: Intentionally excluded from buildSubscriptionTopics() / subscription groups —
  * consumed only by the read-model-consumer via READ_MODEL_TOPICS. */

@@ -372,6 +372,7 @@ export class PostgresAdapter {
       injection_effectiveness: schema.injectionEffectiveness,
       latency_breakdowns: schema.latencyBreakdowns,
       pattern_hit_rates: schema.patternHitRates,
+      correlation_trace_spans: schema.correlationTraceSpans,
     };
 
     return tableMap[tableName];

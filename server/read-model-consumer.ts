@@ -49,6 +49,7 @@ import {
   patternLearningArtifacts,
   planReviewRuns,
   modelEfficiencyRollups,
+  correlationTraceSpans,
 } from '@shared/intelligence-schema';
 import type {
   InsertAgentRoutingDecision,
@@ -67,6 +68,7 @@ import type { PatternEnforcementEvent } from '@shared/enforcement-types';
 import { ENRICHMENT_OUTCOMES } from '@shared/enrichment-types';
 import type { ContextEnrichmentEvent } from '@shared/enrichment-types';
 import {
+  SUFFIX_OMNICLAUDE_CORRELATION_TRACE,
   SUFFIX_OMNICLAUDE_CONTEXT_ENRICHMENT,
   SUFFIX_OMNICLAUDE_LLM_ROUTING_DECISION,
   SUFFIX_OMNICLAUDE_TASK_DELEGATED,
@@ -294,6 +296,8 @@ export const READ_MODEL_TOPICS = [
   // OMN-3324: Plan reviewer strategy run completions from omniintelligence.
   TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED,
   SUFFIX_OMNICLAUDE_PR_VALIDATION_ROLLUP,
+  // OMN-5047: Correlation trace spans emitted by omniclaude trace emitter.
+  SUFFIX_OMNICLAUDE_CORRELATION_TRACE,
 ] as const;
 
 type ReadModelTopic = (typeof READ_MODEL_TOPICS)[number];
@@ -819,6 +823,10 @@ export class ReadModelConsumer {
         // OMN-3933: PR validation rollup events for MEI dashboard
         case SUFFIX_OMNICLAUDE_PR_VALIDATION_ROLLUP:
           projected = await this.projectPrValidationRollup(parsed);
+          break;
+        // OMN-5047: Correlation trace spans from omniclaude trace emitter
+        case SUFFIX_OMNICLAUDE_CORRELATION_TRACE:
+          projected = await this.projectCorrelationTrace(parsed);
           break;
         default:
           console.warn(
@@ -3127,6 +3135,79 @@ export class ReadModelConsumer {
         console.warn(
           '[ReadModelConsumer] model_efficiency_rollups table not yet created -- ' +
             'run migrations to enable MEI projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Project a correlation trace span event into correlation_trace_spans table (OMN-5047).
+   * Returns true if the row was successfully written, false if the DB was unavailable.
+   *
+   * Payload shape (from ModelCorrelationTraceSpanPayload):
+   *   trace_id, span_id, parent_span_id, span_kind, span_name, status,
+   *   started_at, ended_at, metadata, correlation_id, session_id
+   */
+  private async projectCorrelationTrace(data: Record<string, unknown>): Promise<boolean> {
+    const db = tryGetIntelligenceDb();
+    if (!db) return false;
+
+    const traceId = (data.trace_id as string) || (data.traceId as string);
+    const spanId = (data.span_id as string) || (data.spanId as string);
+    if (!traceId || !spanId) {
+      console.warn('[ReadModelConsumer] correlation-trace missing trace_id or span_id — skipping');
+      return true;
+    }
+
+    const correlationId =
+      (data.correlation_id as string) || (data.correlationId as string) || traceId;
+
+    const startedAt = safeParseDate(data.started_at ?? data.startedAt);
+    const endedAtRaw = data.ended_at ?? data.endedAt;
+    const endedAt = endedAtRaw ? safeParseDate(endedAtRaw) : null;
+    const durationMs =
+      typeof (data.duration_ms ?? data.durationMs) === 'number'
+        ? ((data.duration_ms ?? data.durationMs) as number)
+        : endedAt
+          ? endedAt.getTime() - startedAt.getTime()
+          : null;
+
+    try {
+      await db
+        .insert(correlationTraceSpans)
+        .values({
+          traceId,
+          spanId,
+          parentSpanId: (data.parent_span_id as string) || (data.parentSpanId as string) || null,
+          correlationId,
+          sessionId: sanitizeSessionId(
+            (data.session_id as string | null | undefined) ??
+              (data.sessionId as string | null | undefined),
+            { correlationId }
+          ),
+          spanKind: (data.span_kind as string) || (data.spanKind as string) || 'internal',
+          spanName: (data.span_name as string) || (data.spanName as string) || 'unknown',
+          status: (data.status as string) || 'ok',
+          startedAt,
+          endedAt,
+          durationMs,
+          metadata: data.metadata || {},
+        })
+        .onConflictDoNothing();
+
+      return true;
+    } catch (err) {
+      const pgCode = (err as { code?: string }).code;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        pgCode === '42P01' ||
+        (msg.includes('correlation_trace_spans') && msg.includes('does not exist'))
+      ) {
+        console.warn(
+          '[ReadModelConsumer] correlation_trace_spans table not yet created -- ' +
+            'run migrations to enable trace span projection'
         );
         return true;
       }
