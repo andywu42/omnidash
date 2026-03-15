@@ -63,6 +63,8 @@ read_model_topics:
     handler: "projectPatternProjection"
   - topic: "onex.evt.omniintelligence.plan-review-strategy-run-completed.v1"
     handler: "projectPlanReviewStrategyRunCompleted"
+  - topic: "onex.evt.omniintelligence.run-evaluated.v1"
+    handler: "projectRunEvaluated"
 
   # --- omnimemory topics ---
   - topic: "onex.evt.omnimemory.intent-stored.v1"
