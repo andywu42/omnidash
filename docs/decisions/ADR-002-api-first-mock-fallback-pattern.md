@@ -1,8 +1,10 @@
 > **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > ADR-002
 
+> **Status: SUPERSEDED** -- The `mockOnEmpty` pattern described here was removed in OMN-2331. Dashboards now use API-first data sources with explicit demo mode toggle. Retained for historical context.
+
 # ADR-002: API-First with Mock Fallback for All Data Sources
 
-**Status**: Accepted
+**Status**: Superseded (OMN-2331)
 **Date**: 2026-01
 **Deciders**: Omnidash Engineering Team
 **Related**: OMN-2304 (extraction dashboard mock fallback), OMN-2298 (global demo mode)
