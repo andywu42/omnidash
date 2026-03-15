@@ -20,10 +20,10 @@ Key environment variables (see `.env.example` for the full template):
 PORT=3000
 
 # Omnidash read-model database (omnidash_analytics)
-OMNIDASH_ANALYTICS_DB_URL="postgresql://postgres:<password>@192.168.86.200:5436/omnidash_analytics"
+OMNIDASH_ANALYTICS_DB_URL="postgresql://postgres:<password>@localhost:5436/omnidash_analytics"
 
-# Kafka event streaming
-KAFKA_BROKERS=192.168.86.200:29092
+# Kafka event streaming (cloud bus; use localhost:19092 for local Docker bus)
+KAFKA_BROKERS=localhost:29092
 KAFKA_CLIENT_ID=omnidash-dashboard
 KAFKA_CONSUMER_GROUP=omnidash-consumers-v2
 
