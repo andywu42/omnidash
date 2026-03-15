@@ -448,15 +448,16 @@ export default function IntentDashboard() {
 
   // Transform projection snapshot → IntentItem[] for child components.
   // ProjectionEventItem wraps intent fields inside .payload; IntentItem expects them flat.
+  //
+  // OMN-5055: event-consumer.ts now normalizes to canonical snake_case at the write site,
+  // so the projection payload always carries session_ref / intent_category / created_at.
+  // No dual-casing fallbacks needed here.
   const projectionIntentItems = useMemo((): IntentItem[] | undefined => {
     if (!snapshot?.recentIntents?.length) return undefined;
     return snapshot.recentIntents.map((e) => ({
       intent_id: e.id,
       session_ref: String(e.payload.session_ref ?? ''),
-      intent_category: String(
-        e.payload.intent_category ?? e.payload.intentCategory ??
-        e.payload.intent_type ?? e.payload.intentType ?? ''
-      ),
+      intent_category: String(e.payload.intent_category ?? ''),
       confidence: Number(e.payload.confidence ?? 0),
       keywords: [],
       created_at: e.payload.created_at

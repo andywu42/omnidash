@@ -2915,8 +2915,16 @@ export class EventConsumer extends EventEmitter {
 
       // OMN-4957: Emit intentUpdate so projection-bootstrap wires intent events
       // through the same consumerEventNames pipeline as other event types.
+      //
+      // OMN-5055: Emit canonical snake_case fields alongside camelCase so the
+      // projection payload always carries a single authoritative schema.
+      // Frontend reads session_ref / intent_category / created_at without fallbacks.
       this.emit('intentUpdate', {
         ...intentEvent,
+        // Canonical snake_case fields (match IntentRecordPayload wire format)
+        session_ref: intentEvent.sessionId || '',
+        intent_category: intentType,
+        created_at: createdAt.toISOString(),
         topic: INTENT_CLASSIFIED_TOPIC,
         type: 'intent-classified',
         actionType: 'intent-classified',
