@@ -221,3 +221,19 @@ jobs:
           fi
           if [ "$FAILED" = "1" ]; then exit 1; fi
           echo "All checks passed (tests: $TEST_RESULT, arch-guard: $ARCH_RESULT, migration: $MIGRATION_RESULT)"
+
+  # ⚠️ Do not rename — branch protection requires this exact check name
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [tests-gate]
+    if: always()
+    steps:
+      - name: Evaluate gates
+        run: |
+          echo "CI Tests Gate: ${{ needs.tests-gate.result }}"
+          if [[ "${{ needs.tests-gate.result }}" != "success" ]]; then
+            echo "::error::CI Summary: FAILED"
+            exit 1
+          fi
+          echo "CI Summary: PASSED"
