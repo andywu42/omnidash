@@ -473,6 +473,14 @@ export default function IntentDashboard() {
     return projectionIntentItems.filter((i) => i.intent_category === categoryFilter);
   }, [projectionIntentItems, categoryFilter]);
 
+  // Filter distribution data: exclude "unknown" category (classifier fallback for
+  // unclassifiable intents with 0% confidence — OMN-5056). These are noise from
+  // before the classifier fix and don't convey actionable information.
+  const filteredDistribution = useMemo(() => {
+    if (!snapshot?.distribution) return undefined;
+    return snapshot.distribution.filter((d) => d.category !== 'unknown');
+  }, [snapshot?.distribution]);
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -559,7 +567,7 @@ export default function IntentDashboard() {
                 refreshInterval={30000}
                 title={`Intent Distribution (${TIME_RANGE_OPTIONS.find((o) => o.value === timeRange)?.label})`}
                 className="h-full"
-                data={snapshot?.distribution}
+                data={filteredDistribution}
                 totalIntents={snapshot?.totalIntents}
                 selectedCategory={categoryFilter}
                 onCategoryClick={setCategoryFilter}
@@ -577,6 +585,7 @@ export default function IntentDashboard() {
                 onIntentClick={handleIntentClick}
                 className="h-full"
                 data={filteredIntentItems}
+                connectionStatus={connectionStatus}
               />
             </IntentErrorBoundary>
           </div>

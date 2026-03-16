@@ -58,10 +58,17 @@ export interface RecentIntentsProps {
   /** Callback when an intent is clicked */
   onIntentClick?: (intent: IntentItem) => void;
   /**
-   * Pre-fetched intent items. When provided, skips the internal API fetch.
-   * Accepts items transformed from the projection snapshot.
+   * Pre-fetched intent items. When provided, skips the internal API fetch
+   * and the internal WebSocket connection. Use `connectionStatus` to
+   * reflect the parent's data-source status in the header badge.
    */
   data?: IntentItem[];
+  /**
+   * External connection status from the parent data source (e.g.
+   * useIntentProjectionStream). When `data` is provided this replaces
+   * the internal WebSocket's connection indicator.
+   */
+  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error';
 }
 
 interface RecentIntentsResponse {
@@ -224,6 +231,7 @@ export function RecentIntents({
   showCard = true,
   onIntentClick,
   data: propData,
+  connectionStatus: externalConnectionStatus,
 }: RecentIntentsProps) {
   const queryClient = useQueryClient();
   const [intents, setIntents] = useState<IntentItem[]>([]);
@@ -280,8 +288,9 @@ export function RecentIntents({
   // WebSocket message handler for real-time updates
   const handleMessage = useCallback(
     (message: { type: string; data?: unknown; timestamp: string }) => {
-      // Handle INTENT_STORED events from the intent event emitter
-      if (message.type === 'INTENT_STORED') {
+      // Handle INTENT_UPDATE events from the WebSocket (server broadcasts as INTENT_UPDATE).
+      // Also accept legacy INTENT_STORED for backward compatibility.
+      if (message.type === 'INTENT_UPDATE' || message.type === 'INTENT_STORED') {
         const eventData = message.data as {
           intent_id?: string;
           session_id?: string;
@@ -344,19 +353,31 @@ export function RecentIntents({
     [limit, queryClient, propData]
   );
 
-  // WebSocket connection
-  const { isConnected, subscribe, unsubscribe } = useWebSocket({
-    onMessage: handleMessage,
+  // WebSocket connection — only created when using internal fetch (no propData).
+  // When propData is provided, the parent owns the data source and connection
+  // status is reflected via the `connectionStatus` prop.
+  const {
+    isConnected: wsIsConnected,
+    subscribe,
+    unsubscribe,
+  } = useWebSocket({
+    onMessage: propData === undefined ? handleMessage : undefined,
   });
 
-  // Subscribe to intent events when connected
+  // Derive effective connection status: prefer external (parent-provided) when
+  // propData is set, otherwise use the internal WebSocket's state.
+  const isConnected =
+    propData !== undefined ? externalConnectionStatus === 'connected' : wsIsConnected;
+
+  // Subscribe to intent events when connected (internal WebSocket path only)
   useEffect(() => {
-    if (isConnected) {
-      // Subscribe to intents topic for real-time updates
-      subscribe(['intents', 'intents-stored']);
-      return () => unsubscribe(['intents', 'intents-stored']);
+    if (propData !== undefined) return; // Parent owns the data source
+    if (wsIsConnected) {
+      // Subscribe to 'intent' topic (matches server VALID_TOPICS)
+      subscribe(['intent']);
+      return () => unsubscribe(['intent']);
     }
-  }, [isConnected, subscribe, unsubscribe]);
+  }, [wsIsConnected, subscribe, unsubscribe, propData]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {

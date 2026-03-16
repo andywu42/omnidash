@@ -264,7 +264,12 @@ const VALID_TOPICS = [
   'registry-nodes',
   'registry-instances',
   // Intent classification events (OMN-1516)
+  // 'intent' is the broadcast target; 'intents' and 'intents-stored' are
+  // client-facing channel names from shared/intent-types WS_CHANNEL_* constants.
+  // All three are accepted as valid subscription topics.
   'intent',
+  'intents',
+  'intents-stored',
   // Event Bus Monitor events (real-time Kafka events)
   'event-bus',
   // Demo playback events (OMN-1843)
@@ -644,27 +649,47 @@ export function setupWebSocket(httpServer: HTTPServer) {
   // Tells clients to re-fetch Wave 2 dashboard data when events are projected.
 
   const gateDecisionInvalidateHandler = (data: { correlationId: string }) => {
-    broadcast('GATE_DECISION_INVALIDATE', { correlationId: data.correlationId, timestamp: Date.now() }, 'gate-decisions');
+    broadcast(
+      'GATE_DECISION_INVALIDATE',
+      { correlationId: data.correlationId, timestamp: Date.now() },
+      'gate-decisions'
+    );
   };
   gateDecisionEventEmitter.on('gate-decision-invalidate', gateDecisionInvalidateHandler);
 
   const epicRunInvalidateHandler = (data: { epicRunId: string }) => {
-    broadcast('EPIC_RUN_INVALIDATE', { epicRunId: data.epicRunId, timestamp: Date.now() }, 'epic-run');
+    broadcast(
+      'EPIC_RUN_INVALIDATE',
+      { epicRunId: data.epicRunId, timestamp: Date.now() },
+      'epic-run'
+    );
   };
   epicRunEventEmitter.on('epic-run-invalidate', epicRunInvalidateHandler);
 
   const prWatchInvalidateHandler = (data: { correlationId: string }) => {
-    broadcast('PR_WATCH_INVALIDATE', { correlationId: data.correlationId, timestamp: Date.now() }, 'pr-watch');
+    broadcast(
+      'PR_WATCH_INVALIDATE',
+      { correlationId: data.correlationId, timestamp: Date.now() },
+      'pr-watch'
+    );
   };
   prWatchEventEmitter.on('pr-watch-invalidate', prWatchInvalidateHandler);
 
   const pipelineBudgetInvalidateHandler = (data: { correlationId: string }) => {
-    broadcast('PIPELINE_BUDGET_INVALIDATE', { correlationId: data.correlationId, timestamp: Date.now() }, 'pipeline-budget');
+    broadcast(
+      'PIPELINE_BUDGET_INVALIDATE',
+      { correlationId: data.correlationId, timestamp: Date.now() },
+      'pipeline-budget'
+    );
   };
   pipelineBudgetEventEmitter.on('pipeline-budget-invalidate', pipelineBudgetInvalidateHandler);
 
   const debugEscalationInvalidateHandler = (data: { correlationId: string }) => {
-    broadcast('DEBUG_ESCALATION_INVALIDATE', { correlationId: data.correlationId, timestamp: Date.now() }, 'debug-escalation');
+    broadcast(
+      'DEBUG_ESCALATION_INVALIDATE',
+      { correlationId: data.correlationId, timestamp: Date.now() },
+      'debug-escalation'
+    );
   };
   circuitBreakerEventEmitter.on('circuit-breaker-invalidate', debugEscalationInvalidateHandler);
 
@@ -694,21 +719,28 @@ export function setupWebSocket(httpServer: HTTPServer) {
   });
 
   // Intent classification event listeners (OMN-1516)
-  // Note: Intent events are emitted from intentEventEmitter, NOT eventConsumer
+  // Note: Intent events are emitted from intentEventEmitter, NOT eventConsumer.
+  // Broadcast to both 'intent' (legacy) and 'intents' / 'intents-stored'
+  // (shared WS_CHANNEL_* constants) so all subscriber variants receive events.
   const intentStoredHandler = (payload: IntentStoredEventPayload) => {
     broadcast('INTENT_UPDATE', payload, 'intent');
+    broadcast('INTENT_STORED', payload, 'intents-stored');
+    broadcast('INTENT_STORED', payload, 'intents');
   };
 
   const intentDistributionHandler = (payload: IntentDistributionEventPayload) => {
     broadcast('INTENT_DISTRIBUTION', payload, 'intent');
+    broadcast('INTENT_DISTRIBUTION', payload, 'intents');
   };
 
   const intentSessionHandler = (payload: IntentSessionEventPayload) => {
     broadcast('INTENT_SESSION', payload, 'intent');
+    broadcast('INTENT_SESSION', payload, 'intents');
   };
 
   const intentRecentHandler = (payload: IntentRecentEventPayload) => {
     broadcast('INTENT_RECENT', payload, 'intent');
+    broadcast('INTENT_RECENT', payload, 'intents');
   };
 
   // Register listeners on intentEventEmitter (not eventConsumer)
@@ -1269,11 +1301,20 @@ export function setupWebSocket(httpServer: HTTPServer) {
     statusEventEmitter.removeListener('status-invalidate', statusInvalidateHandler);
 
     // Remove Wave 2 state event listeners (OMN-2602)
-    gateDecisionEventEmitter.removeListener('gate-decision-invalidate', gateDecisionInvalidateHandler);
+    gateDecisionEventEmitter.removeListener(
+      'gate-decision-invalidate',
+      gateDecisionInvalidateHandler
+    );
     epicRunEventEmitter.removeListener('epic-run-invalidate', epicRunInvalidateHandler);
     prWatchEventEmitter.removeListener('pr-watch-invalidate', prWatchInvalidateHandler);
-    pipelineBudgetEventEmitter.removeListener('pipeline-budget-invalidate', pipelineBudgetInvalidateHandler);
-    circuitBreakerEventEmitter.removeListener('circuit-breaker-invalidate', debugEscalationInvalidateHandler);
+    pipelineBudgetEventEmitter.removeListener(
+      'pipeline-budget-invalidate',
+      pipelineBudgetInvalidateHandler
+    );
+    circuitBreakerEventEmitter.removeListener(
+      'circuit-breaker-invalidate',
+      debugEscalationInvalidateHandler
+    );
 
     // Remove event bus data source listeners
     console.log(`Removing ${eventBusListeners.length} event bus data source listeners...`);
