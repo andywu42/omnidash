@@ -65,7 +65,7 @@ import { readModelConsumer } from './read-model-consumer';
 // Types
 // ============================================================================
 
-export type DataSourceStatus = 'live' | 'mock' | 'error' | 'offline';
+export type DataSourceStatus = 'live' | 'mock' | 'error' | 'offline' | 'expected_idle_local';
 
 export interface DataSourceInfo {
   status: DataSourceStatus;
@@ -77,7 +77,13 @@ export interface DataSourceInfo {
 
 export interface DataSourcesHealthResponse {
   dataSources: Record<string, DataSourceInfo>;
-  summary: { live: number; mock: number; error: number; offline: number };
+  summary: {
+    live: number;
+    mock: number;
+    error: number;
+    offline: number;
+    expected_idle_local: number;
+  };
   checkedAt: string;
 }
 
@@ -86,6 +92,35 @@ export interface DataSourcesHealthResponse {
 // ============================================================================
 
 const ENV_SYNC_STALE_SECS = 3600; // 1 hour (2× the 5-min throttle window)
+
+/**
+ * Detect whether this is a local (non-cloud) environment.
+ * Local dev environments don't have all upstream producers running, so some
+ * data sources being empty is expected — not an error (OMN-5149).
+ */
+function isLocalEnvironment(): boolean {
+  return (
+    !process.env.K8S_NAMESPACE &&
+    !process.env.KUBERNETES_SERVICE_HOST &&
+    process.env.NODE_ENV !== 'production'
+  );
+}
+
+/**
+ * Data sources that are expected to be idle (no data) in local dev
+ * environments because their upstream producers only run in cloud or during
+ * active agent sessions. Listed here so the health panel can distinguish
+ * "structurally offline" from "broken" (OMN-5149).
+ */
+const LOCAL_IDLE_EXPECTED: Set<string> = new Set([
+  'intents',
+  'topicParity',
+  'baselines',
+  'validation',
+  'patterns',
+  'insights',
+  'envSync',
+]);
 
 // ============================================================================
 // Individual probe functions
@@ -427,19 +462,20 @@ async function probeEnforcement(): Promise<DataSourceInfo> {
 }
 
 /**
- * Probe the env→Infisical sync script (OMN-3216).
- * Gated behind ENABLE_ENV_SYNC_PROBE=true.
+ * Probe the env→Infisical sync script (OMN-3216, OMN-5148).
  *
  * Status map:
- *   mock    — INFISICAL_ADDR not set (opt-out) OR probe disabled via flag
+ *   mock    — INFISICAL_ADDR not set (opt-out)
  *   offline — script not deployed, never run, or stale
  *   live    — script exists and last-run timestamp is within 1 hour
  *   error   — unexpected exception
+ *
+ * OMN-5148: Removed ENABLE_ENV_SYNC_PROBE gate. The probe is now always
+ * active; when Infisical is disabled (INFISICAL_ADDR empty), it returns
+ * 'mock' with reason 'infisical_disabled' which is then reclassified to
+ * expected_idle_local in local dev by the OMN-5149 logic.
  */
 function probeEnvSync(): DataSourceInfo {
-  if (!process.env.ENABLE_ENV_SYNC_PROBE) {
-    return { status: 'mock', reason: 'probe_disabled' };
-  }
   try {
     const infisicalAddr = process.env.INFISICAL_ADDR ?? '';
     if (!infisicalAddr.trim()) {
@@ -632,16 +668,34 @@ router.get('/data-sources', async (_req, res) => {
           topicParity: probeTopicParity(),
         };
 
+        // OMN-5149: In local dev, reclassify known-idle sources from mock/offline
+        // to expected_idle_local so the health panel doesn't alarm on expected gaps.
+        const isLocal = isLocalEnvironment();
+        if (isLocal) {
+          for (const [key, info] of Object.entries(dataSources)) {
+            if (
+              LOCAL_IDLE_EXPECTED.has(key) &&
+              (info.status === 'mock' || info.status === 'offline')
+            ) {
+              info.status = 'expected_idle_local';
+              info.reason = info.reason
+                ? `${info.reason} (expected idle in local dev)`
+                : 'expected idle in local dev';
+            }
+          }
+        }
+
         const counts = Object.values(dataSources).reduce(
           (acc, info) => {
             acc[info.status] = (acc[info.status] ?? 0) + 1;
             return acc;
           },
-          { live: 0, mock: 0, error: 0, offline: 0 } as {
+          { live: 0, mock: 0, error: 0, offline: 0, expected_idle_local: 0 } as {
             live: number;
             mock: number;
             error: number;
             offline: number;
+            expected_idle_local: number;
           }
         );
 

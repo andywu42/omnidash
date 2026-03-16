@@ -66,6 +66,24 @@ operation. They should show data as soon as the platform is running.
 | Delegation | `/delegation` | Delegation events | `delegation_events` | omniclaude |
 | Intent | `/intent` | Intent classification | In-memory projection | omniintelligence |
 
+## Local Dev Expected Status (OMN-5141)
+
+In local development environments (no K8S_NAMESPACE, NODE_ENV != production),
+certain data sources are expected to be idle because their upstream producers
+only run in cloud or during specific batch/agent sessions. The health panel
+shows these as `expected_idle_local` (blue "Idle (local)" badge) instead of
+`offline` or `mock`, so developers can distinguish "expected gap" from "broken".
+
+| Source Key | Why Idle Locally | How to Activate |
+|---|---|---|
+| baselines | Daily GH Actions batch job | `uv run python scripts/run_baselines_batch_compute.py` |
+| validation | Cross-repo validation pipeline | Run validation orchestrator |
+| intents | Requires active agent sessions | Start an agent session producing intent events |
+| patterns | Requires pattern extraction pipeline | Run pattern extraction |
+| insights | Requires pattern_learning_artifacts | Run pattern extraction pipeline |
+| topicParity | Requires all Kafka consumers connected | Ensure full runtime stack is up |
+| envSync | Requires Infisical (secrets profile) | `docker compose --profile secrets up -d` + run sync |
+
 ## Architecture Notes
 
 ### Event Flow

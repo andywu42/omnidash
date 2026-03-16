@@ -168,14 +168,18 @@ describe('GET /api/health/data-sources', () => {
     const res = await request(app).get('/api/health/data-sources');
 
     expect(res.status).toBe(200);
-    // All projection-based sources should be mock
+    // Projection-based sources should be mock (or expected_idle_local in test env).
+    // OMN-5149: In non-production environments, sources in LOCAL_IDLE_EXPECTED
+    // are reclassified from mock/offline to expected_idle_local.
     const { dataSources } = res.body;
     expect(dataSources.eventBus.status).toBe('mock');
     expect(dataSources.effectiveness.status).toBe('mock');
     expect(dataSources.extraction.status).toBe('mock');
-    expect(dataSources.baselines.status).toBe('mock');
+    // baselines is in LOCAL_IDLE_EXPECTED → reclassified in test env
+    expect(dataSources.baselines.status).toBe('expected_idle_local');
     expect(dataSources.costTrends.status).toBe('mock');
-    expect(dataSources.intents.status).toBe('mock');
+    // intents is in LOCAL_IDLE_EXPECTED → reclassified in test env
+    expect(dataSources.intents.status).toBe('expected_idle_local');
     expect(dataSources.nodeRegistry.status).toBe('mock');
   });
 
@@ -324,7 +328,7 @@ describe('GET /api/health/data-sources', () => {
     expect(res.body.dataSources.patterns.reason).toBe('probe_threw');
   });
 
-  it('reports status: offline for patterns when projection has totalPatterns === 0', async () => {
+  it('reports status: expected_idle_local for patterns when projection has totalPatterns === 0 in local env', async () => {
     const patternsView = makeView({ totalPatterns: 0 });
 
     vi.mocked(projectionService.getView).mockImplementation((viewId: string) => {
@@ -338,8 +342,9 @@ describe('GET /api/health/data-sources', () => {
     const res = await request(app).get('/api/health/data-sources');
 
     expect(res.status).toBe(200);
-    expect(res.body.dataSources.patterns.status).toBe('offline');
-    expect(res.body.dataSources.patterns.reason).toBe('upstream_never_emitted');
+    // OMN-5149: patterns is in LOCAL_IDLE_EXPECTED, so offline → expected_idle_local in test env
+    expect(res.body.dataSources.patterns.status).toBe('expected_idle_local');
+    expect(res.body.dataSources.patterns.reason).toContain('upstream_never_emitted');
   });
 
   it('computes summary counts correctly', async () => {
@@ -365,9 +370,17 @@ describe('GET /api/health/data-sources', () => {
 
     expect(res.status).toBe(200);
     const { summary } = res.body;
+    // OMN-5149: In test env, LOCAL_IDLE_EXPECTED sources are reclassified.
     // 4 live sources (event-bus, validation, correlationTrace, topicParity)
     expect(summary.live).toBe(4);
-    expect(summary.live + summary.mock + summary.error + (summary.offline ?? 0)).toBe(15); // 15 total sources (OMN-4964: +topicParity)
+    // Total across all statuses must equal 15 (all data sources)
+    const total =
+      summary.live +
+      summary.mock +
+      summary.error +
+      (summary.offline ?? 0) +
+      (summary.expected_idle_local ?? 0);
+    expect(total).toBe(15);
   });
 
   it('includes all 15 expected data sources', async () => {
@@ -402,7 +415,7 @@ describe('GET /api/health/data-sources', () => {
     expect(keys.length).toBe(15);
   });
 
-  it('returns status: offline with reason for empty baselines projection', async () => {
+  it('returns status: expected_idle_local with reason for empty baselines projection in local env', async () => {
     const baselinesView = makeView({
       summary: { total_comparisons: 0 },
     });
@@ -418,8 +431,9 @@ describe('GET /api/health/data-sources', () => {
     const res = await request(app).get('/api/health/data-sources');
 
     expect(res.status).toBe(200);
-    expect(res.body.dataSources.baselines.status).toBe('offline');
-    expect(res.body.dataSources.baselines.reason).toBe('upstream_service_offline');
+    // OMN-5149: baselines is in LOCAL_IDLE_EXPECTED, so offline → expected_idle_local in test env
+    expect(res.body.dataSources.baselines.status).toBe('expected_idle_local');
+    expect(res.body.dataSources.baselines.reason).toContain('upstream_service_offline');
   });
 
   it('reports status: error for executionGraph when probe throws', async () => {

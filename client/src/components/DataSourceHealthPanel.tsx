@@ -10,13 +10,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, AlertTriangle, CheckCircle, WifiOff, XCircle } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle, MinusCircle, WifiOff, XCircle } from 'lucide-react';
 
 // ============================================================================
 // Types (mirrors server/health-data-sources-routes.ts)
 // ============================================================================
 
-export type DataSourceStatus = 'live' | 'mock' | 'error' | 'offline';
+export type DataSourceStatus = 'live' | 'mock' | 'error' | 'offline' | 'expected_idle_local';
 
 export interface DataSourceInfo {
   status: DataSourceStatus;
@@ -26,7 +26,13 @@ export interface DataSourceInfo {
 
 export interface DataSourcesHealthResponse {
   dataSources: Record<string, DataSourceInfo>;
-  summary: { live: number; mock: number; error: number; offline: number };
+  summary: {
+    live: number;
+    mock: number;
+    error: number;
+    offline: number;
+    expected_idle_local: number;
+  };
   checkedAt: string;
 }
 
@@ -49,6 +55,7 @@ const DATA_SOURCE_LABELS: Record<string, string> = {
   executionGraph: 'Execution Graph',
   enforcement: 'Pattern Enforcement',
   envSync: 'Env → Infisical Sync',
+  topicParity: 'Topic Parity',
 };
 
 // Human-readable reason descriptions
@@ -96,6 +103,8 @@ function StatusIcon({ status }: { status: DataSourceStatus }) {
       return <XCircle className="w-4 h-4 text-red-500" />;
     case 'offline':
       return <WifiOff className="w-4 h-4 text-slate-400" />;
+    case 'expected_idle_local':
+      return <MinusCircle className="w-4 h-4 text-blue-400" />;
     default:
       return <Activity className="w-4 h-4 text-gray-400" />;
   }
@@ -123,6 +132,12 @@ function StatusBadge({ status }: { status: DataSourceStatus }) {
       return (
         <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/30 text-[10px]">
           Offline
+        </Badge>
+      );
+    case 'expected_idle_local':
+      return (
+        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-[10px]">
+          Idle (local)
         </Badge>
       );
     default:
@@ -173,7 +188,13 @@ function DataSourceRow({ sourceKey, info }: { sourceKey: string; info: DataSourc
 function SummaryBar({
   summary,
 }: {
-  summary: { live: number; mock: number; error: number; offline: number };
+  summary: {
+    live: number;
+    mock: number;
+    error: number;
+    offline: number;
+    expected_idle_local: number;
+  };
 }) {
   // total from summary object — should equal Object.keys(dataSources).length;
   // if they diverge, a probe is returning a status not included in the summary count.
@@ -200,6 +221,12 @@ function SummaryBar({
         <span className="flex items-center gap-1.5 text-red-400">
           <XCircle className="w-3.5 h-3.5" />
           {summary.error} error
+        </span>
+      )}
+      {summary.expected_idle_local > 0 && (
+        <span className="flex items-center gap-1.5 text-blue-400">
+          <MinusCircle className="w-3.5 h-3.5" />
+          {summary.expected_idle_local} idle
         </span>
       )}
       <span className="text-muted-foreground text-xs ml-auto">{total} total sources</span>

@@ -46,6 +46,7 @@ import { startPipelineHealthWatcher, stopPipelineHealthWatcher } from './pipelin
 import { startEventBusHealthPoller, stopEventBusHealthPoller } from './event-bus-health-poller';
 import { startWorkerHealthPoller, stopWorkerHealthPoller } from './worker-health-poller';
 import selfTestRoutes, { runStartupSelfTest } from './startup-self-test';
+import buildInfoRoutes from './build-info-routes';
 
 const app = express();
 
@@ -141,6 +142,10 @@ app.use((req, res, next) => {
   // /api/health/self-test — startup self-test report (OMN-4974).
   // Registered BEFORE the requireAuth gate so health checks can access it.
   app.use('/api/health', selfTestRoutes);
+
+  // /api/build-info — version, git SHA, uptime for lifecycle scripts (OMN-5143).
+  // Registered BEFORE the requireAuth gate so unauthenticated callers can reach it.
+  app.use('/api/build-info', buildInfoRoutes);
 
   // Token refresh + auth gate for all /api routes (skip /api/auth/me and /api/health-probe)
   const skipPublicRoutes = (req: Request, _res: Response, next: NextFunction) => {
