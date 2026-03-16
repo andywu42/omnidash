@@ -194,6 +194,7 @@ export function generateMockPatterns(count = 25): PatlearnArtifact[] {
  */
 export function generateMockSummary(window: '24h' | '7d' | '30d' = '24h'): PatlearnSummary {
   const byState = {
+    requested: randomInt(0, 3),
     candidate: randomInt(6, 10),
     provisional: randomInt(4, 8),
     validated: randomInt(4, 8),

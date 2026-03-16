@@ -145,6 +145,7 @@ export const lifecycleStateSchema = z.enum([
   'provisional', // Above threshold, pending validation
   'validated', // Confirmed as learned pattern
   'deprecated', // Superseded or invalidated
+  'requested', // Raw pipeline event, not yet processed
 ]);
 
 // ===========================
@@ -278,6 +279,7 @@ export const patlearnArtifactSchema = z.object({
       __demo: z.boolean().optional(),
       __demoCreatedAt: z.string().optional(),
     })
+    .passthrough()
     .optional(),
   createdAt: z.string(),
   updatedAt: z.string().optional(),
@@ -290,6 +292,7 @@ export const patlearnArtifactSchema = z.object({
 export const patlearnSummarySchema = z.object({
   totalPatterns: z.number().min(0),
   byState: z.object({
+    requested: z.number().min(0),
     candidate: z.number().min(0),
     provisional: z.number().min(0),
     validated: z.number().min(0),

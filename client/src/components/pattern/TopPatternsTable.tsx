@@ -60,6 +60,7 @@ const STATE_ORDER: Record<LifecycleState, number> = {
   provisional: 1,
   candidate: 2,
   deprecated: 3,
+  requested: 4,
 };
 
 function sortPatterns(patterns: PatlearnArtifact[], config: SortConfig): PatlearnArtifact[] {

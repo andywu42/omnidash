@@ -71,6 +71,7 @@ const createValidArtifact = (overrides: Partial<PatlearnArtifact> = {}): Patlear
 const createValidSummary = (overrides: Partial<PatlearnSummary> = {}): PatlearnSummary => ({
   totalPatterns: 150,
   byState: {
+    requested: 0,
     candidate: 45,
     provisional: 30,
     validated: 60,

@@ -146,6 +146,7 @@ function createMockSummary(overrides: Partial<PatlearnSummary> = {}): PatlearnSu
   return {
     totalPatterns: overrides.totalPatterns ?? 100,
     byState: overrides.byState ?? {
+      requested: 0,
       candidate: 20,
       provisional: 15,
       validated: 55,

@@ -41,6 +41,11 @@ interface ChartDataItem {
  * Uses CSS-compatible colors for recharts
  */
 const STATE_COLORS: Record<LifecycleState, { fill: string; hover: string; label: string }> = {
+  requested: {
+    fill: '#94a3b8', // slate-400
+    hover: '#64748b', // slate-500
+    label: 'Requested',
+  },
   candidate: {
     fill: '#eab308', // yellow-500
     hover: '#ca8a04', // yellow-600
@@ -63,7 +68,7 @@ const STATE_COLORS: Record<LifecycleState, { fill: string; hover: string; label:
   },
 };
 
-const LIFECYCLE_ORDER: LifecycleState[] = ['candidate', 'provisional', 'validated', 'deprecated'];
+const LIFECYCLE_ORDER: LifecycleState[] = ['requested', 'candidate', 'provisional', 'validated', 'deprecated'];
 
 // ===========================
 // Custom Tooltip
