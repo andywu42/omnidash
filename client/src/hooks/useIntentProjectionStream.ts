@@ -50,7 +50,7 @@ export interface UseIntentProjectionStreamReturn<T> {
   /** Whether the WebSocket is connected */
   isConnected: boolean;
   /** Connection status */
-  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error' | 'offline';
   /** Error state */
   error: Error | null;
   /** Whether a fetch is in progress */

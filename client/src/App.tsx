@@ -309,7 +309,7 @@ function Dashboard() {
                       ? 'bg-green-500 animate-pulse'
                       : connectionStatus === 'connecting'
                         ? 'bg-yellow-500 animate-pulse'
-                        : 'bg-red-500'
+                        : 'bg-gray-400'
                   }`}
                 />
                 <span className="text-xs text-muted-foreground">
@@ -317,7 +317,7 @@ function Dashboard() {
                     ? 'Connected'
                     : connectionStatus === 'connecting'
                       ? 'Connecting...'
-                      : 'Disconnected'}
+                      : 'Offline'}
                 </span>
               </div>
               {runtimeEnv && (

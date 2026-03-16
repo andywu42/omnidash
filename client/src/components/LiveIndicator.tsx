@@ -18,7 +18,7 @@ export interface LiveIndicatorProps {
   /**
    * Connection status for more detailed display
    */
-  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error';
+  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error' | 'offline';
 
   /**
    * Optional label override
@@ -80,6 +80,7 @@ export function LiveIndicator({
         return 'Connecting...';
       case 'connected':
         return 'Live';
+      case 'offline':
       case 'disconnected':
         return 'Offline';
       case 'error':
@@ -112,6 +113,7 @@ export function LiveIndicator({
       case 'error':
         statusClasses = 'bg-red-500';
         break;
+      case 'offline':
       case 'disconnected':
       default:
         statusClasses = 'bg-gray-400';
@@ -160,6 +162,7 @@ export function LiveIndicatorCompact({
         return 'Connecting to real-time updates...';
       case 'connected':
         return 'Connected - Receiving live updates';
+      case 'offline':
       case 'disconnected':
         return 'Disconnected - Updates paused';
       case 'error':
@@ -177,6 +180,7 @@ export function LiveIndicatorCompact({
         return 'w-2 h-2 rounded-full bg-green-500 animate-pulse';
       case 'error':
         return 'w-2 h-2 rounded-full bg-red-500';
+      case 'offline':
       case 'disconnected':
       default:
         return 'w-2 h-2 rounded-full bg-gray-400';

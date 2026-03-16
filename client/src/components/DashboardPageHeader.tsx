@@ -43,7 +43,7 @@ export interface DashboardPageHeaderProps {
   /** Whether the WebSocket/real-time connection is active */
   isConnected?: boolean;
   /** Connection status for the LiveIndicator */
-  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error';
+  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error' | 'offline';
   /** Callback for refresh button click */
   onRefresh?: () => void;
   /** Whether data is currently being fetched */

@@ -68,7 +68,7 @@ export interface RecentIntentsProps {
    * useIntentProjectionStream). When `data` is provided this replaces
    * the internal WebSocket's connection indicator.
    */
-  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error';
+  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error' | 'offline';
 }
 
 interface RecentIntentsResponse {

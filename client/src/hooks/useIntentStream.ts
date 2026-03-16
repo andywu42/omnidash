@@ -160,7 +160,7 @@ export interface UseIntentStreamReturn {
   /**
    * Current connection status
    */
-  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error' | 'offline';
 
   /**
    * Statistics about received intents

@@ -162,7 +162,7 @@ export interface UseRegistryWebSocketReturn {
   /**
    * Current connection status
    */
-  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error' | 'offline';
 
   /**
    * Connection error message if any

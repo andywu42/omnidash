@@ -20,7 +20,7 @@ interface UseWebSocketOptions {
 
 interface UseWebSocketReturn {
   isConnected: boolean;
-  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error' | 'offline';
   error: string | null;
   send: (message: any) => void;
   subscribe: (topics: string[]) => void;
@@ -71,7 +71,7 @@ export function useWebSocket({
 }: UseWebSocketOptions = {}): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<
-    'connecting' | 'connected' | 'disconnected' | 'error'
+    'connecting' | 'connected' | 'disconnected' | 'error' | 'offline'
   >('disconnected');
   const [error, setError] = useState<string | null>(null);
 
@@ -79,6 +79,9 @@ export function useWebSocket({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectCountRef = useRef(0);
   const mountedRef = useRef(true);
+
+  // Timeout: transition from 'connecting' to 'offline' after 10 seconds
+  const connectingTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Stabilization: Track connection state changes to prevent flickering
   const disconnectTimeoutRef = useRef<NodeJS.Timeout>();
@@ -179,6 +182,12 @@ export function useWebSocket({
       disconnectTimeoutRef.current = undefined;
     }
 
+    // Clear any pending connecting timeout
+    if (connectingTimeoutRef.current) {
+      clearTimeout(connectingTimeoutRef.current);
+      connectingTimeoutRef.current = undefined;
+    }
+
     // Set reconnect count to max to prevent auto-reconnection
     reconnectCountRef.current = reconnectAttempts;
 
@@ -208,12 +217,29 @@ export function useWebSocket({
       setConnectionStatus('connecting');
       setError(null);
 
+      // Start a 10-second timeout: if still not connected, show 'offline'
+      if (connectingTimeoutRef.current) {
+        clearTimeout(connectingTimeoutRef.current);
+      }
+      connectingTimeoutRef.current = setTimeout(() => {
+        if (mountedRef.current && wsRef.current?.readyState !== WebSocket.OPEN) {
+          log('Connection timeout - transitioning to offline');
+          setConnectionStatus('offline');
+        }
+      }, 10000);
+
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
         if (!mountedRef.current) return;
 
         log('WebSocket connected');
+
+        // Clear the connecting timeout since we connected successfully
+        if (connectingTimeoutRef.current) {
+          clearTimeout(connectingTimeoutRef.current);
+          connectingTimeoutRef.current = undefined;
+        }
 
         // Clear any pending disconnect timeout
         if (disconnectTimeoutRef.current) {
@@ -343,6 +369,10 @@ export function useWebSocket({
 
       if (disconnectTimeoutRef.current) {
         clearTimeout(disconnectTimeoutRef.current);
+      }
+
+      if (connectingTimeoutRef.current) {
+        clearTimeout(connectingTimeoutRef.current);
       }
 
       if (wsRef.current) {
