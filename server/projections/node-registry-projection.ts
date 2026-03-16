@@ -636,6 +636,12 @@ export class NodeRegistryProjection implements ProjectionView<NodeRegistryPayloa
     this.nodes.set(nodeId, node);
     this.updateStats(oldState, newState, !existing);
 
+    // Track in recentStateChanges for Registration Events feed (OMN-5132)
+    this.recentStateChanges.unshift({ ...event, payload: { ...event.payload } });
+    if (this.recentStateChanges.length > MAX_RECENT_STATE_CHANGES) {
+      this.recentStateChanges.splice(MAX_RECENT_STATE_CHANGES);
+    }
+
     return true;
   }
 

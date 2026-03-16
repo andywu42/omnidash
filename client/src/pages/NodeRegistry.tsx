@@ -11,15 +11,19 @@
  *            ProjectionService -> WebSocket invalidation -> re-fetch snapshot
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSearch, useLocation } from 'wouter';
 import { DashboardRenderer } from '@/lib/widgets';
 import { nodeRegistryDashboardConfig } from '@/lib/configs/node-registry-dashboard';
 import { useProjectionStream } from '@/hooks/useProjectionStream';
 import { DemoBanner } from '@/components/DemoBanner';
+import { DetailSheet } from '@/components/DetailSheet';
+import { NodeDetailContent } from '@/components/registry/NodeDetailPanel';
+import { deriveNodeName } from '@/lib/node-display-utils';
 import {
   transformNodeRegistryPayload,
   type NodeRegistryPayload,
+  type NodeState,
 } from '@/lib/data-sources/node-registry-projection-source';
 import {
   transformTopicRegistryData,
@@ -303,6 +307,8 @@ function NodesTab({
   isLoading: boolean;
 }) {
   const [protocolOpen, setProtocolOpen] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<NodeState | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const data = snapshot?.payload ?? null;
   const hasNodes = data !== null && data.nodes.length > 0;
@@ -311,6 +317,20 @@ function NodesTab({
     if (!data || data.nodes.length === 0) return null;
     return transformNodeRegistryPayload(data);
   }, [data]);
+
+  const handleRowClick = useCallback(
+    (_widgetId: string, row: Record<string, unknown>) => {
+      if (!data) return;
+      const nodeId = row.node_id as string | undefined;
+      if (!nodeId) return;
+      const found = data.nodes.find((n) => n.nodeId === nodeId);
+      if (found) {
+        setSelectedNode(found);
+        setIsPanelOpen(true);
+      }
+    },
+    [data]
+  );
 
   if (isLoading) {
     return (
@@ -445,7 +465,18 @@ function NodesTab({
         config={nodeRegistryDashboardConfig}
         data={dashboardData}
         isLoading={isLoading}
+        onWidgetRowClick={handleRowClick}
       />
+
+      {/* Node detail flyout */}
+      <DetailSheet
+        open={isPanelOpen}
+        onOpenChange={setIsPanelOpen}
+        title={selectedNode ? deriveNodeName(selectedNode.nodeId) : 'Node Details'}
+        subtitle={selectedNode?.nodeId}
+      >
+        {selectedNode && <NodeDetailContent node={selectedNode} />}
+      </DetailSheet>
     </div>
   );
 }

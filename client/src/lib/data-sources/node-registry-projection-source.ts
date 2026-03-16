@@ -8,7 +8,9 @@
  * done inline in NodeRegistry.tsx.
  */
 
+// no-migration: OMN-5132 display-only field addition, no projection schema change
 import type { DashboardData } from '@/lib/dashboard-schema';
+import { deriveNodeName } from '@/lib/node-display-utils';
 import type {
   NodeType,
   RegistrationState,
@@ -133,9 +135,11 @@ export function transformNodeRegistryPayload(payload: NodeRegistryPayload): Dash
   // Transform nodes to client-expected snake_case format with extended fields
   const registeredNodes = nodes.map((n) => {
     const capsList = flattenCapabilities(n.capabilities);
-    const description = n.metadata?.description ?? (capsList.length > 0 ? capsList.join(', ') : null);
+    const description =
+      n.metadata?.description ?? (capsList.length > 0 ? capsList.join(', ') : null);
     return {
       node_id: n.nodeId,
+      node_name: deriveNodeName(n.nodeId),
       node_description: description,
       node_type: n.nodeType,
       state: n.state,

@@ -130,6 +130,7 @@ export type NodeBecameActivePayload = z.infer<typeof NodeBecameActivePayloadSche
 // node-heartbeat payload
 export const NodeHeartbeatPayloadSchema = z.object({
   node_id: z.string().uuid(),
+  node_type: z.string().optional(),
   uptime_seconds: z.number().optional(),
   memory_usage_mb: z.number().optional(),
   cpu_usage_percent: z.number().optional(),

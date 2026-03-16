@@ -146,10 +146,109 @@ function EmptyState({ className }: { className?: string }) {
 // Detail view
 // ---------------------------------------------------------------------------
 
-function DetailView({ node, className }: { node: NodeState; className?: string }) {
+/**
+ * Inner detail content without Card wrapper -- suitable for embedding in a
+ * Sheet flyout or other container. Exported for use in NodeRegistry.tsx.
+ */
+export function NodeDetailContent({ node }: { node: NodeState }) {
   const capabilities = flattenCapabilities(node.capabilities);
   const fullDate = new Date(node.lastSeen).toLocaleString();
 
+  return (
+    <div className="space-y-4">
+      {/* Primary metrics row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <MetricItem label="State">
+          <RegistrationStateBadge state={node.state} />
+        </MetricItem>
+
+        <MetricItem label="Version">
+          <span className="font-mono text-sm">{node.version || '-'}</span>
+        </MetricItem>
+
+        <MetricItem label="Uptime">
+          <span className="font-mono text-sm">{formatUptime(node.uptimeSeconds)}</span>
+        </MetricItem>
+
+        <MetricItem label="Last Seen">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-sm cursor-help">{formatRelativeTime(node.lastSeen)}</span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p className="text-xs font-mono">{fullDate}</p>
+            </TooltipContent>
+          </Tooltip>
+        </MetricItem>
+      </div>
+
+      {/* Resource usage (if available) */}
+      {(node.cpuUsagePercent != null || node.memoryUsageMb != null) && (
+        <div className="space-y-2">
+          <SectionLabel icon={Cpu} label="Resources" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {node.cpuUsagePercent != null && (
+              <ResourceBar label="CPU" value={node.cpuUsagePercent} unit="%" max={100} />
+            )}
+            {node.memoryUsageMb != null && (
+              <ResourceBar label="Memory" value={node.memoryUsageMb} unit=" MB" max={2048} />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Capabilities */}
+      {capabilities.length > 0 && (
+        <div className="space-y-2">
+          <SectionLabel icon={Tag} label="Capabilities" />
+          <div className="flex flex-wrap gap-1.5">
+            {capabilities.map((cap) => (
+              <Badge key={cap} variant="outline" className="text-xs font-mono bg-muted/50">
+                {cap}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Metadata */}
+      {node.metadata && hasMetadata(node.metadata) && (
+        <div className="space-y-2">
+          <SectionLabel icon={Globe} label="Metadata" />
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+            {node.metadata.environment && (
+              <MetadataRow label="Environment" value={node.metadata.environment} />
+            )}
+            {node.metadata.region && <MetadataRow label="Region" value={node.metadata.region} />}
+            {node.metadata.cluster && <MetadataRow label="Cluster" value={node.metadata.cluster} />}
+            {node.metadata.description && (
+              <div className="col-span-2">
+                <MetadataRow label="Description" value={node.metadata.description} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Endpoints */}
+      {node.endpoints && Object.keys(node.endpoints).length > 0 && (
+        <div className="space-y-2">
+          <SectionLabel icon={Layers} label="Endpoints" />
+          <div className="grid grid-cols-1 gap-1 text-sm">
+            {Object.entries(node.endpoints).map(([key, url]) => (
+              <div key={key} className="flex items-center gap-2 font-mono text-xs">
+                <span className="text-muted-foreground min-w-[80px]">{key}:</span>
+                <span className="truncate">{url}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DetailView({ node, className }: { node: NodeState; className?: string }) {
   return (
     <Card className={cn('h-full flex flex-col overflow-hidden', className)}>
       <CardHeader className="pb-3 space-y-0">
@@ -157,96 +256,7 @@ function DetailView({ node, className }: { node: NodeState; className?: string }
       </CardHeader>
 
       <CardContent className="flex-1 overflow-auto space-y-4 pt-0">
-        {/* Primary metrics row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <MetricItem label="State">
-            <RegistrationStateBadge state={node.state} />
-          </MetricItem>
-
-          <MetricItem label="Version">
-            <span className="font-mono text-sm">{node.version || '-'}</span>
-          </MetricItem>
-
-          <MetricItem label="Uptime">
-            <span className="font-mono text-sm">{formatUptime(node.uptimeSeconds)}</span>
-          </MetricItem>
-
-          <MetricItem label="Last Seen">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="text-sm cursor-help">{formatRelativeTime(node.lastSeen)}</span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p className="text-xs font-mono">{fullDate}</p>
-              </TooltipContent>
-            </Tooltip>
-          </MetricItem>
-        </div>
-
-        {/* Resource usage (if available) */}
-        {(node.cpuUsagePercent != null || node.memoryUsageMb != null) && (
-          <div className="space-y-2">
-            <SectionLabel icon={Cpu} label="Resources" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {node.cpuUsagePercent != null && (
-                <ResourceBar label="CPU" value={node.cpuUsagePercent} unit="%" max={100} />
-              )}
-              {node.memoryUsageMb != null && (
-                <ResourceBar label="Memory" value={node.memoryUsageMb} unit=" MB" max={2048} />
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Capabilities */}
-        {capabilities.length > 0 && (
-          <div className="space-y-2">
-            <SectionLabel icon={Tag} label="Capabilities" />
-            <div className="flex flex-wrap gap-1.5">
-              {capabilities.map((cap) => (
-                <Badge key={cap} variant="outline" className="text-xs font-mono bg-muted/50">
-                  {cap}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Metadata */}
-        {node.metadata && hasMetadata(node.metadata) && (
-          <div className="space-y-2">
-            <SectionLabel icon={Globe} label="Metadata" />
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              {node.metadata.environment && (
-                <MetadataRow label="Environment" value={node.metadata.environment} />
-              )}
-              {node.metadata.region && <MetadataRow label="Region" value={node.metadata.region} />}
-              {node.metadata.cluster && (
-                <MetadataRow label="Cluster" value={node.metadata.cluster} />
-              )}
-              {node.metadata.description && (
-                <div className="col-span-2">
-                  <MetadataRow label="Description" value={node.metadata.description} />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Endpoints */}
-        {node.endpoints && Object.keys(node.endpoints).length > 0 && (
-          <div className="space-y-2">
-            <SectionLabel icon={Layers} label="Endpoints" />
-            <div className="grid grid-cols-1 gap-1 text-sm">
-              {Object.entries(node.endpoints).map(([key, url]) => (
-                <div key={key} className="flex items-center gap-2 font-mono text-xs">
-                  <span className="text-muted-foreground min-w-[80px]">{key}:</span>
-                  <span className="truncate">{url}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <NodeDetailContent node={node} />
       </CardContent>
     </Card>
   );

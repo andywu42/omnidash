@@ -236,6 +236,7 @@ app.use((req, res, next) => {
   eventConsumer.on('nodeIntrospectionUpdate', projectionBridgeListeners.nodeIntrospectionUpdate);
   eventConsumer.on('nodeHeartbeatUpdate', projectionBridgeListeners.nodeHeartbeatUpdate);
   eventConsumer.on('nodeStateChangeUpdate', projectionBridgeListeners.nodeStateChangeUpdate);
+  eventConsumer.on('nodeBecameActive', projectionBridgeListeners.nodeBecameActive);
   eventConsumer.on('nodeRegistryUpdate', projectionBridgeListeners.nodeRegistryUpdate);
 
   // Wire intent-event → ProjectionService BEFORE consumer.start() so Phase A
