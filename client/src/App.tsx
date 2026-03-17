@@ -71,6 +71,8 @@ import ModelEfficiencyDashboard from '@/pages/ModelEfficiencyDashboard';
 import DelegationDashboard from '@/pages/DelegationDashboard';
 // Topic Topology Visualization (OMN-5294)
 import TopicTopologyDashboard from '@/pages/TopicTopologyDashboard';
+// Decision Store dashboard (OMN-5280)
+import DecisionStoreDashboard from '@/pages/DecisionStoreDashboard';
 // Runtime health dashboard (OMN-3598)
 import WorkerHealthPage from '@/components/worker-health/WorkerHealthPage';
 
@@ -190,6 +192,9 @@ function Router() {
 
       {/* Delegation Metrics dashboard (OMN-2284) — wired in OMN-5194 */}
       <Route path="/delegation" component={DelegationDashboard} />
+
+      {/* Decision Store dashboard (OMN-5280) */}
+      <Route path="/decisions" component={DecisionStoreDashboard} />
 
       {/* Preview routes */}
       <Route path="/preview/analytics" component={EnhancedAnalytics} />

@@ -223,6 +223,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         description:
           'Task delegation rate, quality gate pass rate, shadow validation divergence (OMN-2284)',
       },
+      {
+        title: 'Decision Store',
+        url: '/decisions',
+        icon: FileSearch,
+        description: 'Decision provenance and intent-vs-plan comparison',
+      },
     ],
   },
   {
