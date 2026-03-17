@@ -35,6 +35,8 @@ import { PipelineBudgetProjection } from './projections/pipeline-budget-projecti
 import { DebugEscalationProjection } from './projections/debug-escalation-projection';
 import { CiIntelProjection } from './projections/ci-intel-projection';
 import { PatternLifecycleProjection } from './projections/pattern-lifecycle-projection';
+// LLM Health projection (OMN-5279)
+import { LlmHealthProjection } from './projections/llm-health-projection';
 import { eventConsumer } from './event-consumer';
 import { eventBusDataSource } from './event-bus-data-source';
 import { extractActionFromTopic, extractProducerFromTopicOrDefault } from '@shared/topics';
@@ -138,6 +140,8 @@ export const patternLifecycleProjection = new PatternLifecycleProjection();
 export const planReviewerProjection = new PlanReviewerProjection();
 /** DoD verification projection (OMN-5200). Queries dod_verify_runs + dod_guard_events tables. */
 export const dodProjection = new DodProjection();
+/** LLM endpoint health projection (OMN-5279). Queries llm_health_snapshots table. */
+export const llmHealthProjection = new LlmHealthProjection();
 
 if (!projectionService.getView(extractionMetricsProjection.viewId)) {
   projectionService.registerView(extractionMetricsProjection);
@@ -190,6 +194,9 @@ if (!projectionService.getView(ciIntelProjection.viewId)) {
 }
 if (!projectionService.getView(patternLifecycleProjection.viewId)) {
   projectionService.registerView(patternLifecycleProjection);
+}
+if (!projectionService.getView(llmHealthProjection.viewId)) {
+  projectionService.registerView(llmHealthProjection);
 }
 
 // ============================================================================

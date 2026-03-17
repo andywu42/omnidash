@@ -46,6 +46,8 @@ import planReviewerRoutes from './plan-reviewer-routes';
 import routingConfigRoutes from './routing-config-routes';
 // Worker health routes (OMN-3598)
 import workerHealthRoutes from './worker-health-routes';
+// LLM Health Dashboard routes (OMN-5279)
+import llmHealthRoutes from './llm-health-routes';
 // Schema health endpoint (OMN-3751)
 import schemaHealthRoutes from './schema-health';
 // Model Efficiency Index routes (OMN-3937)
@@ -173,6 +175,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Worker health routes (OMN-3598)
   app.use('/api/worker-health', workerHealthRoutes);
+
+  // LLM Health Dashboard routes (OMN-5279)
+  app.use('/api/llm-health', llmHealthRoutes);
 
   // Schema health endpoint (OMN-3751)
   app.use('/api/health', schemaHealthRoutes);

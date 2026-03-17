@@ -292,6 +292,13 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         description:
           'Container status, restart counts, Docker healthcheck for runtime workers (OMN-3598)',
       },
+      {
+        title: 'LLM Health',
+        url: '/llm-health',
+        icon: Cpu,
+        description:
+          'Per-endpoint LLM latency, error rate, and throughput from health snapshot events (OMN-5279)',
+      },
     ],
   },
   {

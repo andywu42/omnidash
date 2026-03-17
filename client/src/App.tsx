@@ -80,6 +80,8 @@ import DodDashboard from '@/pages/DodDashboard';
 import IntentDriftDashboard from '@/pages/IntentDriftDashboard';
 // Runtime health dashboard (OMN-3598)
 import WorkerHealthPage from '@/components/worker-health/WorkerHealthPage';
+// LLM Health Dashboard (OMN-5279)
+import LlmHealthDashboard from '@/pages/LlmHealthDashboard';
 
 // Phase 2: Category landing pages (OMN-2181)
 import SpeedCategory from '@/pages/SpeedCategory';
@@ -193,6 +195,9 @@ function Router() {
 
       {/* Runtime Health — container status + restart counts (OMN-3598) */}
       <Route path="/worker-health" component={WorkerHealthPage} />
+
+      {/* LLM Health Dashboard — per-endpoint latency, error rate, throughput (OMN-5279) */}
+      <Route path="/llm-health" component={LlmHealthDashboard} />
 
       {/* Model Efficiency Index dashboard (OMN-3941) */}
       <Route path="/model-efficiency" component={ModelEfficiencyDashboard} />

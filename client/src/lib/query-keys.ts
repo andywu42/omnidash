@@ -888,6 +888,17 @@ export const queryKeys = {
     all: ['dod'] as const,
     snapshot: () => ['dod', 'snapshot'] as const,
   },
+
+  // ============================================================================
+  // LLM Health Dashboard (OMN-5279)
+  // ============================================================================
+
+  /** LLM endpoint health dashboard query keys */
+  llmHealth: {
+    all: ['llm-health'] as const,
+    snapshot: () => ['llm-health', 'snapshot'] as const,
+    history: (modelId: string) => ['llm-health', 'history', modelId] as const,
+  },
 } as const;
 
 /**

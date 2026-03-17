@@ -393,6 +393,22 @@ export const SUFFIX_OMNICLAUDE_DOD_GUARD_FIRED = 'onex.evt.omniclaude.dod-guard-
 export const SUFFIX_OMNICLAUDE_DEBUG_TRIGGER_RECORD = 'onex.evt.omniclaude.debug-trigger-record.v1';
 
 // ============================================================================
+// OmniBase Infra Topics
+// ============================================================================
+
+/** Baselines computed (OMN-5192).
+ * Emitted by omnibase-infra after computing baseline comparisons.
+ * Consumed by ReadModelConsumer to project into baselines_* tables. */
+export const SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED =
+  'onex.evt.omnibase-infra.baselines-computed.v1';
+
+/** LLM endpoint health snapshot (OMN-5279).
+ * Emitted by omnibase-infra health poller after probing configured LLM endpoints.
+ * Consumed by ReadModelConsumer to project into llm_health_snapshots table. */
+export const SUFFIX_OMNIBASE_INFRA_LLM_HEALTH_SNAPSHOT =
+  'onex.evt.omnibase-infra.llm-health-snapshot.v1';
+
+// ============================================================================
 // Miscellaneous Topics
 // ============================================================================
 

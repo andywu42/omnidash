@@ -1935,3 +1935,36 @@ export const intentDriftEvents = pgTable(
 
 export type IntentDriftRow = typeof intentDriftEvents.$inferSelect;
 export type InsertIntentDrift = typeof intentDriftEvents.$inferInsert;
+
+// ============================================================================
+// LLM Health Snapshots Table (migration 0024_llm_health_snapshots, OMN-5279)
+// Tracks per-endpoint health metrics for LLM inference servers.
+// Source topic: onex.evt.omnibase-infra.llm-health-snapshot.v1
+// Replay policy: APPEND-ONLY.
+// ============================================================================
+
+export const llmHealthSnapshots = pgTable(
+  'llm_health_snapshots',
+  {
+    id: serial('id').primaryKey(),
+    modelId: text('model_id').notNull(),
+    endpointUrl: text('endpoint_url').notNull(),
+    latencyP50Ms: integer('latency_p50_ms'),
+    latencyP99Ms: integer('latency_p99_ms'),
+    errorRate: doublePrecision('error_rate'),
+    tokensPerSecond: doublePrecision('tokens_per_second'),
+    status: text('status').notNull().default('unknown'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_llm_health_model_id').on(table.modelId),
+    index('idx_llm_health_created_at').on(table.createdAt),
+    index('idx_llm_health_status').on(table.status),
+    // Composite index for the primary read pattern: latest snapshot per model_id
+    index('idx_llm_health_model_created').on(table.modelId, table.createdAt),
+  ]
+);
+
+export const insertLlmHealthSnapshotSchema = createInsertSchema(llmHealthSnapshots);
+export type LlmHealthSnapshotRow = typeof llmHealthSnapshots.$inferSelect;
+export type InsertLlmHealthSnapshot = typeof llmHealthSnapshots.$inferInsert;

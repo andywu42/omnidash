@@ -3,6 +3,7 @@
  *
  * Projects events from omnibase-infra topics into the omnidash_analytics read-model:
  * - Baselines computed -> baselines_snapshots / baselines_comparisons / baselines_trend / baselines_breakdown
+ * - LLM health snapshot -> llm_health_snapshots (OMN-5279)
  */
 
 import { eq } from 'drizzle-orm';
@@ -11,15 +12,21 @@ import {
   baselinesComparisons,
   baselinesTrend,
   baselinesBreakdown,
+  llmHealthSnapshots,
 } from '@shared/intelligence-schema';
 import type {
   InsertBaselinesSnapshot,
   InsertBaselinesComparison,
   InsertBaselinesTrend,
   InsertBaselinesBreakdown,
+  InsertLlmHealthSnapshot,
 } from '@shared/intelligence-schema';
 import { baselinesProjection } from '../../projection-bootstrap';
 import { emitBaselinesUpdate } from '../../baselines-events';
+import {
+  SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED,
+  SUFFIX_OMNIBASE_INFRA_LLM_HEALTH_SNAPSHOT,
+} from '@shared/topics';
 
 import type { ProjectionHandler, ProjectionContext, MessageMeta } from './types';
 import {
@@ -33,9 +40,13 @@ import {
   VALID_CONFIDENCE_LEVELS,
 } from './types';
 
-const OMNIBASE_INFRA_TOPICS = new Set(['onex.evt.omnibase-infra.baselines-computed.v1']);
+const BASELINES_TOPIC = SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED;
+const LLM_HEALTH_TOPIC = SUFFIX_OMNIBASE_INFRA_LLM_HEALTH_SNAPSHOT;
 
-const BASELINES_TOPIC = 'onex.evt.omnibase-infra.baselines-computed.v1';
+const OMNIBASE_INFRA_TOPICS = new Set([
+  SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED,
+  SUFFIX_OMNIBASE_INFRA_LLM_HEALTH_SNAPSHOT,
+]);
 
 export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
   canHandle(topic: string): boolean {
@@ -48,8 +59,81 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
     context: ProjectionContext,
     meta: MessageMeta
   ): Promise<boolean> {
-    if (topic !== BASELINES_TOPIC) return false;
-    return this.projectBaselinesSnapshot(data, meta.partition, meta.offset, context);
+    if (topic === BASELINES_TOPIC) {
+      return this.projectBaselinesSnapshot(data, meta.partition, meta.offset, context);
+    }
+    if (topic === LLM_HEALTH_TOPIC) {
+      return this.projectLlmHealthSnapshot(data, context);
+    }
+    return false;
+  }
+
+  private async projectLlmHealthSnapshot(
+    data: Record<string, unknown>,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const modelId = String(data.model_id ?? data.modelId ?? '').trim();
+    const endpointUrl = String(data.endpoint_url ?? data.endpointUrl ?? '').trim();
+
+    if (!modelId || !endpointUrl) {
+      console.warn('[ReadModelConsumer] llm-health-snapshot missing model_id or endpoint_url');
+      return true;
+    }
+
+    /** Parse a numeric field, returning null for NaN/Infinity/non-finite values. */
+    const safeNum = (v: unknown): number | null => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    const row: InsertLlmHealthSnapshot = {
+      modelId,
+      endpointUrl,
+      latencyP50Ms:
+        data.latency_p50_ms != null
+          ? safeNum(data.latency_p50_ms)
+          : data.latencyP50Ms != null
+            ? safeNum(data.latencyP50Ms)
+            : null,
+      latencyP99Ms:
+        data.latency_p99_ms != null
+          ? safeNum(data.latency_p99_ms)
+          : data.latencyP99Ms != null
+            ? safeNum(data.latencyP99Ms)
+            : null,
+      errorRate:
+        data.error_rate != null
+          ? safeNum(data.error_rate)
+          : data.errorRate != null
+            ? safeNum(data.errorRate)
+            : null,
+      tokensPerSecond:
+        data.tokens_per_second != null
+          ? safeNum(data.tokens_per_second)
+          : data.tokensPerSecond != null
+            ? safeNum(data.tokensPerSecond)
+            : null,
+      status: String(data.status ?? 'unknown'),
+    };
+
+    try {
+      await db.insert(llmHealthSnapshots).values(row);
+      console.log(`[ReadModelConsumer] Projected llm-health-snapshot for ${modelId}`);
+    } catch (err) {
+      if (isTableMissingError(err, 'llm_health_snapshots')) {
+        console.warn(
+          '[ReadModelConsumer] llm_health_snapshots table not yet created -- ' +
+            'run migrations to enable llm health projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+
+    return true;
   }
 
   private async projectBaselinesSnapshot(
