@@ -27,6 +27,7 @@ import {
   Container,
   BarChart3,
   Users,
+  Network,
 } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import {
@@ -250,6 +251,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         url: '/event-bus-health',
         icon: Server,
         description: 'Consumer lag, DLQ traffic, missing topics per Redpanda topic (OMN-3192)',
+      },
+      {
+        title: 'Topic Topology',
+        url: '/topic-topology',
+        icon: Network,
+        description: 'Graph of Kafka topic producers flowing into the omnidash consumer (OMN-5294)',
       },
       {
         title: 'Runtime Health',

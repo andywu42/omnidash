@@ -53,6 +53,8 @@ import traceRoutes from './trace-routes';
 // Session outcome and phase metrics routes (OMN-5184)
 import { sessionOutcomeRoutes } from './session-outcome-routes';
 import { phaseMetricsRoutes } from './phase-metrics-routes';
+// Topic topology routes (OMN-5294)
+import topologyRoutes from './topology-routes';
 // Prometheus metrics endpoint (OMN-4609)
 import { createMetricsRouter } from './metrics-routes';
 import type { DataSourcesHealthResponse } from './health-data-sources-routes';
@@ -173,6 +175,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session outcome and phase metrics routes (OMN-5184)
   app.use('/api/session-outcomes', sessionOutcomeRoutes);
   app.use('/api/phase-metrics', phaseMetricsRoutes);
+
+  // Topic topology routes (OMN-5294)
+  app.use('/api/topology', topologyRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.

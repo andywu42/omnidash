@@ -69,6 +69,8 @@ import PlanReviewer from '@/pages/PlanReviewer';
 import ModelEfficiencyDashboard from '@/pages/ModelEfficiencyDashboard';
 // Delegation Metrics dashboard (OMN-2284) — wired in OMN-5194
 import DelegationDashboard from '@/pages/DelegationDashboard';
+// Topic Topology Visualization (OMN-5294)
+import TopicTopologyDashboard from '@/pages/TopicTopologyDashboard';
 // Runtime health dashboard (OMN-3598)
 import WorkerHealthPage from '@/components/worker-health/WorkerHealthPage';
 
@@ -156,6 +158,9 @@ function Router() {
 
       {/* Why This Happened — decision provenance panel (OMN-2350 epic) */}
       <Route path="/why" component={WhyThisHappened} />
+
+      {/* Topic Topology Visualization (OMN-5294) */}
+      <Route path="/topic-topology" component={TopicTopologyDashboard} />
 
       {/* Status dashboard — PR triage, workstreams, hook feed (OMN-2658) */}
       <Route path="/status" component={StatusDashboard} />
