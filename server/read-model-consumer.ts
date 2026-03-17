@@ -50,6 +50,8 @@ import {
   planReviewRuns,
   modelEfficiencyRollups,
   correlationTraceSpans,
+  sessionOutcomes,
+  phaseMetricsEvents,
 } from '@shared/intelligence-schema';
 import type {
   InsertAgentRoutingDecision,
@@ -91,6 +93,8 @@ import {
   TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED,
   SUFFIX_OMNICLAUDE_PR_VALIDATION_ROLLUP,
   SUFFIX_INTELLIGENCE_RUN_EVALUATED,
+  SUFFIX_OMNICLAUDE_SESSION_OUTCOME,
+  SUFFIX_OMNICLAUDE_PHASE_METRICS,
 } from '@shared/topics';
 import type { LlmRoutingDecisionEvent } from '@shared/llm-routing-types';
 import type { TaskDelegatedEvent, DelegationShadowComparisonEvent } from '@shared/delegation-types';
@@ -301,6 +305,9 @@ export const READ_MODEL_TOPICS = [
   SUFFIX_INTELLIGENCE_RUN_EVALUATED,
   // OMN-5047: Correlation trace spans emitted by omniclaude trace emitter.
   SUFFIX_OMNICLAUDE_CORRELATION_TRACE,
+  // OMN-5184: Session outcome and phase metrics projections.
+  SUFFIX_OMNICLAUDE_SESSION_OUTCOME,
+  SUFFIX_OMNICLAUDE_PHASE_METRICS,
 ] as const;
 
 type ReadModelTopic = (typeof READ_MODEL_TOPICS)[number];
@@ -834,6 +841,14 @@ export class ReadModelConsumer {
         // OMN-5047: Correlation trace spans from omniclaude trace emitter
         case SUFFIX_OMNICLAUDE_CORRELATION_TRACE:
           projected = await this.projectCorrelationTrace(parsed);
+          break;
+        // OMN-5184: Session outcome projection (Success category)
+        case SUFFIX_OMNICLAUDE_SESSION_OUTCOME:
+          projected = await this.projectSessionOutcome(parsed);
+          break;
+        // OMN-5184: Phase metrics projection (Speed category)
+        case SUFFIX_OMNICLAUDE_PHASE_METRICS:
+          projected = await this.projectPhaseMetrics(parsed);
           break;
         default:
           console.warn(
@@ -3317,6 +3332,126 @@ export class ReadModelConsumer {
         console.warn(
           '[ReadModelConsumer] correlation_trace_spans table not yet created -- ' +
             'run migrations to enable trace span projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+  }
+
+  // ==========================================================================
+  // OMN-5184: Session outcome projection
+  // ==========================================================================
+
+  /**
+   * Project a session-outcome.v1 event into the session_outcomes table.
+   * Uses UPSERT (latest-state-wins) — replaying the same session_id updates
+   * the existing row rather than creating a duplicate.
+   */
+  private async projectSessionOutcome(data: Record<string, unknown>): Promise<boolean> {
+    const db = tryGetIntelligenceDb();
+    if (!db) return false;
+
+    const sessionId =
+      (data.session_id as string) || (data.sessionId as string);
+    if (!sessionId) {
+      console.warn('[ReadModelConsumer] session-outcome event missing session_id -- skipping');
+      return true;
+    }
+
+    const outcome = (data.outcome as string) || 'unknown';
+    const emittedAt = safeParseDate(
+      data.emitted_at ?? data.emittedAt ?? data.timestamp ?? data.created_at
+    );
+
+    try {
+      await db
+        .insert(sessionOutcomes)
+        .values({
+          sessionId,
+          outcome,
+          emittedAt,
+        })
+        .onConflictDoUpdate({
+          target: sessionOutcomes.sessionId,
+          set: {
+            outcome: sql`EXCLUDED.outcome`,
+            emittedAt: sql`EXCLUDED.emitted_at`,
+            ingestedAt: sql`NOW()`,
+          },
+        });
+
+      return true;
+    } catch (err) {
+      const pgCode = (err as { code?: string }).code;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        pgCode === '42P01' ||
+        (msg.includes('session_outcomes') && msg.includes('does not exist'))
+      ) {
+        console.warn(
+          '[ReadModelConsumer] session_outcomes table not yet created -- ' +
+            'run migrations to enable session outcome projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+  }
+
+  // ==========================================================================
+  // OMN-5184: Phase metrics projection
+  // ==========================================================================
+
+  /**
+   * Project a phase-metrics.v1 event into the phase_metrics_events table.
+   * Uses INSERT ON CONFLICT DO NOTHING — the natural key (session_id, phase, emitted_at)
+   * prevents exact duplicates from consumer replays.
+   */
+  private async projectPhaseMetrics(data: Record<string, unknown>): Promise<boolean> {
+    const db = tryGetIntelligenceDb();
+    if (!db) return false;
+
+    const sessionId =
+      (data.session_id as string) || (data.sessionId as string);
+    if (!sessionId) {
+      console.warn('[ReadModelConsumer] phase-metrics event missing session_id -- skipping');
+      return true;
+    }
+
+    const phase = (data.phase as string) || 'unknown';
+    const status = (data.status as string) || 'unknown';
+    const durationMs = Number(data.duration_ms ?? data.durationMs ?? 0);
+    const ticketId =
+      (data.ticket_id as string | null) || (data.ticketId as string | null) || null;
+    const emittedAt = safeParseDate(
+      data.emitted_at ?? data.emittedAt ?? data.timestamp ?? data.created_at
+    );
+
+    try {
+      await db
+        .insert(phaseMetricsEvents)
+        .values({
+          sessionId,
+          ticketId,
+          phase,
+          status,
+          durationMs,
+          emittedAt,
+        })
+        .onConflictDoNothing();
+
+      return true;
+    } catch (err) {
+      const pgCode = (err as { code?: string }).code;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        pgCode === '42P01' ||
+        (msg.includes('phase_metrics_events') && msg.includes('does not exist'))
+      ) {
+        console.warn(
+          '[ReadModelConsumer] phase_metrics_events table not yet created -- ' +
+            'run migrations to enable phase metrics projection'
         );
         return true;
       }

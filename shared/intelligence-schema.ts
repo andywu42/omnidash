@@ -1787,3 +1787,59 @@ export const correlationTraceSpans = pgTable(
 export const insertCorrelationTraceSpanSchema = createInsertSchema(correlationTraceSpans);
 export type CorrelationTraceSpanRow = typeof correlationTraceSpans.$inferSelect;
 export type InsertCorrelationTraceSpan = typeof correlationTraceSpans.$inferInsert;
+
+// ============================================================================
+// Session Outcomes Table (migration 0021, OMN-5184)
+// Tracks session-level outcome classifications emitted by omniclaude.
+// Source topic: onex.evt.omniclaude.session-outcome.v1
+// Replay policy: UPSERT by session_id (latest-state-wins).
+// ============================================================================
+
+export const sessionOutcomes = pgTable(
+  'session_outcomes',
+  {
+    sessionId: text('session_id').primaryKey(),
+    outcome: text('outcome').notNull(),
+    emittedAt: timestamp('emitted_at', { withTimezone: true }).notNull(),
+    ingestedAt: timestamp('ingested_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_session_outcomes_outcome').on(table.outcome),
+    index('idx_session_outcomes_emitted_at').on(table.emittedAt),
+  ]
+);
+
+export const insertSessionOutcomeSchema = createInsertSchema(sessionOutcomes);
+export type SessionOutcomeRow = typeof sessionOutcomes.$inferSelect;
+export type InsertSessionOutcome = typeof sessionOutcomes.$inferInsert;
+
+// ============================================================================
+// Phase Metrics Events Table (migration 0022, OMN-5184)
+// Tracks per-phase pipeline metrics emitted by omniclaude phase_instrumentation.
+// Source topic: onex.evt.omniclaude.phase-metrics.v1
+// Replay policy: APPEND-ONLY with natural dedup key (session_id, phase, emitted_at).
+// ============================================================================
+
+export const phaseMetricsEvents = pgTable(
+  'phase_metrics_events',
+  {
+    id: serial('id').primaryKey(),
+    sessionId: text('session_id').notNull(),
+    ticketId: text('ticket_id'),
+    phase: text('phase').notNull(),
+    status: text('status').notNull(),
+    durationMs: integer('duration_ms').notNull(),
+    emittedAt: timestamp('emitted_at', { withTimezone: true }).notNull(),
+    ingestedAt: timestamp('ingested_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('uq_phase_metrics_dedup').on(table.sessionId, table.phase, table.emittedAt),
+    index('idx_phase_metrics_session_id').on(table.sessionId),
+    index('idx_phase_metrics_phase').on(table.phase),
+    index('idx_phase_metrics_emitted_at').on(table.emittedAt),
+  ]
+);
+
+export const insertPhaseMetricsEventSchema = createInsertSchema(phaseMetricsEvents);
+export type PhaseMetricsEventRow = typeof phaseMetricsEvents.$inferSelect;
+export type InsertPhaseMetricsEvent = typeof phaseMetricsEvents.$inferInsert;

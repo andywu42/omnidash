@@ -13,6 +13,7 @@ import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { effectivenessSource } from '@/lib/data-sources/effectiveness-source';
+import { sessionOutcomeSource, type SessionOutcomeSummary, type SessionOutcomeTrend } from '@/lib/data-sources/session-outcome-source';
 import { queryKeys } from '@/lib/query-keys';
 import { MetricCard } from '@/components/MetricCard';
 import { HeroMetric } from '@/components/HeroMetric';
@@ -216,6 +217,25 @@ export default function SuccessCategory() {
   } = useQuery<EffectivenessTrendPoint[]>({
     queryKey: [...queryKeys.effectiveness.trend(), 14],
     queryFn: () => effectivenessSource.trend(14),
+    refetchInterval: 15_000,
+  });
+
+  // OMN-5184: Session outcome data from real session-outcome.v1 events
+  const {
+    data: sessionOutcomeSummary,
+    isLoading: sessionOutcomeLoading,
+  } = useQuery<SessionOutcomeSummary>({
+    queryKey: queryKeys.sessionOutcomes.summary('7d'),
+    queryFn: () => sessionOutcomeSource.summary('7d'),
+    refetchInterval: 15_000,
+  });
+
+  const {
+    data: sessionOutcomeTrend,
+    isLoading: sessionOutcomeTrendLoading,
+  } = useQuery<SessionOutcomeTrend>({
+    queryKey: queryKeys.sessionOutcomes.trend('7d'),
+    queryFn: () => sessionOutcomeSource.trend('7d'),
     refetchInterval: 15_000,
   });
 
@@ -440,6 +460,95 @@ export default function SuccessCategory() {
           </CardContent>
         </Card>
       </div>
+
+      {/* OMN-5184: Session Outcomes (real data from session-outcome.v1 events) */}
+      {sessionOutcomeSummary && sessionOutcomeSummary.totalSessions > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Target className="w-4 h-4 text-muted-foreground" />
+              Session Outcomes (7d)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <MetricCard
+                label="Session Success Rate"
+                value={`${(sessionOutcomeSummary.successRate * 100).toFixed(1)}%`}
+                subtitle={`${sessionOutcomeSummary.byOutcome.success} of ${sessionOutcomeSummary.byOutcome.success + sessionOutcomeSummary.byOutcome.failed} completed sessions`}
+                icon={Target}
+                status={
+                  sessionOutcomeSummary.successRate >= 0.8
+                    ? 'healthy'
+                    : sessionOutcomeSummary.successRate >= 0.6
+                      ? 'warning'
+                      : 'error'
+                }
+                isLoading={sessionOutcomeLoading}
+              />
+              <MetricCard
+                label="Successful"
+                value={sessionOutcomeSummary.byOutcome.success.toLocaleString()}
+                subtitle="Sessions completed successfully"
+                icon={Zap}
+                isLoading={sessionOutcomeLoading}
+              />
+              <MetricCard
+                label="Failed"
+                value={sessionOutcomeSummary.byOutcome.failed.toLocaleString()}
+                subtitle="Sessions that failed"
+                icon={AlertTriangle}
+                isLoading={sessionOutcomeLoading}
+              />
+              <MetricCard
+                label="Total Sessions"
+                value={sessionOutcomeSummary.totalSessions.toLocaleString()}
+                subtitle={`${sessionOutcomeSummary.byOutcome.abandoned} abandoned, ${sessionOutcomeSummary.byOutcome.unknown} unknown`}
+                icon={Users}
+                isLoading={sessionOutcomeLoading}
+              />
+            </div>
+
+            {sessionOutcomeTrend && sessionOutcomeTrend.points.length > 0 && (
+              <div className="mt-4">
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart
+                    data={sessionOutcomeTrend.points.map(p => ({
+                      bucket: p.bucket.slice(5, 10),
+                      Success: p.success,
+                      Failed: p.failed,
+                      Abandoned: p.abandoned,
+                    }))}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis
+                      dataKey="bucket"
+                      tick={{ fill: 'hsl(var(--foreground))', fontSize: 11, fillOpacity: 0.85 }}
+                    />
+                    <YAxis
+                      tick={{ fill: 'hsl(var(--foreground))', fontSize: 12, fillOpacity: 0.85 }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'hsl(var(--muted))' }}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar dataKey="Success" fill="#22c55e" stackId="outcomes" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="Failed" fill="#ef4444" stackId="outcomes" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="Abandoned" fill="#f59e0b" stackId="outcomes" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Drill-Down Navigation */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

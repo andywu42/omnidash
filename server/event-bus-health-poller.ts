@@ -21,6 +21,7 @@ import {
   eventBusHealthProjection,
   type TopicHealthRecord,
 } from './projections/event-bus-health-projection';
+import { loadManifestTopics } from './services/topic-manifest-loader';
 
 // ============================================================================
 // Constants
@@ -47,25 +48,36 @@ const WATCHED_CONSUMER_GROUPS: string[] = [
  * Any topic in this list that is absent from the broker generates a
  * missingFromBroker: true record in the projection.
  *
- * Derived from the omnidash topic catalog.
+ * OMN-5184: Now derived from topics.yaml manifest (via TopicManifestLoader)
+ * merged with additional external topics we want to monitor but don't consume.
+ * Adding a new topic to topics.yaml automatically updates health probe coverage.
  */
-export const EXPECTED_TOPICS: string[] = [
-  'onex.evt.omniclaude.gate-decision.v1',
-  'onex.evt.omniclaude.epic-run-updated.v1',
-  'onex.evt.omniclaude.pr-watch-updated.v1',
-  'onex.evt.omniclaude.budget-cap-hit.v1',
-  'onex.evt.omniclaude.circuit-breaker-tripped.v1',
+const ADDITIONAL_MONITORED_TOPICS: string[] = [
+  // Topics we want to verify exist on the broker but are not in topics.yaml
+  // (omnidash doesn't consume them, but they indicate healthy upstream producers)
   'onex.evt.omniintelligence.pattern-discovery.v1',
   'onex.evt.omniintelligence.pattern-refined.v1',
   'onex.evt.omniintelligence.intent-classified.v1',
   'onex.evt.omnimemory.document-ingested.v1',
-  // Canonical ONEX topic names (OMN-4083: replaced legacy flat names)
-  // Legacy: 'agent-actions' → omniclaude no longer produces to this topic
-  'onex.evt.omniclaude.agent-actions.v1',
-  // Legacy: 'agent.routing.requested.v1' / 'agent.routing.completed.v1'
   'onex.cmd.omninode.routing-requested.v1',
   'onex.evt.omninode.routing-completed.v1',
 ];
+
+function buildExpectedTopics(): string[] {
+  try {
+    const manifestTopics = loadManifestTopics();
+    const combined = new Set([...manifestTopics, ...ADDITIONAL_MONITORED_TOPICS]);
+    return [...combined];
+  } catch (err) {
+    console.warn(
+      '[EventBusHealthPoller] Failed to load topics.yaml, falling back to additional topics only:',
+      err instanceof Error ? err.message : err
+    );
+    return [...ADDITIONAL_MONITORED_TOPICS];
+  }
+}
+
+export const EXPECTED_TOPICS: string[] = buildExpectedTopics();
 
 /** DLQ topic suffix pattern — topics ending with .dlq or -dlq. */
 const DLQ_SUFFIX_RE = /\.(dlq)$|-dlq$/i;

@@ -852,6 +852,26 @@ export const queryKeys = {
     /** Anti-gaming alert feed */
     antiGaming: (window: string) => ['objective', 'anti-gaming', window] as const,
   },
+
+  // ============================================================================
+  // Session Outcomes (OMN-5184)
+  // ============================================================================
+
+  sessionOutcomes: {
+    all: ['session-outcomes'] as const,
+    summary: (window: string) => ['session-outcomes', 'summary', window] as const,
+    trend: (window: string) => ['session-outcomes', 'trend', window] as const,
+  },
+
+  // ============================================================================
+  // Phase Metrics (OMN-5184)
+  // ============================================================================
+
+  phaseMetrics: {
+    all: ['phase-metrics'] as const,
+    summary: (window: string) => ['phase-metrics', 'summary', window] as const,
+    byPhase: (window: string) => ['phase-metrics', 'by-phase', window] as const,
+  },
 } as const;
 
 /**

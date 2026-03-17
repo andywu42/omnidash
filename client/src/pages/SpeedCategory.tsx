@@ -14,6 +14,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { extractionSource } from '@/lib/data-sources/extraction-source';
 import { effectivenessSource } from '@/lib/data-sources/effectiveness-source';
+import { phaseMetricsSource, type PhaseMetricsSummary, type PhaseMetricsByPhase } from '@/lib/data-sources/phase-metrics-source';
 import { queryKeys } from '@/lib/query-keys';
 import { MetricCard } from '@/components/MetricCard';
 import { HeroMetric } from '@/components/HeroMetric';
@@ -130,12 +131,28 @@ export default function SpeedCategory() {
     queryKey: queryKeys.effectiveness.latency(),
     queryFn: async () => {
       const data = await effectivenessSource.latencyDetails();
-      // SAFE: JavaScript's event loop guarantees that no other code can run
-      // between this await resumption and the next synchronous line. markMock/markReal
-      // were called synchronously inside latencyDetails() before it returned.
       const isMock = effectivenessSource.isUsingMockData;
       return { data, isMock };
     },
+    refetchInterval: 30_000,
+  });
+
+  // OMN-5184: Phase metrics from real pipeline instrumentation
+  const {
+    data: phaseMetricsSummary,
+    isLoading: phaseMetricsLoading,
+  } = useQuery<PhaseMetricsSummary>({
+    queryKey: queryKeys.phaseMetrics.summary('7d'),
+    queryFn: () => phaseMetricsSource.summary('7d'),
+    refetchInterval: 30_000,
+  });
+
+  const {
+    data: phaseMetricsByPhase,
+    isLoading: phasesByPhaseLoading,
+  } = useQuery<PhaseMetricsByPhase>({
+    queryKey: queryKeys.phaseMetrics.byPhase('7d'),
+    queryFn: () => phaseMetricsSource.byPhase('7d'),
     refetchInterval: 30_000,
   });
 
@@ -364,6 +381,100 @@ export default function SpeedCategory() {
 
       {/* Latency Heatmap */}
       <LatencyHeatmap timeWindow={timeWindow} onMockStateChange={onLatencyHeatmapMock} />
+
+      {/* OMN-5184: Pipeline Phase Metrics (real data from phase_instrumentation) */}
+      {(phaseMetricsSummary && phaseMetricsSummary.totalPhaseRuns > 0) && (
+        <>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Timer className="w-4 h-4 text-muted-foreground" />
+                Pipeline Phase Performance (7d)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <MetricCard
+                  label="Phase Runs"
+                  value={phaseMetricsSummary.totalPhaseRuns.toLocaleString()}
+                  subtitle="Total pipeline phase executions"
+                  icon={Activity}
+                  isLoading={phaseMetricsLoading}
+                />
+                <MetricCard
+                  label="Avg Duration"
+                  value={`${Math.round(phaseMetricsSummary.avgDurationMs)}ms`}
+                  subtitle="Mean phase execution time"
+                  icon={Clock}
+                  isLoading={phaseMetricsLoading}
+                />
+                <MetricCard
+                  label="Phase Success"
+                  value={
+                    phaseMetricsSummary.byStatus.success + phaseMetricsSummary.byStatus.failure > 0
+                      ? `${((phaseMetricsSummary.byStatus.success / (phaseMetricsSummary.byStatus.success + phaseMetricsSummary.byStatus.failure)) * 100).toFixed(1)}%`
+                      : 'No data'
+                  }
+                  subtitle={`${phaseMetricsSummary.byStatus.success} succeeded / ${phaseMetricsSummary.byStatus.failure} failed`}
+                  icon={Gauge}
+                  status={
+                    phaseMetricsSummary.byStatus.success + phaseMetricsSummary.byStatus.failure > 0
+                      ? phaseMetricsSummary.byStatus.success / (phaseMetricsSummary.byStatus.success + phaseMetricsSummary.byStatus.failure) >= 0.9
+                        ? 'healthy'
+                        : 'warning'
+                      : undefined
+                  }
+                  isLoading={phaseMetricsLoading}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {phaseMetricsByPhase && phaseMetricsByPhase.phases.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Database className="w-4 h-4 text-muted-foreground" />
+                  Duration by Phase (7d)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart
+                    data={phaseMetricsByPhase.phases.map(p => ({
+                      phase: p.phase.replace(/_/g, ' '),
+                      'Avg Duration (ms)': Math.round(p.avgDurationMs),
+                      count: p.count,
+                    }))}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis
+                      dataKey="phase"
+                      tick={{ fill: 'hsl(var(--foreground))', fontSize: 11, fillOpacity: 0.85 }}
+                    />
+                    <YAxis
+                      tick={{ fill: 'hsl(var(--foreground))', fontSize: 12, fillOpacity: 0.85 }}
+                      tickFormatter={(v: number) => `${v}ms`}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'hsl(var(--muted))' }}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                      }}
+                      formatter={(value: number, name: string) => [`${value}ms`, name]}
+                    />
+                    <Bar dataKey="Avg Duration (ms)" fill="#3b82f6" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
 
       {/* Drill-Down Navigation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

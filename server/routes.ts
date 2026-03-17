@@ -50,6 +50,9 @@ import schemaHealthRoutes from './schema-health';
 import modelEfficiencyRoutes from './model-efficiency-routes';
 // Correlation trace span routes (OMN-5047)
 import traceRoutes from './trace-routes';
+// Session outcome and phase metrics routes (OMN-5184)
+import { sessionOutcomeRoutes } from './session-outcome-routes';
+import { phaseMetricsRoutes } from './phase-metrics-routes';
 // Prometheus metrics endpoint (OMN-4609)
 import { createMetricsRouter } from './metrics-routes';
 import type { DataSourcesHealthResponse } from './health-data-sources-routes';
@@ -166,6 +169,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Correlation trace span routes (OMN-5047)
   app.use('/api/traces', traceRoutes);
+
+  // Session outcome and phase metrics routes (OMN-5184)
+  app.use('/api/session-outcomes', sessionOutcomeRoutes);
+  app.use('/api/phase-metrics', phaseMetricsRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.
