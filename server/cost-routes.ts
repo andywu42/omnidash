@@ -48,6 +48,18 @@ function getCostView(): CostMetricsProjection | undefined {
   return view as CostMetricsProjection;
 }
 
+/**
+ * Parse the includeEstimated query parameter.
+ *
+ * Default is `true` (backwards-compatible — all rows returned).
+ * When explicitly set to 'false' or '0', returns `false` to exclude
+ * rows whose cost data is estimated rather than reported by the provider.
+ */
+function parseIncludeEstimated(raw: unknown): boolean {
+  if (raw === 'false' || raw === '0') return false;
+  return true;
+}
+
 /** Validate and normalize the time window query parameter. */
 function parseWindow(raw: unknown): CostTimeWindow {
   if (raw === '24h' || raw === '7d' || raw === '30d') return raw;
@@ -90,9 +102,7 @@ async function getPayloadForWindow(
 router.get('/summary', async (req, res) => {
   try {
     const timeWindow = parseWindow(req.query.window);
-    // NOTE: `includeEstimated` query parameter is accepted but not yet
-    // implemented. The response always includes estimated costs.
-    // TODO(OMN-2242): honour includeEstimated to filter out estimated rows.
+    const includeEstimated = parseIncludeEstimated(req.query.includeEstimated);
 
     const view = getCostView();
     if (!view) {
@@ -119,8 +129,18 @@ router.get('/summary', async (req, res) => {
       res.setHeader('X-Degraded', 'true');
       if (payload.window !== undefined) res.setHeader('X-Degraded-Window', payload.window);
     }
-    const body: Record<string, unknown> = { ...payload.summary };
-    return res.json(body);
+    const summary = { ...payload.summary };
+    // When includeEstimated=false, subtract estimated costs from totals and
+    // zero out the estimated_cost_usd field so the response reflects only
+    // provider-reported costs.
+    if (!includeEstimated) {
+      summary.total_cost_usd -= summary.estimated_cost_usd;
+      summary.estimated_cost_usd = 0;
+      summary.reported_coverage_pct = summary.total_cost_usd > 0 ? 100 : 0;
+      summary.avg_cost_per_session =
+        summary.session_count > 0 ? summary.total_cost_usd / summary.session_count : 0;
+    }
+    return res.json(summary);
   } catch (error) {
     console.error('[costs] Error fetching summary:', error);
     return res.status(500).json({ error: 'Failed to fetch cost summary' });
@@ -134,9 +154,7 @@ router.get('/summary', async (req, res) => {
 router.get('/trend', async (req, res) => {
   try {
     const timeWindow = parseWindow(req.query.window);
-    // NOTE: `includeEstimated` query parameter is accepted but not yet
-    // implemented. The response always includes estimated costs.
-    // TODO(OMN-2242): honour includeEstimated to filter out estimated rows.
+    const includeEstimated = parseIncludeEstimated(req.query.includeEstimated);
 
     const view = getCostView();
     if (!view) {
@@ -150,6 +168,15 @@ router.get('/trend', async (req, res) => {
       res.setHeader('X-Degraded', 'true');
       if (payload.window !== undefined) res.setHeader('X-Degraded-Window', payload.window);
     }
+    // When includeEstimated=false, subtract estimated costs from each trend point.
+    if (!includeEstimated) {
+      const filtered = payload.trend.map((p) => ({
+        ...p,
+        total_cost_usd: p.total_cost_usd - p.estimated_cost_usd,
+        estimated_cost_usd: 0,
+      }));
+      return res.json(filtered);
+    }
     return res.json(payload.trend);
   } catch (error) {
     console.error('[costs] Error fetching trend:', error);
@@ -160,15 +187,13 @@ router.get('/trend', async (req, res) => {
 // ============================================================================
 // GET /api/costs/by-model?includeEstimated=false
 // ============================================================================
-// NOTE: `includeEstimated` query parameter is accepted but not yet
-// implemented. The response always includes estimated costs.
-// TODO(OMN-2242): honour includeEstimated to filter out estimated rows.
 
 // NOTE: window parameter is intentionally ignored; these views always return 30d data.
 // byModel/byRepo/byPattern are context panels that need a stable long-horizon distribution.
 // See queryByModel() in cost-metrics-projection.ts for the full rationale.
 router.get('/by-model', async (req, res) => {
   try {
+    const includeEstimated = parseIncludeEstimated(req.query.includeEstimated);
     // Signal to clients that their ?window= param was received but not applied.
     // These endpoints always use a fixed 30d window for stable distribution context.
     if (req.query.window !== undefined) {
@@ -181,6 +206,11 @@ router.get('/by-model', async (req, res) => {
     }
 
     const payload = await view.ensureFresh();
+    // When includeEstimated=false, exclude rows where the predominant usage_source
+    // is 'ESTIMATED' (i.e. the model's cost data is primarily estimated, not reported).
+    if (!includeEstimated) {
+      return res.json(payload.byModel.filter((r) => r.usage_source !== 'ESTIMATED'));
+    }
     return res.json(payload.byModel);
   } catch (error) {
     console.error('[costs] Error fetching by-model:', error);
@@ -191,15 +221,13 @@ router.get('/by-model', async (req, res) => {
 // ============================================================================
 // GET /api/costs/by-repo?includeEstimated=false
 // ============================================================================
-// NOTE: `includeEstimated` query parameter is accepted but not yet
-// implemented. The response always includes estimated costs.
-// TODO(OMN-2242): honour includeEstimated to filter out estimated rows.
 
 // NOTE: window parameter is intentionally ignored; these views always return 30d data.
 // byModel/byRepo/byPattern are context panels that need a stable long-horizon distribution.
 // See queryByRepo() in cost-metrics-projection.ts for the full rationale.
 router.get('/by-repo', async (req, res) => {
   try {
+    const includeEstimated = parseIncludeEstimated(req.query.includeEstimated);
     // Signal to clients that their ?window= param was received but not applied.
     // These endpoints always use a fixed 30d window for stable distribution context.
     if (req.query.window !== undefined) {
@@ -212,6 +240,9 @@ router.get('/by-repo', async (req, res) => {
     }
 
     const payload = await view.ensureFresh();
+    if (!includeEstimated) {
+      return res.json(payload.byRepo.filter((r) => r.usage_source !== 'ESTIMATED'));
+    }
     return res.json(payload.byRepo);
   } catch (error) {
     console.error('[costs] Error fetching by-repo:', error);
@@ -222,15 +253,13 @@ router.get('/by-repo', async (req, res) => {
 // ============================================================================
 // GET /api/costs/by-pattern?includeEstimated=false
 // ============================================================================
-// NOTE: `includeEstimated` query parameter is accepted but not yet
-// implemented. The response always includes estimated costs.
-// TODO(OMN-2242): honour includeEstimated to filter out estimated rows.
 
 // NOTE: window parameter is intentionally ignored; these views always return 30d data.
 // byModel/byRepo/byPattern are context panels that need a stable long-horizon distribution.
 // See queryByPattern() in cost-metrics-projection.ts for the full rationale.
 router.get('/by-pattern', async (req, res) => {
   try {
+    const includeEstimated = parseIncludeEstimated(req.query.includeEstimated);
     // Signal to clients that their ?window= param was received but not applied.
     // These endpoints always use a fixed 30d window for stable distribution context.
     if (req.query.window !== undefined) {
@@ -243,6 +272,9 @@ router.get('/by-pattern', async (req, res) => {
     }
 
     const payload = await view.ensureFresh();
+    if (!includeEstimated) {
+      return res.json(payload.byPattern.filter((r) => r.usage_source !== 'ESTIMATED'));
+    }
     return res.json(payload.byPattern);
   } catch (error) {
     console.error('[costs] Error fetching by-pattern:', error);
@@ -257,9 +289,7 @@ router.get('/by-pattern', async (req, res) => {
 router.get('/token-usage', async (req, res) => {
   try {
     const timeWindow = parseWindow(req.query.window);
-    // NOTE: `includeEstimated` query parameter is accepted but not yet
-    // implemented. The response always includes estimated costs.
-    // TODO(OMN-2242): honour includeEstimated to filter out estimated rows.
+    const includeEstimated = parseIncludeEstimated(req.query.includeEstimated);
 
     const view = getCostView();
     if (!view) {
@@ -272,6 +302,11 @@ router.get('/token-usage', async (req, res) => {
     if (payload.degraded) {
       res.setHeader('X-Degraded', 'true');
       if (payload.window !== undefined) res.setHeader('X-Degraded-Window', payload.window);
+    }
+    // When includeEstimated=false, filter out token usage points whose data
+    // source is 'ESTIMATED'.
+    if (!includeEstimated) {
+      return res.json(payload.tokenUsage.filter((p) => p.usage_source !== 'ESTIMATED'));
     }
     return res.json(payload.tokenUsage);
   } catch (error) {
