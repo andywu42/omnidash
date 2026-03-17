@@ -52,6 +52,8 @@ import schemaHealthRoutes from './schema-health';
 import modelEfficiencyRoutes from './model-efficiency-routes';
 // Correlation trace span routes (OMN-5047)
 import traceRoutes from './trace-routes';
+// Pattern lifecycle dashboard routes (OMN-5283)
+import patternLifecycleRoutes from './pattern-lifecycle-routes';
 // Session outcome and phase metrics routes (OMN-5184)
 import { sessionOutcomeRoutes } from './session-outcome-routes';
 import { phaseMetricsRoutes } from './phase-metrics-routes';
@@ -180,6 +182,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Correlation trace span routes (OMN-5047)
   app.use('/api/traces', traceRoutes);
+
+  // Pattern lifecycle dashboard routes (OMN-5283)
+  app.use('/api/pattern-lifecycle', patternLifecycleRoutes);
 
   // Session outcome and phase metrics routes (OMN-5184)
   app.use('/api/session-outcomes', sessionOutcomeRoutes);

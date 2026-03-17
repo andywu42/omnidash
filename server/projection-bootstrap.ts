@@ -34,6 +34,7 @@ import { PrWatchProjection } from './projections/pr-watch-projection';
 import { PipelineBudgetProjection } from './projections/pipeline-budget-projection';
 import { DebugEscalationProjection } from './projections/debug-escalation-projection';
 import { CiIntelProjection } from './projections/ci-intel-projection';
+import { PatternLifecycleProjection } from './projections/pattern-lifecycle-projection';
 import { eventConsumer } from './event-consumer';
 import { eventBusDataSource } from './event-bus-data-source';
 import { extractActionFromTopic, extractProducerFromTopicOrDefault } from '@shared/topics';
@@ -127,6 +128,8 @@ export const pipelineBudgetProjection = new PipelineBudgetProjection();
 export const debugEscalationProjection = new DebugEscalationProjection();
 /** CI Intelligence projection (OMN-5282). Queries ci_debug_escalation_events table. */
 export const ciIntelProjection = new CiIntelProjection();
+/** Pattern Lifecycle projection (OMN-5283). Queries pattern_lifecycle_transitions table. */
+export const patternLifecycleProjection = new PatternLifecycleProjection();
 /**
  * Plan reviewer projection (OMN-3324). Queries plan_review_runs table.
  * Standalone — NOT registered with ProjectionService (no fanout, no WS
@@ -184,6 +187,9 @@ if (!projectionService.getView(debugEscalationProjection.viewId)) {
 }
 if (!projectionService.getView(ciIntelProjection.viewId)) {
   projectionService.registerView(ciIntelProjection);
+}
+if (!projectionService.getView(patternLifecycleProjection.viewId)) {
+  projectionService.registerView(patternLifecycleProjection);
 }
 
 // ============================================================================

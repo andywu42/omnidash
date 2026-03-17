@@ -20,6 +20,7 @@ import {
   Cpu,
   GitFork,
   GitCommit,
+  GitBranch,
   Target,
   ClipboardCheck,
   GitPullRequest,
