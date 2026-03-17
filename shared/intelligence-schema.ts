@@ -1997,3 +1997,35 @@ export const routingFeedbackEvents = pgTable(
 export const insertRoutingFeedbackEventSchema = createInsertSchema(routingFeedbackEvents);
 export type RoutingFeedbackEventRow = typeof routingFeedbackEvents.$inferSelect;
 export type InsertRoutingFeedbackEvent = typeof routingFeedbackEvents.$inferInsert;
+
+// ============================================================================
+// Compliance Evaluations Table (migration 0024_compliance_evaluations, OMN-5285)
+// Tracks per-evaluation compliance results for the Compliance Dashboard.
+// Source topic: onex.evt.omniintelligence.compliance-evaluated.v1
+// Replay policy: APPEND-ONLY with evaluation_id as natural dedup key.
+// ============================================================================
+
+export const complianceEvaluations = pgTable(
+  'compliance_evaluations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    evaluationId: text('evaluation_id').notNull().unique(),
+    repo: text('repo').notNull(),
+    ruleSet: text('rule_set').notNull(),
+    score: real('score').notNull(),
+    violations: jsonb('violations').default([]),
+    pass: boolean('pass').notNull(),
+    eventTimestamp: timestamp('event_timestamp', { withTimezone: true }).notNull(),
+    ingestedAt: timestamp('ingested_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_compliance_evaluations_repo').on(table.repo),
+    index('idx_compliance_evaluations_rule_set').on(table.ruleSet),
+    index('idx_compliance_evaluations_event_timestamp').on(table.eventTimestamp),
+    index('idx_compliance_evaluations_pass').on(table.pass),
+  ]
+);
+
+export const insertComplianceEvaluationSchema = createInsertSchema(complianceEvaluations);
+export type ComplianceEvaluationRow = typeof complianceEvaluations.$inferSelect;
+export type InsertComplianceEvaluation = typeof complianceEvaluations.$inferInsert;

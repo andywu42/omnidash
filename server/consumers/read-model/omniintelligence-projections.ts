@@ -18,12 +18,14 @@ import {
   planReviewRuns,
   intentDriftEvents,
   routingFeedbackEvents,
+  complianceEvaluations,
 } from '@shared/intelligence-schema';
 import type {
   InsertLlmCostAggregate,
   InsertPatternLearningArtifact,
   InsertIntentDrift,
   InsertRoutingFeedbackEvent,
+  InsertComplianceEvaluation,
 } from '@shared/intelligence-schema';
 import {
   TOPIC_OMNIINTELLIGENCE_LLM_CALL_COMPLETED,
@@ -35,6 +37,7 @@ import {
   SUFFIX_INTELLIGENCE_INTENT_DRIFT_DETECTED,
   SUFFIX_INTELLIGENCE_CI_DEBUG_ESCALATION,
   SUFFIX_INTELLIGENCE_ROUTING_FEEDBACK_PROCESSED,
+  SUFFIX_INTELLIGENCE_COMPLIANCE_EVALUATED,
 } from '@shared/topics';
 import {
   PatternProjectionEventSchema,
@@ -56,6 +59,7 @@ const OMNIINTELLIGENCE_TOPICS = new Set([
   SUFFIX_INTELLIGENCE_INTENT_DRIFT_DETECTED,
   SUFFIX_INTELLIGENCE_CI_DEBUG_ESCALATION,
   SUFFIX_INTELLIGENCE_ROUTING_FEEDBACK_PROCESSED,
+  SUFFIX_INTELLIGENCE_COMPLIANCE_EVALUATED,
 ]);
 
 export class OmniintelligenceProjectionHandler implements ProjectionHandler {
@@ -99,6 +103,8 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
         return this.projectCiDebugEscalation(data, fallbackId, context);
       case SUFFIX_INTELLIGENCE_ROUTING_FEEDBACK_PROCESSED:
         return this.projectRoutingFeedbackProcessed(data, context);
+      case SUFFIX_INTELLIGENCE_COMPLIANCE_EVALUATED:
+        return this.projectComplianceEvaluated(data, context);
       default:
         return false;
     }
@@ -740,6 +746,72 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
         console.warn(
           '[ReadModelConsumer] routing_feedback_events table not yet created -- ' +
             'run migrations to enable routing feedback projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
+  // Compliance evaluated -> compliance_evaluations (OMN-5285)
+  // -------------------------------------------------------------------------
+
+  private async projectComplianceEvaluated(
+    data: Record<string, unknown>,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const evaluationId = String(data.evaluation_id ?? data.evaluationId ?? '').trim();
+    const repo = String(data.repo ?? '').trim();
+    const ruleSet = String(data.rule_set ?? data.ruleSet ?? '').trim();
+
+    if (!evaluationId || !repo || !ruleSet) {
+      console.warn(
+        '[ReadModelConsumer] compliance-evaluated missing required fields (evaluation_id, repo, rule_set)'
+      );
+      return true;
+    }
+
+    const score = Number(data.score ?? 0);
+    const pass = Boolean(data.pass ?? false);
+    const violations = Array.isArray(data.violations) ? data.violations : [];
+    const eventTimestamp = safeParseDate(
+      data.event_timestamp ?? data.eventTimestamp ?? data.timestamp
+    );
+
+    if (!eventTimestamp) {
+      console.warn('[ReadModelConsumer] compliance-evaluated missing event_timestamp');
+      return true;
+    }
+
+    const row: InsertComplianceEvaluation = {
+      evaluationId,
+      repo,
+      ruleSet,
+      score,
+      violations,
+      pass,
+      eventTimestamp,
+    };
+
+    try {
+      await db
+        .insert(complianceEvaluations)
+        .values(row)
+        .onConflictDoNothing({ target: complianceEvaluations.evaluationId });
+      console.log(
+        `[ReadModelConsumer] Projected compliance evaluation ${evaluationId} for ${repo}`
+      );
+    } catch (err) {
+      if (isTableMissingError(err, 'compliance_evaluations')) {
+        console.warn(
+          '[ReadModelConsumer] compliance_evaluations table not yet created -- ' +
+            'run migrations to enable compliance projection'
         );
         return true;
       }

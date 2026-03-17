@@ -39,6 +39,8 @@ import { PatternLifecycleProjection } from './projections/pattern-lifecycle-proj
 import { LlmHealthProjection } from './projections/llm-health-projection';
 // Routing Feedback projection (OMN-5284)
 import { RoutingFeedbackProjection } from './projections/routing-feedback-projection';
+// Compliance projection (OMN-5285)
+import { ComplianceProjection } from './projections/compliance-projection';
 import { eventConsumer } from './event-consumer';
 import { eventBusDataSource } from './event-bus-data-source';
 import { extractActionFromTopic, extractProducerFromTopicOrDefault } from '@shared/topics';
@@ -146,6 +148,8 @@ export const dodProjection = new DodProjection();
 export const llmHealthProjection = new LlmHealthProjection();
 /** Routing feedback projection (OMN-5284). Queries routing_feedback_events table. */
 export const routingFeedbackProjection = new RoutingFeedbackProjection();
+/** Compliance evaluation projection (OMN-5285). Queries compliance_evaluations table. */
+export const complianceProjection = new ComplianceProjection();
 
 if (!projectionService.getView(extractionMetricsProjection.viewId)) {
   projectionService.registerView(extractionMetricsProjection);
@@ -204,6 +208,9 @@ if (!projectionService.getView(llmHealthProjection.viewId)) {
 }
 if (!projectionService.getView(routingFeedbackProjection.viewId)) {
   projectionService.registerView(routingFeedbackProjection);
+}
+if (!projectionService.getView(complianceProjection.viewId)) {
+  projectionService.registerView(complianceProjection);
 }
 
 // ============================================================================

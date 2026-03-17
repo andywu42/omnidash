@@ -85,6 +85,8 @@ read_model_topics:
     handler: "projectRunEvaluated"
   - topic: "onex.evt.omniintelligence.routing-feedback-processed.v1"
     handler: "projectRoutingFeedbackEvent"
+  - topic: "onex.evt.omniintelligence.compliance-evaluated.v1"
+    handler: "projectComplianceEvaluated"
 
   # --- omnimemory topics ---
   - topic: "onex.evt.omnimemory.intent-stored.v1"

@@ -336,6 +336,8 @@ export const SUFFIX_INTELLIGENCE_PATTERN_LEARNING_COMPLETED =
   'onex.evt.omniintelligence.pattern-learning-completed.v1';
 export const SUFFIX_INTELLIGENCE_QUALITY_ASSESSMENT_COMPLETED =
   'onex.evt.omniintelligence.quality-assessment-completed.v1';
+export const SUFFIX_INTELLIGENCE_COMPLIANCE_EVALUATED =
+  'onex.evt.omniintelligence.compliance-evaluated.v1';
 
 /** Intelligence pattern lifecycle events */
 export const SUFFIX_INTELLIGENCE_PATTERN_LIFECYCLE_TRANSITION_CMD =

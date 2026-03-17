@@ -899,6 +899,18 @@ export const queryKeys = {
     snapshot: () => ['llm-health', 'snapshot'] as const,
     history: (modelId: string) => ['llm-health', 'history', modelId] as const,
   },
+
+  // ============================================================================
+  // Compliance Dashboard (OMN-5285)
+  // ============================================================================
+
+  /** Compliance evaluation dashboard query keys */
+  compliance: {
+    all: ['compliance'] as const,
+    evaluations: (window: string) => ['compliance', 'evaluations', window] as const,
+    summary: (window: string) => ['compliance', 'summary', window] as const,
+    trend: (window: string) => ['compliance', 'trend', window] as const,
+  },
 } as const;
 
 /**
