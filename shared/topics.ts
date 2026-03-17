@@ -354,6 +354,12 @@ export const SUFFIX_INTELLIGENCE_PATTERN_PROJECTION =
  * Consumed by the ReadModelConsumer to project into objective_evaluations table. */
 export const SUFFIX_INTELLIGENCE_RUN_EVALUATED = 'onex.evt.omniintelligence.run-evaluated.v1';
 
+/** Intent drift detected event (OMN-5281).
+ * Emitted when agent intent drifts from the original plan.
+ * Consumed by the ReadModelConsumer to project into intent_drift_events table. */
+export const SUFFIX_INTELLIGENCE_INTENT_DRIFT_DETECTED =
+  'onex.evt.omniintelligence.intent-drift-detected.v1';
+
 /** Full topic string: plan review strategy run completed event.
  * Emitted by node_plan_reviewer_multi_compute (omniintelligence).
  * Consumed only by READ_MODEL_TOPICS in read-model-consumer.ts (OMN-3282). */

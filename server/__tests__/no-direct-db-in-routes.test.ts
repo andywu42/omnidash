@@ -87,6 +87,12 @@ const EXEMPT_FILES = new Set([
   // trace timelines) are not yet representable as a ProjectionService view.
   // TODO(OMN-5047-followup): migrate to ProjectionService view.
   'trace-routes.ts',
+
+  // Intent drift routes query intent_drift_events (populated by ReadModelConsumer
+  // projection via Kafka). Aggregation queries (drift trends, severity breakdowns)
+  // are not yet representable as a ProjectionService view.
+  // TODO(OMN-5281-followup): migrate to ProjectionService view.
+  'intent-drift-routes.ts',
 ]);
 
 /**

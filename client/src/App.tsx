@@ -75,6 +75,8 @@ import TopicTopologyDashboard from '@/pages/TopicTopologyDashboard';
 import DecisionStoreDashboard from '@/pages/DecisionStoreDashboard';
 // DoD Verification dashboard (OMN-5200)
 import DodDashboard from '@/pages/DodDashboard';
+// Intent Drift dashboard (OMN-5281)
+import IntentDriftDashboard from '@/pages/IntentDriftDashboard';
 // Runtime health dashboard (OMN-3598)
 import WorkerHealthPage from '@/components/worker-health/WorkerHealthPage';
 
@@ -200,6 +202,9 @@ function Router() {
 
       {/* DoD Verification dashboard (OMN-5200) */}
       <Route path="/dod" component={DodDashboard} />
+
+      {/* Intent Drift dashboard (OMN-5281) */}
+      <Route path="/intent-drift" component={IntentDriftDashboard} />
 
       {/* Preview routes */}
       <Route path="/preview/analytics" component={EnhancedAnalytics} />

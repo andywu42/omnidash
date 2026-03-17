@@ -9,6 +9,7 @@ import {
   numeric,
   boolean,
   doublePrecision,
+  real,
   jsonb,
   timestamp,
   index,
@@ -1910,3 +1911,27 @@ export const dodGuardEvents = pgTable(
 export const insertDodGuardEventSchema = createInsertSchema(dodGuardEvents);
 export type DodGuardEventRow = typeof dodGuardEvents.$inferSelect;
 export type InsertDodGuardEvent = typeof dodGuardEvents.$inferInsert;
+
+// ============================================================================
+// Intent Drift Events Table (migration 0024, OMN-5281)
+// Tracks when agent intent drifts from the original plan.
+// Source topic: onex.evt.omniintelligence.intent-drift-detected.v1
+// Replay policy: APPEND-ONLY (no natural dedup key).
+// ============================================================================
+
+export const intentDriftEvents = pgTable(
+  'intent_drift_events',
+  {
+    id: serial('id').primaryKey(),
+    sessionId: text('session_id'),
+    originalIntent: text('original_intent'),
+    currentIntent: text('current_intent'),
+    driftScore: real('drift_score'),
+    severity: text('severity'), // low, medium, high, critical
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('idx_intent_drift_session').on(table.sessionId)]
+);
+
+export type IntentDriftRow = typeof intentDriftEvents.$inferSelect;
+export type InsertIntentDrift = typeof intentDriftEvents.$inferInsert;

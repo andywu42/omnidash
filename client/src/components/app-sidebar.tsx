@@ -167,6 +167,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         description: 'Real-time intent classification and analysis',
       },
       {
+        title: 'Intent Drift',
+        url: '/intent-drift',
+        icon: TrendingUp,
+        description: 'Agent intent drift detection and severity tracking (OMN-5281)',
+      },
+      {
         title: 'Pattern Intelligence',
         url: '/patterns',
         icon: Sparkles,

@@ -16,10 +16,12 @@ import {
   llmCostAggregates,
   patternLearningArtifacts,
   planReviewRuns,
+  intentDriftEvents,
 } from '@shared/intelligence-schema';
 import type {
   InsertLlmCostAggregate,
   InsertPatternLearningArtifact,
+  InsertIntentDrift,
 } from '@shared/intelligence-schema';
 import {
   TOPIC_OMNIINTELLIGENCE_LLM_CALL_COMPLETED,
@@ -28,6 +30,7 @@ import {
   SUFFIX_INTELLIGENCE_PATTERN_LEARNING_CMD,
   TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED,
   SUFFIX_INTELLIGENCE_RUN_EVALUATED,
+  SUFFIX_INTELLIGENCE_INTENT_DRIFT_DETECTED,
 } from '@shared/topics';
 import {
   PatternProjectionEventSchema,
@@ -46,6 +49,7 @@ const OMNIINTELLIGENCE_TOPICS = new Set([
   SUFFIX_INTELLIGENCE_PATTERN_LEARNING_CMD,
   TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED,
   SUFFIX_INTELLIGENCE_RUN_EVALUATED,
+  SUFFIX_INTELLIGENCE_INTENT_DRIFT_DETECTED,
 ]);
 
 export class OmniintelligenceProjectionHandler implements ProjectionHandler {
@@ -83,6 +87,8 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
         return this.projectPlanReviewStrategyRunEvent(data, fallbackId, context);
       case SUFFIX_INTELLIGENCE_RUN_EVALUATED:
         return this.projectRunEvaluated(data, fallbackId, context);
+      case SUFFIX_INTELLIGENCE_INTENT_DRIFT_DETECTED:
+        return this.projectIntentDriftDetected(data, context);
       default:
         return false;
     }
@@ -581,5 +587,46 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
       }
       throw err;
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Intent drift detected -> intent_drift_events (OMN-5281)
+  // -------------------------------------------------------------------------
+
+  private async projectIntentDriftDetected(
+    data: Record<string, unknown>,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const row: InsertIntentDrift = {
+      sessionId: (data.session_id as string) || (data.sessionId as string) || null,
+      originalIntent:
+        (data.original_intent as string) || (data.originalIntent as string) || null,
+      currentIntent: (data.current_intent as string) || (data.currentIntent as string) || null,
+      driftScore:
+        typeof data.drift_score === 'number'
+          ? data.drift_score
+          : typeof data.driftScore === 'number'
+            ? data.driftScore
+            : null,
+      severity: (data.severity as string) || null,
+    };
+
+    try {
+      await db.insert(intentDriftEvents).values(row);
+    } catch (err) {
+      if (isTableMissingError(err, 'intent_drift_events')) {
+        console.warn(
+          '[ReadModelConsumer] intent_drift_events table not yet created -- ' +
+            'run migrations to enable intent drift projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+
+    return true;
   }
 }

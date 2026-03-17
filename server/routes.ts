@@ -57,6 +57,8 @@ import { phaseMetricsRoutes } from './phase-metrics-routes';
 import topologyRoutes from './topology-routes';
 // DoD verification dashboard routes (OMN-5200)
 import dodRoutes from './dod-routes';
+// Intent drift routes (OMN-5281)
+import intentDriftRoutes from './intent-drift-routes';
 // Prometheus metrics endpoint (OMN-4609)
 import { createMetricsRouter } from './metrics-routes';
 import type { DataSourcesHealthResponse } from './health-data-sources-routes';
@@ -183,6 +185,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // DoD verification dashboard routes (OMN-5200)
   app.use('/api/dod', dodRoutes);
+
+  // Intent drift routes (OMN-5281)
+  app.use('/api/intent-drift', intentDriftRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.
