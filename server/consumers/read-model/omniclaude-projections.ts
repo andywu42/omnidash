@@ -30,6 +30,7 @@ import {
   correlationTraceSpans,
   sessionOutcomes,
   phaseMetricsEvents,
+  skillInvocations,
 } from '@shared/intelligence-schema';
 import type {
   InsertAgentRoutingDecision,
@@ -61,6 +62,7 @@ import {
   SUFFIX_OMNICLAUDE_SESSION_OUTCOME,
   SUFFIX_OMNICLAUDE_PHASE_METRICS,
   SUFFIX_OMNICLAUDE_DEBUG_TRIGGER_RECORD,
+  SUFFIX_OMNICLAUDE_SKILL_INVOKED,
 } from '@shared/topics';
 import { llmRoutingProjection } from '../../projection-bootstrap';
 import { emitLlmRoutingInvalidate } from '../../llm-routing-events';
@@ -97,6 +99,7 @@ const OMNICLAUDE_TOPICS = new Set([
   SUFFIX_OMNICLAUDE_SESSION_OUTCOME,
   SUFFIX_OMNICLAUDE_PHASE_METRICS,
   SUFFIX_OMNICLAUDE_DEBUG_TRIGGER_RECORD,
+  SUFFIX_OMNICLAUDE_SKILL_INVOKED,
 ]);
 
 export class OmniclaudeProjectionHandler implements ProjectionHandler {
@@ -150,6 +153,8 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
         return this.projectPhaseMetrics(data, context);
       case SUFFIX_OMNICLAUDE_DEBUG_TRIGGER_RECORD:
         return this.projectDebugTriggerRecord(data, fallbackId, context);
+      case SUFFIX_OMNICLAUDE_SKILL_INVOKED:
+        return this.projectSkillInvoked(data, context);
       default:
         return false;
     }
@@ -1250,6 +1255,31 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
       throw err;
     }
 
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
+  // Skill invocations -> skill_invocations
+  // -------------------------------------------------------------------------
+
+  private async projectSkillInvoked(
+    data: Record<string, unknown>,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const db = context.db;
+    if (!db) return false;
+    try {
+      await db.insert(skillInvocations).values({
+        skillName: String(data.skill_name ?? ''),
+        sessionId: data.session_id ? String(data.session_id) : null,
+        durationMs: data.duration_ms ? Number(data.duration_ms) : null,
+        success: data.success !== false,
+        error: data.error ? String(data.error) : null,
+      });
+    } catch (e) {
+      if (isTableMissingError(e, 'skill_invocations')) return true;
+      throw e;
+    }
     return true;
   }
 }

@@ -289,6 +289,9 @@ export const SUFFIX_OMNICLAUDE_GATE_DECISION = 'onex.evt.omniclaude.gate-decisio
 /** Epic pipeline state-change events covering both epic_run_lease and epic_run_events tables. */
 export const SUFFIX_OMNICLAUDE_EPIC_RUN_UPDATED = 'onex.evt.omniclaude.epic-run-updated.v1';
 
+/** Emitted by omniclaude when a skill is invoked. */
+export const SUFFIX_OMNICLAUDE_SKILL_INVOKED = 'onex.evt.omniclaude.skill-invoked.v1';
+
 /** PR watch state-change events (pr_watch_state table). */
 export const SUFFIX_OMNICLAUDE_PR_WATCH_UPDATED = 'onex.evt.omniclaude.pr-watch-updated.v1';
 

@@ -45,6 +45,8 @@ import { ComplianceProjection } from './projections/compliance-projection';
 import { ContextEffectivenessProjection } from './projections/context-effectiveness-projection';
 // OmniMemory projection (OMN-5290)
 import { MemoryProjection } from './projections/memory-projection';
+// Skill invocation projection (OMN-5278)
+import { SkillProjection } from './projections/skill-projection';
 import { eventConsumer } from './event-consumer';
 import { eventBusDataSource } from './event-bus-data-source';
 import { extractActionFromTopic, extractProducerFromTopicOrDefault } from '@shared/topics';
@@ -158,6 +160,8 @@ export const complianceProjection = new ComplianceProjection();
 export const contextEffectivenessProjection = new ContextEffectivenessProjection();
 /** OmniMemory projection (OMN-5290). Queries memory_documents and memory_retrievals tables. */
 export const memoryProjection = new MemoryProjection();
+/** Skill invocation projection (OMN-5278). Queries skill_invocations table. */
+export const skillProjection = new SkillProjection();
 
 if (!projectionService.getView(extractionMetricsProjection.viewId)) {
   projectionService.registerView(extractionMetricsProjection);
@@ -225,6 +229,9 @@ if (!projectionService.getView(contextEffectivenessProjection.viewId)) {
 }
 if (!projectionService.getView(memoryProjection.viewId)) {
   projectionService.registerView(memoryProjection);
+}
+if (!projectionService.getView(skillProjection.viewId)) {
+  projectionService.registerView(skillProjection);
 }
 
 // ============================================================================

@@ -57,6 +57,8 @@ read_model_topics:
     handler: "projectRoutingDecision"
   - topic: "onex.evt.omniclaude.session-outcome.v1"
     handler: "projectSessionOutcome"
+  - topic: "onex.evt.omniclaude.skill-invoked.v1"
+    handler: "projectSkillInvoked"
   - topic: "onex.evt.omniclaude.task-delegated.v1"
     handler: "projectTaskDelegated"
   - topic: "onex.evt.omniclaude.debug-trigger-record.v1"

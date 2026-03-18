@@ -2095,3 +2095,31 @@ export const memoryRetrievals = pgTable(
 
 export type MemoryRetrievalRow = typeof memoryRetrievals.$inferSelect;
 export type InsertMemoryRetrieval = typeof memoryRetrievals.$inferInsert;
+
+// ============================================================================
+// Skill Invocations Table (OMN-5278)
+// Tracks each skill invocation event from the omniclaude agent.
+// Source topic: onex.evt.omniclaude.skill-invoked.v1
+// Replay policy: APPEND-ONLY.
+// ============================================================================
+
+export const skillInvocations = pgTable(
+  'skill_invocations',
+  {
+    id: serial('id').primaryKey(),
+    skillName: text('skill_name').notNull(),
+    sessionId: text('session_id'),
+    durationMs: integer('duration_ms'),
+    success: boolean('success').notNull().default(true),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_skill_invocations_name').on(table.skillName),
+    index('idx_skill_invocations_ts').on(table.createdAt),
+  ]
+);
+
+export const insertSkillInvocationSchema = createInsertSchema(skillInvocations);
+export type SkillInvocationRow = typeof skillInvocations.$inferSelect;
+export type InsertSkillInvocation = typeof skillInvocations.$inferInsert;
