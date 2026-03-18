@@ -69,6 +69,8 @@ read_model_topics:
     handler: "projectBaselinesComputed"
   - topic: "onex.evt.omnibase-infra.llm-health-snapshot.v1"
     handler: "projectLlmHealthSnapshot"
+  - topic: "onex.evt.omnibase-infra.wiring-health-snapshot.v1"
+    handler: "projectWiringHealthSnapshot"
 
   # --- omniintelligence topics ---
   - topic: "onex.evt.omniintelligence.ci-debug-escalation.v1"

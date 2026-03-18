@@ -818,6 +818,19 @@ export const queryKeys = {
   },
 
   // ============================================================================
+  // Wiring Health (OMN-5292)
+  // ============================================================================
+
+  /** Wiring health query keys for /wiring-health dashboard */
+  wiringHealth: {
+    /** Base key for all wiring health queries */
+    all: ['wiring-health'] as const,
+    full: () => [...queryKeys.wiringHealth.all, 'full'] as const,
+    summary: () => [...queryKeys.wiringHealth.all, 'summary'] as const,
+    history: () => [...queryKeys.wiringHealth.all, 'history'] as const,
+  },
+
+  // ============================================================================
   // Plan Reviewer (OMN-3324)
   // ============================================================================
 

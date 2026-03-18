@@ -251,6 +251,11 @@ export const SUFFIX_OMNICLAUDE_TRANSFORMATION_COMPLETED =
 export const TOPIC_OMNIINTELLIGENCE_LLM_CALL_COMPLETED =
   'onex.evt.omniintelligence.llm-call-completed.v1';
 
+/** Wiring health snapshot events emitted by WiringHealthChecker (OMN-5292).
+ * NOTE: Consumed only by the read-model-consumer via READ_MODEL_TOPICS. */
+export const TOPIC_OMNIBASE_INFRA_WIRING_HEALTH_SNAPSHOT =
+  'onex.evt.omnibase-infra.wiring-health-snapshot.v1';
+
 /** Correlation trace span events emitted by the omniclaude trace emitter (OMN-5047).
  * NOTE: Intentionally excluded from buildSubscriptionTopics() / subscription groups —
  * consumed only by the read-model-consumer via READ_MODEL_TOPICS. */

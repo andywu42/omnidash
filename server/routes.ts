@@ -58,6 +58,8 @@ import modelEfficiencyRoutes from './model-efficiency-routes';
 import traceRoutes from './trace-routes';
 // Pattern lifecycle dashboard routes (OMN-5283)
 import patternLifecycleRoutes from './pattern-lifecycle-routes';
+// Wiring health snapshot routes (OMN-5292)
+import wiringHealthRoutes from './wiring-health-routes';
 // Session outcome and phase metrics routes (OMN-5184)
 import { sessionOutcomeRoutes } from './session-outcome-routes';
 import { phaseMetricsRoutes } from './phase-metrics-routes';
@@ -205,6 +207,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Pattern lifecycle dashboard routes (OMN-5283)
   app.use('/api/pattern-lifecycle', patternLifecycleRoutes);
+
+  // Wiring health snapshot routes (OMN-5292)
+  app.use('/api/wiring-health', wiringHealthRoutes);
 
   // Session outcome and phase metrics routes (OMN-5184)
   app.use('/api/session-outcomes', sessionOutcomeRoutes);
