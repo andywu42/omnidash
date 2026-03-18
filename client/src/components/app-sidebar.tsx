@@ -32,6 +32,7 @@ import {
   Users,
   Network,
   ListChecks,
+  AlertTriangle,
 } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import {
@@ -312,6 +313,13 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         icon: Cpu,
         description:
           'Per-endpoint LLM latency, error rate, and throughput from health snapshot events (OMN-5279)',
+      },
+      {
+        title: 'DLQ Monitor',
+        url: '/dlq',
+        icon: AlertTriangle,
+        description:
+          'Dead-letter queue failures: failed messages, error categories, retry counts (OMN-5287)',
       },
     ],
   },

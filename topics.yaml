@@ -64,6 +64,10 @@ read_model_topics:
   - topic: "onex.evt.omniclaude.debug-trigger-record.v1"
     handler: "projectDebugTriggerRecord"
 
+  # --- platform topics ---
+  - topic: "onex.evt.platform.dlq-message.v1"
+    handler: "projectDlqMessage"
+
   # --- omnibase-infra topics ---
   - topic: "onex.evt.omnibase-infra.baselines-computed.v1"
     handler: "projectBaselinesComputed"

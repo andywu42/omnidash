@@ -945,6 +945,16 @@ export const queryKeys = {
     lowUtilization: (window: string) =>
       ['context-effectiveness', 'low-utilization', window] as const,
   },
+  // ============================================================================
+  // DLQ Monitor Dashboard (OMN-5287)
+  // ============================================================================
+
+  /** Dead-letter queue monitor dashboard query keys */
+  dlq: {
+    all: ['dlq'] as const,
+    messages: (limit: number) => ['dlq', 'messages', limit] as const,
+    timeline: () => ['dlq', 'timeline'] as const,
+  },
 } as const;
 
 /**

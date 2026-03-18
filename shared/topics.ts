@@ -414,6 +414,11 @@ export const SUFFIX_OMNICLAUDE_DOD_GUARD_FIRED = 'onex.evt.omniclaude.dod-guard-
  * Consumed by ReadModelConsumer to project into debug_trigger_records table. */
 export const SUFFIX_OMNICLAUDE_DEBUG_TRIGGER_RECORD = 'onex.evt.omniclaude.debug-trigger-record.v1';
 
+/** DLQ message event (OMN-5287).
+ * Emitted by platform consumer error handlers when a message fails processing and lands
+ * in the dead-letter queue. Consumed by ReadModelConsumer to project into dlq_messages table. */
+export const SUFFIX_PLATFORM_DLQ_MESSAGE = 'onex.evt.platform.dlq-message.v1';
+
 // ============================================================================
 // OmniBase Infra Topics
 // ============================================================================

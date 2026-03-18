@@ -2123,3 +2123,34 @@ export const skillInvocations = pgTable(
 export const insertSkillInvocationSchema = createInsertSchema(skillInvocations);
 export type SkillInvocationRow = typeof skillInvocations.$inferSelect;
 export type InsertSkillInvocation = typeof skillInvocations.$inferInsert;
+
+// ============================================================================
+// DLQ Messages Table (OMN-5287)
+// Tracks dead-letter queue messages from platform consumer error handlers.
+// Source topic: onex.evt.platform.dlq-message.v1
+// Replay policy: APPEND-ONLY.
+// ============================================================================
+
+export const dlqMessages = pgTable(
+  'dlq_messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    originalTopic: text('original_topic').notNull(),
+    errorMessage: text('error_message').notNull(),
+    errorType: text('error_type').notNull(),
+    retryCount: integer('retry_count').notNull().default(0),
+    consumerGroup: text('consumer_group').notNull(),
+    messageKey: text('message_key'),
+    rawPayload: jsonb('raw_payload'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_dlq_messages_original_topic').on(table.originalTopic),
+    index('idx_dlq_messages_error_type').on(table.errorType),
+    index('idx_dlq_messages_created_at').on(table.createdAt),
+  ]
+);
+
+export const insertDlqMessageSchema = createInsertSchema(dlqMessages);
+export type DlqMessageRow = typeof dlqMessages.$inferSelect;
+export type InsertDlqMessage = typeof dlqMessages.$inferInsert;

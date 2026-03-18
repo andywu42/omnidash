@@ -7,10 +7,11 @@
  */
 
 import { sql } from 'drizzle-orm';
-import { modelEfficiencyRollups } from '@shared/intelligence-schema';
+import { modelEfficiencyRollups, dlqMessages } from '@shared/intelligence-schema';
 import {
   SUFFIX_MEMORY_INTENT_STORED,
   SUFFIX_OMNICLAUDE_PR_VALIDATION_ROLLUP,
+  SUFFIX_PLATFORM_DLQ_MESSAGE,
 } from '@shared/topics';
 
 import type { ProjectionHandler, ProjectionContext, MessageMeta } from './types';
@@ -19,6 +20,7 @@ import { safeParseDate, isTableMissingError } from './types';
 const PLATFORM_TOPICS = new Set([
   SUFFIX_MEMORY_INTENT_STORED,
   SUFFIX_OMNICLAUDE_PR_VALIDATION_ROLLUP,
+  SUFFIX_PLATFORM_DLQ_MESSAGE,
 ]);
 
 export class PlatformProjectionHandler implements ProjectionHandler {
@@ -39,6 +41,8 @@ export class PlatformProjectionHandler implements ProjectionHandler {
         return this.projectIntentStoredEvent(data, fallbackId, context);
       case SUFFIX_OMNICLAUDE_PR_VALIDATION_ROLLUP:
         return this.projectPrValidationRollup(data, context);
+      case SUFFIX_PLATFORM_DLQ_MESSAGE:
+        return this.projectDlqMessage(data, context);
       default:
         return false;
     }
@@ -147,6 +151,54 @@ export class PlatformProjectionHandler implements ProjectionHandler {
         console.warn(
           '[ReadModelConsumer] model_efficiency_rollups table not yet created -- ' +
             'run migrations to enable MEI projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // DLQ message -> dlq_messages (OMN-5287)
+  // -------------------------------------------------------------------------
+
+  private async projectDlqMessage(
+    data: Record<string, unknown>,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const originalTopic =
+      (data.original_topic as string) || (data.originalTopic as string) || 'unknown';
+    const errorMessage =
+      (data.error_message as string) || (data.errorMessage as string) || 'unknown';
+    const errorType = (data.error_type as string) || (data.errorType as string) || 'unknown';
+    const consumerGroup =
+      (data.consumer_group as string) || (data.consumerGroup as string) || 'unknown';
+
+    try {
+      await db.insert(dlqMessages).values({
+        originalTopic,
+        errorMessage,
+        errorType,
+        retryCount:
+          typeof data.retry_count === 'number'
+            ? data.retry_count
+            : typeof data.retryCount === 'number'
+              ? data.retryCount
+              : 0,
+        consumerGroup,
+        messageKey: (data.message_key as string) || (data.messageKey as string) || null,
+        rawPayload: typeof data === 'object' ? data : null,
+        createdAt: safeParseDate(data.timestamp ?? data.created_at) ?? new Date(),
+      });
+      return true;
+    } catch (err) {
+      if (isTableMissingError(err, 'dlq_messages')) {
+        console.warn(
+          '[ReadModelConsumer] dlq_messages table not yet created -- ' +
+            'run migrations to enable DLQ projection'
         );
         return true;
       }

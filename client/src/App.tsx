@@ -87,6 +87,8 @@ import WorkerHealthPage from '@/components/worker-health/WorkerHealthPage';
 import LlmHealthDashboard from '@/pages/LlmHealthDashboard';
 // Wiring Health Dashboard (OMN-5292)
 import WiringHealthDashboard from '@/pages/WiringHealthDashboard';
+// DLQ Monitor Dashboard (OMN-5287)
+import DlqMonitorDashboard from '@/pages/DlqMonitorDashboard';
 
 // Phase 2: Category landing pages (OMN-2181)
 import SpeedCategory from '@/pages/SpeedCategory';
@@ -211,6 +213,9 @@ function Router() {
 
       {/* LLM Health Dashboard — per-endpoint latency, error rate, throughput (OMN-5279) */}
       <Route path="/llm-health" component={LlmHealthDashboard} />
+
+      {/* DLQ Monitor — dead-letter queue failures (OMN-5287) */}
+      <Route path="/dlq" component={DlqMonitorDashboard} />
 
       {/* Model Efficiency Index dashboard (OMN-3941) */}
       <Route path="/model-efficiency" component={ModelEfficiencyDashboard} />
