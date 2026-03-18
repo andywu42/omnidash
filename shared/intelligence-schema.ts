@@ -2154,3 +2154,33 @@ export const dlqMessages = pgTable(
 export const insertDlqMessageSchema = createInsertSchema(dlqMessages);
 export type DlqMessageRow = typeof dlqMessages.$inferSelect;
 export type InsertDlqMessage = typeof dlqMessages.$inferInsert;
+
+// ============================================================================
+// Circuit Breaker Events Table (OMN-5293)
+// Tracks infra circuit breaker state transitions per service.
+// Source topic: onex.evt.omnibase-infra.circuit-breaker.v1
+// Replay policy: APPEND-ONLY (audit log; one row per state transition).
+// ============================================================================
+
+export const circuitBreakerEvents = pgTable(
+  'circuit_breaker_events',
+  {
+    id: text('id').primaryKey().default(sql`gen_random_uuid()::text`),
+    serviceName: text('service_name').notNull(),
+    state: text('state').notNull(),
+    previousState: text('previous_state').notNull(),
+    failureCount: integer('failure_count').notNull().default(0),
+    threshold: integer('threshold').notNull().default(5),
+    emittedAt: timestamp('emitted_at', { withTimezone: true }).notNull(),
+    ingestedAt: timestamp('ingested_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_cbe_service_name').on(table.serviceName),
+    index('idx_cbe_state').on(table.state),
+    index('idx_cbe_emitted_at').on(table.emittedAt),
+  ]
+);
+
+export const insertCircuitBreakerEventSchema = createInsertSchema(circuitBreakerEvents);
+export type CircuitBreakerEventRow = typeof circuitBreakerEvents.$inferSelect;
+export type InsertCircuitBreakerEvent = typeof circuitBreakerEvents.$inferInsert;

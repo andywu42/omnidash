@@ -5,8 +5,10 @@
  * - Baselines computed -> baselines_snapshots / baselines_comparisons / baselines_trend / baselines_breakdown
  * - LLM health snapshot -> llm_health_snapshots (OMN-5279)
  * - Wiring health snapshot -> in-memory WiringHealthProjection (OMN-5292)
+ * - Circuit breaker event -> circuit_breaker_events (OMN-5293)
  */
 
+import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 import {
   baselinesSnapshots,
@@ -14,6 +16,7 @@ import {
   baselinesTrend,
   baselinesBreakdown,
   llmHealthSnapshots,
+  circuitBreakerEvents,
 } from '@shared/intelligence-schema';
 import type {
   InsertBaselinesSnapshot,
@@ -21,6 +24,7 @@ import type {
   InsertBaselinesTrend,
   InsertBaselinesBreakdown,
   InsertLlmHealthSnapshot,
+  InsertCircuitBreakerEvent,
 } from '@shared/intelligence-schema';
 import { baselinesProjection } from '../../projection-bootstrap';
 import { emitBaselinesUpdate } from '../../baselines-events';
@@ -28,6 +32,7 @@ import {
   SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED,
   SUFFIX_OMNIBASE_INFRA_LLM_HEALTH_SNAPSHOT,
   TOPIC_OMNIBASE_INFRA_WIRING_HEALTH_SNAPSHOT,
+  TOPIC_OMNIBASE_INFRA_CIRCUIT_BREAKER,
 } from '@shared/topics';
 import { wiringHealthProjection } from '../../projections/wiring-health-projection';
 import type { TopicWiringRecord } from '../../projections/wiring-health-projection';
@@ -47,11 +52,13 @@ import {
 const BASELINES_TOPIC = SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED;
 const LLM_HEALTH_TOPIC = SUFFIX_OMNIBASE_INFRA_LLM_HEALTH_SNAPSHOT;
 const WIRING_HEALTH_TOPIC = TOPIC_OMNIBASE_INFRA_WIRING_HEALTH_SNAPSHOT;
+const CIRCUIT_BREAKER_TOPIC = TOPIC_OMNIBASE_INFRA_CIRCUIT_BREAKER;
 
 const OMNIBASE_INFRA_TOPICS = new Set([
   SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED,
   SUFFIX_OMNIBASE_INFRA_LLM_HEALTH_SNAPSHOT,
   TOPIC_OMNIBASE_INFRA_WIRING_HEALTH_SNAPSHOT,
+  TOPIC_OMNIBASE_INFRA_CIRCUIT_BREAKER,
 ]);
 
 export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
@@ -74,7 +81,62 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
     if (topic === WIRING_HEALTH_TOPIC) {
       return this.projectWiringHealthSnapshot(data);
     }
+    if (topic === CIRCUIT_BREAKER_TOPIC) {
+      return this.projectCircuitBreakerEvent(data, context);
+    }
     return false;
+  }
+
+  private async projectCircuitBreakerEvent(
+    data: Record<string, unknown>,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const id = String(data.id ?? data.event_id ?? '').trim();
+    const serviceName = String(data.service_name ?? data.serviceName ?? '').trim();
+    const state = String(data.state ?? '').trim().toLowerCase();
+    const previousState = String(data.previous_state ?? data.previousState ?? '').trim().toLowerCase();
+
+    if (!serviceName || !state || !previousState) {
+      console.warn('[ReadModelConsumer] circuit-breaker event missing required fields', {
+        serviceName,
+        state,
+        previousState,
+      });
+      return true;
+    }
+
+    const emittedAt = safeParseDateOrMin(data.emitted_at ?? data.emittedAt ?? data.timestamp);
+
+    const row: InsertCircuitBreakerEvent = {
+      id: id || randomUUID(),
+      serviceName,
+      state,
+      previousState,
+      failureCount: Number(data.failure_count ?? data.failureCount ?? 0),
+      threshold: Number(data.threshold ?? 5),
+      emittedAt,
+    };
+
+    try {
+      await db.insert(circuitBreakerEvents).values(row).onConflictDoNothing();
+      console.log(
+        `[ReadModelConsumer] Projected circuit-breaker event for ${serviceName}: ${previousState} -> ${state}`
+      );
+    } catch (err) {
+      if (isTableMissingError(err, 'circuit_breaker_events')) {
+        console.warn(
+          '[ReadModelConsumer] circuit_breaker_events table not yet created -- ' +
+            'run migrations to enable circuit breaker projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+
+    return true;
   }
 
   private async projectLlmHealthSnapshot(

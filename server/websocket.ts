@@ -557,6 +557,12 @@ export function setupWebSocket(httpServer: HTTPServer) {
     broadcast('EXTRACTION_INVALIDATE', { type: data.type }, 'extraction');
   });
 
+  // Circuit breaker event listener (OMN-5293)
+  // Tells clients to re-fetch circuit breaker state when a new transition is ingested.
+  registerEventListener('circuit-breaker-event', () => {
+    broadcast('circuit-breaker-event', { timestamp: Date.now() }, 'circuit-breaker');
+  });
+
   // Learned Insights invalidation listener (OMN-2306)
   // Tells clients to re-fetch insights data when new patterns are learned.
   // Uses insightsEventEmitter (not eventConsumer) so any module can trigger it.

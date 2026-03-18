@@ -435,6 +435,16 @@ export const SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED =
 export const SUFFIX_OMNIBASE_INFRA_LLM_HEALTH_SNAPSHOT =
   'onex.evt.omnibase-infra.llm-health-snapshot.v1';
 
+/**
+ * Emitted by omnibase-infra circuit breaker when a service transitions state.
+ * States: CLOSED | OPEN | HALF_OPEN
+ * (OMN-5293)
+ */
+export const TOPIC_OMNIBASE_INFRA_CIRCUIT_BREAKER =
+  'onex.evt.omnibase-infra.circuit-breaker.v1';
+/** Alias for TOPIC_OMNIBASE_INFRA_CIRCUIT_BREAKER (SUFFIX_ naming convention). */
+export const SUFFIX_OMNIBASE_INFRA_CIRCUIT_BREAKER = TOPIC_OMNIBASE_INFRA_CIRCUIT_BREAKER;
+
 // ============================================================================
 // Miscellaneous Topics
 // ============================================================================

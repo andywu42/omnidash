@@ -321,6 +321,13 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         description:
           'Dead-letter queue failures: failed messages, error categories, retry counts (OMN-5287)',
       },
+      {
+        title: 'Circuit Breaker',
+        url: '/circuit-breaker',
+        icon: Zap,
+        description:
+          'Infra circuit breaker state transitions — CLOSED / OPEN / HALF_OPEN per service (OMN-5293)',
+      },
     ],
   },
   {

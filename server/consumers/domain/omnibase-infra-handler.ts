@@ -1,32 +1,98 @@
 /**
- * OmniBase Infra domain handler [OMN-5191]
+ * OmniBase Infra domain handler [OMN-5191 / OMN-5293]
  *
- * Placeholder for topics with the omnibase-infra prefix.
- * Currently no topics are exclusively handled by this domain --
- * infrastructure events (node registry, heartbeat, etc.) are handled
- * by the platform handler since they use platform topic suffixes.
- *
- * This handler exists as an extension point for future omnibase-infra
- * specific topics that don't fit the platform domain.
+ * Handles topics with the omnibase-infra prefix:
+ * - Circuit breaker state transition events (OMN-5293)
  */
 
 import type { KafkaMessage } from 'kafkajs';
+import { SUFFIX_OMNIBASE_INFRA_CIRCUIT_BREAKER } from '@shared/topics';
+import { tryGetIntelligenceDb } from '../../storage';
+import { circuitBreakerEvents } from '@shared/intelligence-schema';
 import type { DomainHandler, ConsumerContext } from './types';
+
+const HANDLED_TOPICS = new Set([SUFFIX_OMNIBASE_INFRA_CIRCUIT_BREAKER]);
+
+// ============================================================================
+// Raw Kafka payload type
+// ============================================================================
+
+interface RawCircuitBreakerEvent {
+  service_name?: string;
+  serviceName?: string;
+  state?: string;
+  previous_state?: string;
+  previousState?: string;
+  failure_count?: number;
+  failureCount?: number;
+  threshold?: number;
+  timestamp?: string;
+  correlation_id?: string;
+  correlationId?: string;
+}
+
+// ============================================================================
+// Handler
+// ============================================================================
+
+async function handleCircuitBreakerEvent(
+  event: RawCircuitBreakerEvent,
+  ctx: ConsumerContext
+): Promise<void> {
+  const db = tryGetIntelligenceDb();
+  if (!db) return;
+
+  const serviceName = event.service_name ?? event.serviceName ?? 'unknown';
+  const state = event.state ?? 'closed';
+  const previousState = event.previous_state ?? event.previousState ?? 'closed';
+  const failureCount = event.failure_count ?? event.failureCount ?? 0;
+  const threshold = event.threshold ?? 5;
+  const rawTs = event.timestamp;
+  const emittedAt = rawTs ? new Date(rawTs) : new Date();
+
+  try {
+    await db.insert(circuitBreakerEvents).values({
+      serviceName,
+      state,
+      previousState,
+      failureCount,
+      threshold,
+      emittedAt,
+    });
+
+    ctx.emit('circuit-breaker-event', {
+      serviceName,
+      state,
+      previousState,
+      failureCount,
+      threshold,
+      emittedAt: emittedAt.toISOString(),
+    });
+  } catch (err) {
+    // Log but never block the consumer
+    console.error('[omnibase-infra-handler] Failed to persist circuit breaker event:', err);
+  }
+}
+
+// ============================================================================
+// DomainHandler implementation
+// ============================================================================
 
 export class OmnibaseInfraHandler implements DomainHandler {
   readonly name = 'omnibase-infra';
 
-  canHandle(_topic: string): boolean {
-    // No omnibase-infra-specific topics yet; platform-handler covers infra events
-    return false;
+  canHandle(topic: string): boolean {
+    return HANDLED_TOPICS.has(topic);
   }
 
-  handleEvent(
-    _topic: string,
-    _event: Record<string, unknown>,
+  async handleEvent(
+    topic: string,
+    event: Record<string, unknown>,
     _message: KafkaMessage,
-    _ctx: ConsumerContext
-  ): void {
-    // No-op: extension point for future omnibase-infra topics
+    ctx: ConsumerContext
+  ): Promise<void> {
+    if (topic === SUFFIX_OMNIBASE_INFRA_CIRCUIT_BREAKER) {
+      await handleCircuitBreakerEvent(event as RawCircuitBreakerEvent, ctx);
+    }
   }
 }

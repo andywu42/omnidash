@@ -89,6 +89,8 @@ import LlmHealthDashboard from '@/pages/LlmHealthDashboard';
 import WiringHealthDashboard from '@/pages/WiringHealthDashboard';
 // DLQ Monitor Dashboard (OMN-5287)
 import DlqMonitorDashboard from '@/pages/DlqMonitorDashboard';
+// Circuit Breaker dashboard (OMN-5293)
+import CircuitBreakerDashboard from '@/pages/CircuitBreakerDashboard';
 
 // Phase 2: Category landing pages (OMN-2181)
 import SpeedCategory from '@/pages/SpeedCategory';
@@ -216,6 +218,9 @@ function Router() {
 
       {/* DLQ Monitor — dead-letter queue failures (OMN-5287) */}
       <Route path="/dlq" component={DlqMonitorDashboard} />
+
+      {/* Circuit Breaker — infra circuit breaker state transitions (OMN-5293) */}
+      <Route path="/circuit-breaker" component={CircuitBreakerDashboard} />
 
       {/* Model Efficiency Index dashboard (OMN-3941) */}
       <Route path="/model-efficiency" component={ModelEfficiencyDashboard} />

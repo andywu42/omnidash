@@ -76,6 +76,10 @@ import type { DataSourcesHealthResponse } from './health-data-sources-routes';
 import contextEffectivenessRoutes from './context-effectiveness-routes';
 // OmniMemory dashboard routes (OMN-5290)
 import memoryRoutes from './memory-routes';
+// DLQ Monitor dashboard routes (OMN-5287)
+import { dlqRoutes } from './dlq-routes';
+// Circuit Breaker dashboard routes (OMN-5293)
+import { circuitBreakerRoutes } from './circuit-breaker-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -223,6 +227,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Intent drift routes (OMN-5281)
   app.use('/api/intent-drift', intentDriftRoutes);
+
+  // DLQ Monitor dashboard routes (OMN-5287)
+  app.use('/api/dlq', dlqRoutes);
+
+  // Circuit Breaker dashboard routes (OMN-5293)
+  app.use('/api/circuit-breaker', circuitBreakerRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.

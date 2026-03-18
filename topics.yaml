@@ -75,6 +75,8 @@ read_model_topics:
     handler: "projectLlmHealthSnapshot"
   - topic: "onex.evt.omnibase-infra.wiring-health-snapshot.v1"
     handler: "projectWiringHealthSnapshot"
+  - topic: "onex.evt.omnibase-infra.circuit-breaker.v1"
+    handler: "projectCircuitBreakerEvent"
 
   # --- omniintelligence topics ---
   - topic: "onex.evt.omniintelligence.ci-debug-escalation.v1"
