@@ -48,6 +48,7 @@ import BaselinesROI from '@/pages/BaselinesROI';
 import CostTrendDashboard from '@/pages/CostTrendDashboard';
 import PatternEnforcement from '@/pages/PatternEnforcement';
 import ContextEnrichmentDashboard from '@/pages/ContextEnrichmentDashboard';
+import ContextEffectivenessDashboard from '@/pages/ContextEffectivenessDashboard';
 import LlmRoutingDashboard from '@/pages/LlmRoutingDashboard';
 import WhyThisHappened from '@/pages/WhyThisHappened';
 import StatusDashboard from '@/pages/StatusDashboard';
@@ -161,6 +162,9 @@ function Router() {
 
       {/* Context Enrichment dashboard (OMN-2280) */}
       <Route path="/enrichment" component={ContextEnrichmentDashboard} />
+
+      {/* Context Effectiveness dashboard (OMN-5286) */}
+      <Route path="/context-effectiveness" component={ContextEffectivenessDashboard} />
 
       {/* LLM Routing Effectiveness dashboard (OMN-2279) */}
       <Route path="/llm-routing" component={LlmRoutingDashboard} />

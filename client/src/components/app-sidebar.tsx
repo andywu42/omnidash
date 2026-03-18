@@ -199,6 +199,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         description: 'Hit rate per channel, token savings, latency distribution',
       },
       {
+        title: 'Context Effectiveness',
+        url: '/context-effectiveness',
+        icon: Activity,
+        description: 'Utilization score by method, injection rate, low-utilization alerts',
+      },
+      {
         title: 'LLM Routing',
         url: '/llm-routing',
         icon: GitFork,

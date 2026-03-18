@@ -41,6 +41,8 @@ import { LlmHealthProjection } from './projections/llm-health-projection';
 import { RoutingFeedbackProjection } from './projections/routing-feedback-projection';
 // Compliance projection (OMN-5285)
 import { ComplianceProjection } from './projections/compliance-projection';
+// Context Effectiveness projection (OMN-5286)
+import { ContextEffectivenessProjection } from './projections/context-effectiveness-projection';
 import { eventConsumer } from './event-consumer';
 import { eventBusDataSource } from './event-bus-data-source';
 import { extractActionFromTopic, extractProducerFromTopicOrDefault } from '@shared/topics';
@@ -150,6 +152,8 @@ export const llmHealthProjection = new LlmHealthProjection();
 export const routingFeedbackProjection = new RoutingFeedbackProjection();
 /** Compliance evaluation projection (OMN-5285). Queries compliance_evaluations table. */
 export const complianceProjection = new ComplianceProjection();
+/** Context effectiveness projection (OMN-5286). Queries injection_effectiveness table. */
+export const contextEffectivenessProjection = new ContextEffectivenessProjection();
 
 if (!projectionService.getView(extractionMetricsProjection.viewId)) {
   projectionService.registerView(extractionMetricsProjection);
@@ -211,6 +215,9 @@ if (!projectionService.getView(routingFeedbackProjection.viewId)) {
 }
 if (!projectionService.getView(complianceProjection.viewId)) {
   projectionService.registerView(complianceProjection);
+}
+if (!projectionService.getView(contextEffectivenessProjection.viewId)) {
+  projectionService.registerView(contextEffectivenessProjection);
 }
 
 // ============================================================================

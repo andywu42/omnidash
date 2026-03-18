@@ -71,6 +71,8 @@ read_model_topics:
   # --- omniintelligence topics ---
   - topic: "onex.evt.omniintelligence.ci-debug-escalation.v1"
     handler: "projectCiDebugEscalation"
+  - topic: "onex.evt.omniintelligence.context-effectiveness.v1"
+    handler: "projectContextEffectiveness"
   - topic: "onex.evt.omniintelligence.llm-call-completed.v1"
     handler: "projectLlmCostEvent"
   - topic: "onex.evt.omniintelligence.pattern-lifecycle-transitioned.v1"

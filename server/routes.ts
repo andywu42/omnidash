@@ -70,6 +70,8 @@ import intentDriftRoutes from './intent-drift-routes';
 // Prometheus metrics endpoint (OMN-4609)
 import { createMetricsRouter } from './metrics-routes';
 import type { DataSourcesHealthResponse } from './health-data-sources-routes';
+// Context Effectiveness dashboard routes (OMN-5286)
+import contextEffectivenessRoutes from './context-effectiveness-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -128,6 +130,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mount context enrichment routes for enrichment metrics dashboard (OMN-2280)
   app.use('/api/enrichment', enrichmentRoutes);
+
+  // Mount context effectiveness routes for context utilization dashboard (OMN-5286)
+  app.use('/api/context-effectiveness', contextEffectivenessRoutes);
 
   // Mount topic catalog routes for catalog status and warnings (OMN-2315)
   app.use('/api/catalog', topicCatalogRoutes);

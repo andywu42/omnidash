@@ -911,6 +911,21 @@ export const queryKeys = {
     summary: (window: string) => ['compliance', 'summary', window] as const,
     trend: (window: string) => ['compliance', 'trend', window] as const,
   },
+
+  // ============================================================================
+  // Context Effectiveness Dashboard (OMN-5286)
+  // ============================================================================
+
+  /** Context effectiveness dashboard query keys */
+  contextEffectiveness: {
+    all: ['context-effectiveness'] as const,
+    summary: (window: string) => ['context-effectiveness', 'summary', window] as const,
+    byMethod: (window: string) => ['context-effectiveness', 'by-method', window] as const,
+    trend: (window: string) => ['context-effectiveness', 'trend', window] as const,
+    outcomes: (window: string) => ['context-effectiveness', 'outcomes', window] as const,
+    lowUtilization: (window: string) =>
+      ['context-effectiveness', 'low-utilization', window] as const,
+  },
 } as const;
 
 /**

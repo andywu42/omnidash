@@ -38,7 +38,9 @@ import {
   SUFFIX_INTELLIGENCE_CI_DEBUG_ESCALATION,
   SUFFIX_INTELLIGENCE_ROUTING_FEEDBACK_PROCESSED,
   SUFFIX_INTELLIGENCE_COMPLIANCE_EVALUATED,
+  SUFFIX_INTELLIGENCE_CONTEXT_EFFECTIVENESS,
 } from '@shared/topics';
+import { emitEffectivenessUpdate } from '../../effectiveness-events';
 import {
   PatternProjectionEventSchema,
   PatternLifecycleTransitionedEventSchema,
@@ -60,6 +62,7 @@ const OMNIINTELLIGENCE_TOPICS = new Set([
   SUFFIX_INTELLIGENCE_CI_DEBUG_ESCALATION,
   SUFFIX_INTELLIGENCE_ROUTING_FEEDBACK_PROCESSED,
   SUFFIX_INTELLIGENCE_COMPLIANCE_EVALUATED,
+  SUFFIX_INTELLIGENCE_CONTEXT_EFFECTIVENESS,
 ]);
 
 export class OmniintelligenceProjectionHandler implements ProjectionHandler {
@@ -105,6 +108,8 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
         return this.projectRoutingFeedbackProcessed(data, context);
       case SUFFIX_INTELLIGENCE_COMPLIANCE_EVALUATED:
         return this.projectComplianceEvaluated(data, context);
+      case SUFFIX_INTELLIGENCE_CONTEXT_EFFECTIVENESS:
+        return this.projectContextEffectiveness(context);
       default:
         return false;
     }
@@ -818,6 +823,29 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
       throw err;
     }
 
+    return true;
+  }
+
+  /**
+   * Context effectiveness event (OMN-5286).
+   *
+   * The injection_effectiveness table is populated directly by omniintelligence
+   * and queried by ContextEffectivenessProjection. This handler acknowledges the
+   * event (advances the watermark) so the topic coverage gate passes.
+   * The projection's TTL-based refresh picks up the new data on the next
+   * ensureFresh() call without requiring explicit cache invalidation.
+   */
+
+  private async projectContextEffectiveness(_context: ProjectionContext): Promise<boolean> {
+    // No read-model write required — ContextEffectivenessProjection queries
+    // injection_effectiveness directly via its own TTL-based refresh cycle.
+    // Emit effectiveness update so WebSocket clients receive fresh data immediately
+    // rather than waiting for TTL expiry (mirrors emitEnrichmentInvalidate pattern).
+    try {
+      emitEffectivenessUpdate();
+    } catch (e) {
+      console.warn('[ReadModelConsumer] emitEffectivenessUpdate() failed post-commit:', e);
+    }
     return true;
   }
 }

@@ -339,6 +339,12 @@ export const SUFFIX_INTELLIGENCE_QUALITY_ASSESSMENT_COMPLETED =
 export const SUFFIX_INTELLIGENCE_COMPLIANCE_EVALUATED =
   'onex.evt.omniintelligence.compliance-evaluated.v1';
 
+/** Context effectiveness event (OMN-5286).
+ * Emitted by omniintelligence after measuring context utilization for a session.
+ * Consumed by the ReadModelConsumer to invalidate the contextEffectivenessProjection cache. */
+export const SUFFIX_INTELLIGENCE_CONTEXT_EFFECTIVENESS =
+  'onex.evt.omniintelligence.context-effectiveness.v1';
+
 /** Intelligence pattern lifecycle events */
 export const SUFFIX_INTELLIGENCE_PATTERN_LIFECYCLE_TRANSITION_CMD =
   'onex.cmd.omniintelligence.pattern-lifecycle-transition.v1';
