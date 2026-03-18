@@ -64,7 +64,10 @@ import {
   computeCanonicalNodeStats,
   pruneOldData,
 } from './consumers/consumer-state-helpers';
-import { fetchCatalogTopics as _fetchCatalog } from './consumers/consumer-lifecycle';
+import {
+  fetchCatalogTopics as _fetchCatalog,
+  registerEventConsumerClass,
+} from './consumers/consumer-lifecycle';
 
 // Re-export ALL types for backward compatibility
 export type {
@@ -884,6 +887,9 @@ export class EventConsumer extends EventEmitter {
     };
   }
 }
+
+// Register class with lifecycle module (breaks ESM circular dep — replaces require())
+registerEventConsumerClass(EventConsumer);
 
 // Backward-compatible named export
 import { createEventConsumerProxy } from './consumers/consumer-lifecycle';

@@ -10,6 +10,17 @@ import { TopicCatalogManager } from '../topic-catalog-manager';
 import { loadManifestTopics } from '../services/topic-manifest-loader';
 
 // ============================================================================
+// Class Registry (breaks ESM circular dep — event-consumer.ts registers itself)
+// ============================================================================
+
+type EventConsumerConstructor = new () => EventConsumer;
+let EventConsumerClass: EventConsumerConstructor | null = null;
+
+export function registerEventConsumerClass(cls: EventConsumerConstructor): void {
+  EventConsumerClass = cls;
+}
+
+// ============================================================================
 // Catalog Management
 // ============================================================================
 
@@ -66,9 +77,13 @@ let initializationError: Error | null = null;
 export function getEventConsumer(): EventConsumer | null {
   if (eventConsumerInstance) return eventConsumerInstance;
   if (initializationError) return null;
+  if (!EventConsumerClass) {
+    initializationError = new Error('EventConsumer class not registered');
+    console.error('EventConsumer initialization failed:', initializationError.message);
+    return null;
+  }
   try {
-    const { EventConsumer: EC } = require('../event-consumer');
-    eventConsumerInstance = new EC();
+    eventConsumerInstance = new EventConsumerClass();
     return eventConsumerInstance;
   } catch (error) {
     initializationError = error instanceof Error ? error : new Error(String(error));
