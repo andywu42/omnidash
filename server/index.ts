@@ -378,7 +378,9 @@ app.use((req, res, next) => {
   }
 
   // Setup WebSocket for real-time events
-  if (process.env.ENABLE_REAL_TIME_EVENTS === 'true') {
+  // Infer from KAFKA_BROKERS presence or legacy ENABLE_REAL_TIME_EVENTS [OMN-5363]
+  const kafkaBrokersConfigured = Boolean(process.env.KAFKA_BROKERS);
+  if (kafkaBrokersConfigured || process.env.ENABLE_REAL_TIME_EVENTS === 'true') {
     setupWebSocket(server);
   }
 
