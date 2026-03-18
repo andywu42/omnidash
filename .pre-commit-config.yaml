@@ -65,5 +65,13 @@ repos:
         exclude: ^(archived/|archive/)
         stages: [pre-commit]
 
+  - repo: https://github.com/OmniNode-ai/onex_change_control
+    rev: 39a09ffb2432b8b7d3f47b334b869b55c9cb4fc6
+    hooks:
+      - id: no-hardcoded-topics
+        stages: [pre-commit]
+        # Pre-existing violations — pending migration to canonical topic constants
+        exclude: ^(server/consumers/read-model/(platform|omniclaude)-projections\.ts|server/event-consumer\.ts|server/services/topic-registry-service\.ts|server/startup-backfill\.ts|server/event-bus-health-poller\.ts|client/src/lib/mock-data/event-bus-demo\.ts|scripts/audit-components\.py|scripts/check-bus-parity\.ts)$
+
 default_stages: [pre-commit]
 fail_fast: false
