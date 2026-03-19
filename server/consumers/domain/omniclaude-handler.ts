@@ -593,15 +593,47 @@ export class OmniclaudeHandler implements DomainHandler {
         handleExtractionEvent(topic, event, ctx);
         break;
 
-      // OmniClaude extended events — stub: no read-model projection defined yet
-      case SUFFIX_OMNICLAUDE_ROUTING_DECISION:
+      // Session outcome events — projected to session_outcomes by read-model consumer (OMN-5557)
       case SUFFIX_OMNICLAUDE_SESSION_OUTCOME:
-      case SUFFIX_OMNICLAUDE_MANIFEST_INJECTED:
+        if (ctx.isDebug) {
+          intentLogger.debug(
+            `Processing session-outcome: session=${event.session_id || event.sessionId}, outcome=${event.outcome}`
+          );
+        }
+        ctx.emit('session-outcome', {
+          sessionId: (event.session_id as string) || (event.sessionId as string) || null,
+          outcome: (event.outcome as string) || 'unknown',
+          timestamp: (event.timestamp as string) || new Date().toISOString(),
+        });
+        break;
+
+      // Phase metrics events — projected to phase_metrics_events by read-model consumer (OMN-5557)
       case SUFFIX_OMNICLAUDE_PHASE_METRICS:
+        if (ctx.isDebug) {
+          intentLogger.debug(
+            `Processing phase-metrics: session=${event.session_id || event.sessionId}, phase=${event.phase}, status=${event.status}`
+          );
+        }
+        ctx.emit('phase-metrics', {
+          sessionId: (event.session_id as string) || (event.sessionId as string) || null,
+          phase: (event.phase as string) || 'unknown',
+          status: (event.status as string) || 'unknown',
+          durationMs: Number(event.duration_ms ?? event.durationMs ?? 0),
+          timestamp: (event.timestamp as string) || new Date().toISOString(),
+        });
+        break;
+
+      // Routing decision suffix — duplicate of TOPIC_OMNICLAUDE_ROUTING_DECISIONS (same topic string).
+      // Handled by handleRoutingDecision() above; this case is unreachable but kept for clarity.
+      case SUFFIX_OMNICLAUDE_ROUTING_DECISION:
+        handleRoutingDecision(event as RawRoutingDecisionEvent, ctx);
+        break;
+
+      // OmniClaude extended events — offset advancement only (no domain-handler logic needed)
+      case SUFFIX_OMNICLAUDE_MANIFEST_INJECTED:
       case SUFFIX_OMNICLAUDE_NOTIFICATION_BLOCKED:
       case SUFFIX_OMNICLAUDE_NOTIFICATION_COMPLETED:
       case SUFFIX_OMNICLAUDE_TRANSFORMATION_COMPLETED:
-        // stub: offset advancement only (TODO OMN-2152)
         if (ctx.isDebug) {
           intentLogger.debug(`Processing omniclaude extended event from topic: ${topic}`);
         }
