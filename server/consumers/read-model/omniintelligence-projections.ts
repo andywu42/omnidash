@@ -36,6 +36,7 @@ import {
   SUFFIX_INTELLIGENCE_PATTERN_LEARNING_CMD,
   TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED,
   SUFFIX_INTELLIGENCE_RUN_EVALUATED,
+  SUFFIX_INTELLIGENCE_INTENT_CLASSIFIED,
   SUFFIX_INTELLIGENCE_INTENT_DRIFT_DETECTED,
   SUFFIX_INTELLIGENCE_CI_DEBUG_ESCALATION,
   SUFFIX_INTELLIGENCE_ROUTING_FEEDBACK_PROCESSED,
@@ -61,6 +62,7 @@ const OMNIINTELLIGENCE_TOPICS = new Set([
   SUFFIX_INTELLIGENCE_PATTERN_LEARNING_CMD,
   TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED,
   SUFFIX_INTELLIGENCE_RUN_EVALUATED,
+  SUFFIX_INTELLIGENCE_INTENT_CLASSIFIED,
   SUFFIX_INTELLIGENCE_INTENT_DRIFT_DETECTED,
   SUFFIX_INTELLIGENCE_CI_DEBUG_ESCALATION,
   SUFFIX_INTELLIGENCE_ROUTING_FEEDBACK_PROCESSED,
@@ -104,6 +106,8 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
         return this.projectPlanReviewStrategyRunEvent(data, fallbackId, context);
       case SUFFIX_INTELLIGENCE_RUN_EVALUATED:
         return this.projectRunEvaluated(data, fallbackId, context);
+      case SUFFIX_INTELLIGENCE_INTENT_CLASSIFIED:
+        return this.projectIntentClassifiedEvent(data, fallbackId, context);
       case SUFFIX_INTELLIGENCE_INTENT_DRIFT_DETECTED:
         return this.projectIntentDriftDetected(data, context);
       case SUFFIX_INTELLIGENCE_CI_DEBUG_ESCALATION:
@@ -614,6 +618,60 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
       }
       throw err;
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Intent classified -> intent_signals (OMN-5620)
+  // -------------------------------------------------------------------------
+
+  private async projectIntentClassifiedEvent(
+    data: Record<string, unknown>,
+    fallbackId: string,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const correlationId =
+      (data.correlation_id as string) || (data.correlationId as string) || fallbackId;
+
+    const intentType =
+      (data.intent_category as string) ||
+      (data.intentCategory as string) ||
+      (data.intent_type as string) ||
+      (data.intentType as string) ||
+      'unknown';
+
+    const eventId =
+      (data.id as string) || (data.event_id as string) || (data.eventId as string) || correlationId;
+
+    try {
+      await db.execute(sql`
+        INSERT INTO intent_signals (
+          correlation_id, event_id, intent_type, topic,
+          raw_payload, created_at
+        ) VALUES (
+          ${correlationId},
+          ${eventId},
+          ${intentType},
+          ${'onex.evt.omniintelligence.intent-classified.v1'},
+          ${JSON.stringify(data)},
+          ${safeParseDate(data.timestamp ?? data.created_at ?? data.createdAt)}
+        )
+        ON CONFLICT (correlation_id) DO NOTHING
+      `);
+    } catch (err) {
+      if (isTableMissingError(err, 'intent_signals')) {
+        console.warn(
+          '[ReadModelConsumer] intent_signals table not yet created -- ' +
+            'run migrations to enable intent classified projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+
+    return true;
   }
 
   // -------------------------------------------------------------------------

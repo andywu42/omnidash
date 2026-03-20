@@ -1937,6 +1937,37 @@ export type IntentDriftRow = typeof intentDriftEvents.$inferSelect;
 export type InsertIntentDrift = typeof intentDriftEvents.$inferInsert;
 
 // ============================================================================
+// Intent Signals Table (migration 0037_intent_signals, OMN-5620)
+// Persists intent-classified and intent-stored events for the Intents dashboard.
+// Source topics:
+//   onex.evt.omniintelligence.intent-classified.v1
+//   onex.evt.omnimemory.intent-stored.v1
+// Replay policy: INSERT with ON CONFLICT DO NOTHING (correlation_id is dedup key).
+// ============================================================================
+
+export const intentSignals = pgTable(
+  'intent_signals',
+  {
+    id: serial('id').primaryKey(),
+    correlationId: text('correlation_id').notNull().unique(),
+    eventId: text('event_id').notNull(),
+    intentType: text('intent_type').notNull().default('unknown'),
+    topic: text('topic').notNull(),
+    rawPayload: jsonb('raw_payload'),
+    createdAt: timestamp('created_at', { withTimezone: true }),
+    ingestedAt: timestamp('ingested_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    intentTypeIdx: index('idx_intent_signals_intent_type').on(table.intentType),
+    createdAtIdx: index('idx_intent_signals_created_at').on(table.createdAt),
+    topicIdx: index('idx_intent_signals_topic').on(table.topic),
+  })
+);
+
+export type IntentSignalRow = typeof intentSignals.$inferSelect;
+export type InsertIntentSignal = typeof intentSignals.$inferInsert;
+
+// ============================================================================
 // LLM Health Snapshots Table (migration 0024_llm_health_snapshots, OMN-5279)
 // Tracks per-endpoint health metrics for LLM inference servers.
 // Source topic: onex.evt.omnibase-infra.llm-health-snapshot.v1
@@ -2264,7 +2295,9 @@ export const savingsEstimates = pgTable(
       .notNull()
       .default('0'),
     estimatedTotalTokensSaved: integer('estimated_total_tokens_saved').notNull().default(0),
-    categories: jsonb('categories').notNull().default(sql`'[]'::jsonb`),
+    categories: jsonb('categories')
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     directConfidence: real('direct_confidence').notNull().default(0),
     heuristicConfidenceAvg: real('heuristic_confidence_avg').notNull().default(0),
     estimationMethod: text('estimation_method').notNull().default('tiered_attribution_v1'),
