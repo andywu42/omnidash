@@ -66,8 +66,10 @@ repos:
         stages: [pre-commit]
 
   - repo: https://github.com/OmniNode-ai/onex_change_control
-    rev: a3d309f216f29f7ff3a4d992478cecf61274002a
+    rev: 16659f5db9f03b7f248da5fc319647013be18682 # pragma: allowlist secret
     hooks:
+      - id: check-ts-stubs
+        stages: [pre-commit]
       - id: no-hardcoded-topics
         stages: [pre-commit]
         # Pre-existing violations — pending migration to canonical topic constants.

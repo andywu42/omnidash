@@ -97,6 +97,15 @@ jobs:
           fi
           echo "OK: No omniarchon references"
 
+      - name: No forbidden stub markers (OMN-5606)
+        run: |
+          # Uses the same detector as the pre-commit hook (single source of truth)
+          pip install pre-commit > /dev/null 2>&1
+          pre-commit run check-ts-stubs --all-files || {
+            echo "::error::Forbidden // stub: markers found. Use // stub-ok: or // intentional-skip: instead."
+            exit 1
+          }
+
   test:
     name: Run Tests
     runs-on: ubuntu-latest

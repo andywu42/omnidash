@@ -678,8 +678,10 @@ export class PlatformHandler implements DomainHandler {
         }
         break;
 
-      // stub: agent-status offset advancement only (TODO OMN-2152)
+      // Agent status events (OMN-5604)
       case SUFFIX_AGENT_STATUS:
+        // intentional-skip: agent_status_events table + projection deferred to OMN-5604.
+        // Domain handler advances offset; append-only projection pending table creation.
         if (ctx.isDebug) {
           intentLogger.debug(`Processing session/agent event from topic: ${topic}`);
         }

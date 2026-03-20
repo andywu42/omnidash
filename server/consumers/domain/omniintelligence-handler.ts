@@ -302,7 +302,7 @@ export class OmniintelligenceHandler implements DomainHandler {
         }
         break;
 
-      // Intelligence pipeline commands + completions — stub: offset advancement only (TODO OMN-2152)
+      // Intelligence pipeline commands + completions (OMN-5601)
       case SUFFIX_INTELLIGENCE_CODE_ANALYSIS_CMD:
       case SUFFIX_INTELLIGENCE_DOCUMENT_INGESTION_CMD:
       case SUFFIX_INTELLIGENCE_PATTERN_LEARNING_CMD:
@@ -312,30 +312,29 @@ export class OmniintelligenceHandler implements DomainHandler {
       case SUFFIX_INTELLIGENCE_DOCUMENT_INGESTION_COMPLETED:
       case SUFFIX_INTELLIGENCE_PATTERN_LEARNING_COMPLETED:
       case SUFFIX_INTELLIGENCE_QUALITY_ASSESSMENT_COMPLETED:
-        // stub: no read-model projection defined yet (TODO OMN-2152)
+        // intentional-skip: pipeline job projections deferred to OMN-5601 (intelligence_pipeline_jobs table).
+        // Domain handler advances offset; read-model projection pending table creation.
         if (ctx.isDebug) {
           intentLogger.debug(`Processing intelligence pipeline event from topic: ${topic}`);
         }
         break;
 
-      // Pattern lifecycle — stub: offset advancement only (TODO OMN-2152)
+      // Pattern lifecycle events (OMN-5602)
       case SUFFIX_INTELLIGENCE_PATTERN_LIFECYCLE_TRANSITION_CMD:
       case SUFFIX_INTELLIGENCE_PATTERN_LIFECYCLE_TRANSITIONED:
       case SUFFIX_INTELLIGENCE_PATTERN_PROMOTED:
       case SUFFIX_INTELLIGENCE_PATTERN_STORED:
       case SUFFIX_PATTERN_DISCOVERED:
-        // stub: no read-model projection defined yet (TODO OMN-2152)
+        // intentional-skip: TRANSITIONED + LEARNING_CMD projected by read-model consumer.
+        // PROMOTED/STORED/DISCOVERED projections deferred to OMN-5602.
         if (ctx.isDebug) {
           intentLogger.debug(`Processing pattern lifecycle event from topic: ${topic}`);
         }
         break;
 
-      // Session outcome — stub: offset advancement only (TODO OMN-2152)
       case SUFFIX_INTELLIGENCE_SESSION_OUTCOME_CMD:
-        // stub: no read-model projection defined yet (TODO OMN-2152)
-        if (ctx.isDebug) {
-          intentLogger.debug(`Processing session/agent event from topic: ${topic}`);
-        }
+        // intentional-skip: command routed to omniintelligence service, not a dashboard-projectable event.
+        // Session outcome DATA is projected via SUFFIX_OMNICLAUDE_SESSION_OUTCOME (see omniclaude-handler).
         break;
     }
   }
