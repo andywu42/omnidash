@@ -6,6 +6,7 @@
  * - LLM health snapshot -> llm_health_snapshots (OMN-5279)
  * - Wiring health snapshot -> in-memory WiringHealthProjection (OMN-5292)
  * - Circuit breaker event -> circuit_breaker_events (OMN-5293)
+ * - Savings estimated -> savings_estimates (OMN-5552)
  */
 
 import { randomUUID } from 'crypto';
@@ -17,6 +18,7 @@ import {
   baselinesBreakdown,
   llmHealthSnapshots,
   circuitBreakerEvents,
+  savingsEstimates,
 } from '@shared/intelligence-schema';
 import type {
   InsertBaselinesSnapshot,
@@ -25,6 +27,7 @@ import type {
   InsertBaselinesBreakdown,
   InsertLlmHealthSnapshot,
   InsertCircuitBreakerEvent,
+  InsertSavingsEstimate,
 } from '@shared/intelligence-schema';
 import { baselinesProjection } from '../../projection-bootstrap';
 import { emitBaselinesUpdate } from '../../baselines-events';
@@ -33,6 +36,7 @@ import {
   SUFFIX_OMNIBASE_INFRA_LLM_HEALTH_SNAPSHOT,
   TOPIC_OMNIBASE_INFRA_WIRING_HEALTH_SNAPSHOT,
   TOPIC_OMNIBASE_INFRA_CIRCUIT_BREAKER,
+  SUFFIX_OMNIBASE_INFRA_SAVINGS_ESTIMATED,
 } from '@shared/topics';
 import { wiringHealthProjection } from '../../projections/wiring-health-projection';
 import type { TopicWiringRecord } from '../../projections/wiring-health-projection';
@@ -53,12 +57,14 @@ const BASELINES_TOPIC = SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED;
 const LLM_HEALTH_TOPIC = SUFFIX_OMNIBASE_INFRA_LLM_HEALTH_SNAPSHOT;
 const WIRING_HEALTH_TOPIC = TOPIC_OMNIBASE_INFRA_WIRING_HEALTH_SNAPSHOT;
 const CIRCUIT_BREAKER_TOPIC = TOPIC_OMNIBASE_INFRA_CIRCUIT_BREAKER;
+const SAVINGS_ESTIMATED_TOPIC = SUFFIX_OMNIBASE_INFRA_SAVINGS_ESTIMATED;
 
 const OMNIBASE_INFRA_TOPICS = new Set([
   SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED,
   SUFFIX_OMNIBASE_INFRA_LLM_HEALTH_SNAPSHOT,
   TOPIC_OMNIBASE_INFRA_WIRING_HEALTH_SNAPSHOT,
   TOPIC_OMNIBASE_INFRA_CIRCUIT_BREAKER,
+  SUFFIX_OMNIBASE_INFRA_SAVINGS_ESTIMATED,
 ]);
 
 export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
@@ -83,6 +89,9 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
     }
     if (topic === CIRCUIT_BREAKER_TOPIC) {
       return this.projectCircuitBreakerEvent(data, context);
+    }
+    if (topic === SAVINGS_ESTIMATED_TOPIC) {
+      return this.projectSavingsEstimated(data, context, meta);
     }
     return false;
   }
@@ -510,6 +519,116 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
         console.warn(
           '[ReadModelConsumer] baselines_* tables not yet created -- ' +
             'run migrations to enable baselines projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+
+    return true;
+  }
+
+  private async projectSavingsEstimated(
+    data: Record<string, unknown>,
+    context: ProjectionContext,
+    meta: MessageMeta
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const sessionId = String(data.session_id ?? data.sessionId ?? '').trim();
+    if (!sessionId) {
+      console.warn('[ReadModelConsumer] savings-estimated event missing session_id');
+      return true;
+    }
+
+    // Derive a deterministic source_event_id for idempotency.
+    // Prefer correlation_id from the event; fall back to Kafka coordinates.
+    const correlationId = String(data.correlation_id ?? data.correlationId ?? '').trim();
+    const sourceEventId =
+      correlationId || deterministicCorrelationId(SAVINGS_ESTIMATED_TOPIC, meta.partition, meta.offset);
+
+    const eventTimestamp = safeParseDate(data.timestamp_iso ?? data.timestamp ?? data.emitted_at);
+
+    const row: InsertSavingsEstimate = {
+      sourceEventId,
+      sessionId,
+      correlationId: correlationId || null,
+      schemaVersion: String(data.schema_version ?? '1.0'),
+      actualTotalTokens: Number(data.actual_total_tokens ?? data.actualTotalTokens ?? 0),
+      actualCostUsd: String(Number(data.actual_cost_usd ?? data.actualCostUsd ?? 0)),
+      actualModelId: data.actual_model_id != null
+        ? String(data.actual_model_id)
+        : data.actualModelId != null
+          ? String(data.actualModelId)
+          : null,
+      counterfactualModelId: data.counterfactual_model_id != null
+        ? String(data.counterfactual_model_id)
+        : data.counterfactualModelId != null
+          ? String(data.counterfactualModelId)
+          : null,
+      directSavingsUsd: String(Number(data.direct_savings_usd ?? data.directSavingsUsd ?? 0)),
+      directTokensSaved: Number(data.direct_tokens_saved ?? data.directTokensSaved ?? 0),
+      estimatedTotalSavingsUsd: String(
+        Number(data.estimated_total_savings_usd ?? data.estimatedTotalSavingsUsd ?? 0)
+      ),
+      estimatedTotalTokensSaved: Number(
+        data.estimated_total_tokens_saved ?? data.estimatedTotalTokensSaved ?? 0
+      ),
+      categories: (data.categories ?? []) as Record<string, unknown>[],
+      directConfidence: Number(data.direct_confidence ?? data.directConfidence ?? 0),
+      heuristicConfidenceAvg: Number(
+        data.heuristic_confidence_avg ?? data.heuristicConfidenceAvg ?? 0
+      ),
+      estimationMethod: String(
+        data.estimation_method ?? data.estimationMethod ?? 'tiered_attribution_v1'
+      ),
+      treatmentGroup: data.treatment_group != null
+        ? String(data.treatment_group)
+        : data.treatmentGroup != null
+          ? String(data.treatmentGroup)
+          : null,
+      isMeasured: Boolean(data.is_measured ?? data.isMeasured ?? false),
+      completenessStatus: String(
+        data.completeness_status ?? data.completenessStatus ?? 'complete'
+      ),
+      pricingManifestVersion: data.pricing_manifest_version != null
+        ? String(data.pricing_manifest_version)
+        : data.pricingManifestVersion != null
+          ? String(data.pricingManifestVersion)
+          : null,
+      eventTimestamp,
+    };
+
+    try {
+      await db
+        .insert(savingsEstimates)
+        .values(row)
+        .onConflictDoUpdate({
+          target: savingsEstimates.sourceEventId,
+          set: {
+            actualTotalTokens: row.actualTotalTokens,
+            actualCostUsd: row.actualCostUsd,
+            directSavingsUsd: row.directSavingsUsd,
+            directTokensSaved: row.directTokensSaved,
+            estimatedTotalSavingsUsd: row.estimatedTotalSavingsUsd,
+            estimatedTotalTokensSaved: row.estimatedTotalTokensSaved,
+            categories: row.categories,
+            directConfidence: row.directConfidence,
+            heuristicConfidenceAvg: row.heuristicConfidenceAvg,
+            completenessStatus: row.completenessStatus,
+            ingestedAt: new Date(),
+          },
+        });
+      console.log(
+        `[ReadModelConsumer] Projected savings-estimated for session ${sessionId} ` +
+          `(total_savings=$${Number(row.estimatedTotalSavingsUsd).toFixed(4)})`
+      );
+    } catch (err) {
+      if (isTableMissingError(err, 'savings_estimates')) {
+        console.warn(
+          '[ReadModelConsumer] savings_estimates table not yet created -- ' +
+            'run migrations to enable savings projection'
         );
         return true;
       }

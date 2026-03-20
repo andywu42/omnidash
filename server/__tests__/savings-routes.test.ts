@@ -2,53 +2,49 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
 import savingsRoutes from '../savings-routes';
-import { AgentRunTracker } from '../agent-run-tracker';
 
-// Mock dependencies
-vi.mock('../agent-run-tracker', () => ({
-  AgentRunTracker: {
-    calculateSavingsMetrics: vi.fn().mockReturnValue({
-      totalSavings: 1000,
-      monthlySavings: 1000,
-      weeklySavings: 250,
-      dailySavings: 35,
-      intelligenceRuns: 100,
-      baselineRuns: 100,
-      avgTokensPerRun: 500,
-      avgComputePerRun: 1.5,
-      costPerToken: 0.0001,
-      costPerCompute: 0.05,
-      efficiencyGain: 25,
-      timeSaved: 10,
-      dataAvailable: true,
-    }),
-    recordRun: vi.fn(),
-    getRuns: vi.fn().mockReturnValue([]),
-    getRunsInRange: vi.fn().mockReturnValue([]),
-    getAgentIds: vi.fn().mockReturnValue(['test-agent']),
-    getAgentComparison: vi.fn().mockReturnValue({
-      agentId: 'test-agent',
-      agentName: 'Test Agent',
-      withIntelligence: {
-        avgTokens: 500,
-        avgCompute: 1.0,
-        avgTime: 30,
-        successRate: 95,
-        cost: 0.05,
+// Mock the projection's ensureFreshForWindow to return test data
+vi.mock('../projections/savings-projection', () => {
+  const payload = {
+    summary: {
+      totalEstimatedSavingsUsd: 125.50,
+      totalDirectSavingsUsd: 80.25,
+      totalTokensSaved: 50000,
+      totalDirectTokensSaved: 32000,
+      eventCount: 100,
+      sessionCount: 25,
+      avgConfidence: 0.72,
+      avgDirectConfidence: 0.95,
+      window: '7d',
+    },
+    trend: [
+      {
+        bucket: '2026-03-15T00:00:00.000Z',
+        estimatedSavingsUsd: 18.5,
+        directSavingsUsd: 11.2,
+        tokensSaved: 7200,
+        eventCount: 15,
       },
-      withoutIntelligence: {
-        avgTokens: 1000,
-        avgCompute: 2.0,
-        avgTime: 60,
-        successRate: 90,
-        cost: 0.1,
+    ],
+    categories: [
+      {
+        category: 'context_caching',
+        totalSavingsUsd: 45.0,
+        totalTokensSaved: 18000,
+        avgConfidence: 0.85,
+        eventCount: 40,
       },
-      savings: { tokens: 500, compute: 1.0, time: 30, cost: 0.05, percentage: 50 },
-    }),
-  },
-}));
+    ],
+    granularity: 'day',
+  };
 
-describe('Savings Routes', () => {
+  class MockSavingsProjection {
+    ensureFreshForWindow = vi.fn().mockResolvedValue(payload);
+  }
+  return { SavingsProjection: MockSavingsProjection };
+});
+
+describe('Savings Routes (DB-backed)', () => {
   let app: Express;
 
   beforeEach(() => {
@@ -58,165 +54,60 @@ describe('Savings Routes', () => {
     vi.clearAllMocks();
   });
 
-  describe('POST /api/savings/runs', () => {
-    it('should record an agent run', async () => {
-      const runData = {
-        id: 'test-run-id',
-        agentId: 'test-agent',
-        agentName: 'Test Agent',
-        timestamp: new Date().toISOString(),
-        withIntelligence: true,
-        tokensUsed: 1000,
-        computeUnits: 2.0,
-        duration: 60,
-        success: true,
-        cost: 0.1,
-      };
+  describe('GET /api/savings/summary', () => {
+    it('should return savings summary', async () => {
+      const response = await request(app).get('/api/savings/summary').expect(200);
 
-      const response = await request(app).post('/api/savings/runs').send(runData).expect(200);
-
-      expect(response.body).toHaveProperty('success', true);
+      expect(response.body).toHaveProperty('totalEstimatedSavingsUsd', 125.50);
+      expect(response.body).toHaveProperty('totalDirectSavingsUsd', 80.25);
+      expect(response.body).toHaveProperty('totalTokensSaved', 50000);
+      expect(response.body).toHaveProperty('eventCount', 100);
+      expect(response.body).toHaveProperty('sessionCount', 25);
+      expect(response.body).toHaveProperty('window', '7d');
     });
 
-    it('should validate required fields', async () => {
-      const response = await request(app).post('/api/savings/runs').send({}).expect(400);
-
-      expect(response.body).toHaveProperty('error');
+    it('should accept window parameter', async () => {
+      const response = await request(app).get('/api/savings/summary?window=24h').expect(200);
+      expect(response.body).toHaveProperty('totalEstimatedSavingsUsd');
     });
   });
 
-  describe('GET /api/savings/metrics', () => {
-    it('should return savings metrics', async () => {
+  describe('GET /api/savings/trend', () => {
+    it('should return savings trend data', async () => {
+      const response = await request(app).get('/api/savings/trend').expect(200);
+
+      expect(response.body).toHaveProperty('trend');
+      expect(Array.isArray(response.body.trend)).toBe(true);
+      expect(response.body).toHaveProperty('granularity', 'day');
+      expect(response.body).toHaveProperty('window', '7d');
+    });
+  });
+
+  describe('GET /api/savings/categories', () => {
+    it('should return category breakdown', async () => {
+      const response = await request(app).get('/api/savings/categories').expect(200);
+
+      expect(response.body).toHaveProperty('categories');
+      expect(Array.isArray(response.body.categories)).toBe(true);
+      expect(response.body.categories[0]).toHaveProperty('category', 'context_caching');
+    });
+  });
+
+  describe('GET /api/savings/metrics (legacy)', () => {
+    it('should return backwards-compatible metrics shape', async () => {
       const response = await request(app).get('/api/savings/metrics').expect(200);
 
-      expect(response.body).toHaveProperty('totalSavings');
+      expect(response.body).toHaveProperty('totalSavings', 125.50);
       expect(response.body).toHaveProperty('monthlySavings');
       expect(response.body).toHaveProperty('weeklySavings');
       expect(response.body).toHaveProperty('dailySavings');
-      expect(response.body).toHaveProperty('intelligenceRuns');
-      expect(response.body).toHaveProperty('baselineRuns');
+      expect(response.body).toHaveProperty('intelligenceRuns', 100);
+      expect(response.body).toHaveProperty('dataAvailable', true);
     });
 
     it('should accept timeRange parameter', async () => {
-      const response = await request(app).get('/api/savings/metrics?timeRange=7d').expect(200);
-
+      const response = await request(app).get('/api/savings/metrics?timeRange=30d').expect(200);
       expect(response.body).toHaveProperty('totalSavings');
-    });
-
-    // eslint-disable-next-line vitest/expect-expect
-    it('should handle different time ranges', async () => {
-      // supertest .expect() performs assertions
-      await request(app).get('/api/savings/metrics?timeRange=30d').expect(200);
-
-      await request(app).get('/api/savings/metrics?timeRange=90d').expect(200);
-    });
-  });
-
-  describe('GET /api/savings/agents', () => {
-    it('should return agent comparisons', async () => {
-      vi.mocked(AgentRunTracker.getRuns).mockReturnValue([
-        {
-          agentId: 'test-agent',
-          agentName: 'Test Agent',
-          timestamp: new Date().toISOString(),
-          withIntelligence: true,
-          tokensUsed: 500,
-          computeUnits: 1.0,
-          duration: 30,
-          success: true,
-          cost: 0.05,
-        },
-        {
-          agentId: 'test-agent',
-          agentName: 'Test Agent',
-          timestamp: new Date().toISOString(),
-          withIntelligence: false,
-          tokensUsed: 1000,
-          computeUnits: 2.0,
-          duration: 60,
-          success: true,
-          cost: 0.1,
-        },
-      ] as any);
-
-      const response = await request(app).get('/api/savings/agents').expect(200);
-
-      expect(Array.isArray(response.body)).toBe(true);
-    });
-
-    it('should accept timeRange parameter', async () => {
-      vi.mocked(AgentRunTracker.getRuns).mockReturnValue([]);
-
-      const response = await request(app).get('/api/savings/agents?timeRange=7d').expect(200);
-
-      expect(Array.isArray(response.body)).toBe(true);
-    });
-  });
-
-  describe('GET /api/savings/timeseries', () => {
-    it('should return time series data', async () => {
-      vi.mocked(AgentRunTracker.getRunsInRange).mockReturnValue([
-        {
-          id: 'run-1',
-          agentId: 'test-agent',
-          agentName: 'Test Agent',
-          timestamp: new Date().toISOString(),
-          withIntelligence: true,
-          tokensUsed: 500,
-          computeUnits: 1.0,
-          duration: 30,
-          success: true,
-          cost: 0.05,
-        },
-        {
-          id: 'run-2',
-          agentId: 'test-agent',
-          agentName: 'Test Agent',
-          timestamp: new Date().toISOString(),
-          withIntelligence: false,
-          tokensUsed: 1000,
-          computeUnits: 2.0,
-          duration: 60,
-          success: true,
-          cost: 0.1,
-        },
-      ] as any);
-
-      const response = await request(app).get('/api/savings/timeseries?timeRange=7d').expect(200);
-
-      expect(Array.isArray(response.body)).toBe(true);
-    });
-  });
-
-  describe('GET /api/savings/providers', () => {
-    it('should return provider savings data', async () => {
-      vi.mocked(AgentRunTracker.getRunsInRange).mockReturnValue([
-        {
-          id: 'run-1',
-          agentId: 'test-agent',
-          agentName: 'Test Agent',
-          timestamp: new Date().toISOString(),
-          withIntelligence: true,
-          tokensUsed: 500,
-          computeUnits: 1.0,
-          duration: 30,
-          success: true,
-          cost: 0.05,
-          metadata: { provider: 'anthropic' },
-        },
-      ] as any);
-
-      const response = await request(app).get('/api/savings/providers?timeRange=30d').expect(200);
-
-      expect(Array.isArray(response.body)).toBe(true);
-    });
-  });
-
-  describe('GET /api/savings/breakdown', () => {
-    it('should return cost breakdown', async () => {
-      const response = await request(app).get('/api/savings/breakdown?timeRange=30d').expect(200);
-
-      expect(response.body).toBeDefined();
     });
   });
 });

@@ -2236,3 +2236,52 @@ export const rlEpisodes = pgTable(
 export const insertRlEpisodeSchema = createInsertSchema(rlEpisodes);
 export type RlEpisodeRow = typeof rlEpisodes.$inferSelect;
 export type InsertRlEpisode = typeof rlEpisodes.$inferInsert;
+
+// ============================================================================
+// Savings Estimates Table (OMN-5552)
+// Stores tiered token savings attribution events from
+// onex.evt.omnibase-infra.savings-estimated.v1
+// Replay policy: UPSERT on source_event_id (idempotent).
+// ============================================================================
+
+export const savingsEstimates = pgTable(
+  'savings_estimates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sourceEventId: text('source_event_id').unique().notNull(),
+    sessionId: text('session_id').notNull(),
+    correlationId: text('correlation_id'),
+    schemaVersion: text('schema_version').notNull().default('1.0'),
+    actualTotalTokens: integer('actual_total_tokens').notNull().default(0),
+    actualCostUsd: numeric('actual_cost_usd', { precision: 12, scale: 10 }).notNull().default('0'),
+    actualModelId: text('actual_model_id'),
+    counterfactualModelId: text('counterfactual_model_id'),
+    directSavingsUsd: numeric('direct_savings_usd', { precision: 12, scale: 10 })
+      .notNull()
+      .default('0'),
+    directTokensSaved: integer('direct_tokens_saved').notNull().default(0),
+    estimatedTotalSavingsUsd: numeric('estimated_total_savings_usd', { precision: 12, scale: 10 })
+      .notNull()
+      .default('0'),
+    estimatedTotalTokensSaved: integer('estimated_total_tokens_saved').notNull().default(0),
+    categories: jsonb('categories').notNull().default(sql`'[]'::jsonb`),
+    directConfidence: real('direct_confidence').notNull().default(0),
+    heuristicConfidenceAvg: real('heuristic_confidence_avg').notNull().default(0),
+    estimationMethod: text('estimation_method').notNull().default('tiered_attribution_v1'),
+    treatmentGroup: text('treatment_group'),
+    isMeasured: boolean('is_measured').notNull().default(false),
+    completenessStatus: text('completeness_status').notNull().default('complete'),
+    pricingManifestVersion: text('pricing_manifest_version'),
+    eventTimestamp: timestamp('event_timestamp', { withTimezone: true }).notNull(),
+    ingestedAt: timestamp('ingested_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_savings_estimates_session_id').on(table.sessionId),
+    index('idx_savings_estimates_event_timestamp').on(table.eventTimestamp),
+    index('idx_savings_estimates_estimation_method').on(table.estimationMethod),
+  ]
+);
+
+export const insertSavingsEstimateSchema = createInsertSchema(savingsEstimates);
+export type SavingsEstimateRow = typeof savingsEstimates.$inferSelect;
+export type InsertSavingsEstimate = typeof savingsEstimates.$inferInsert;
