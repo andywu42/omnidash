@@ -49,6 +49,7 @@ import CostTrendDashboard from '@/pages/CostTrendDashboard';
 import PatternEnforcement from '@/pages/PatternEnforcement';
 import ContextEnrichmentDashboard from '@/pages/ContextEnrichmentDashboard';
 import ContextEffectivenessDashboard from '@/pages/ContextEffectivenessDashboard';
+import MemoryDashboard from '@/pages/MemoryDashboard';
 import LlmRoutingDashboard from '@/pages/LlmRoutingDashboard';
 import WhyThisHappened from '@/pages/WhyThisHappened';
 import StatusDashboard from '@/pages/StatusDashboard';
@@ -173,6 +174,9 @@ function Router() {
 
       {/* Context Effectiveness dashboard (OMN-5286) */}
       <Route path="/context-effectiveness" component={ContextEffectivenessDashboard} />
+
+      {/* OmniMemory dashboard (OMN-5508) */}
+      <Route path="/memory" component={MemoryDashboard} />
 
       {/* LLM Routing Effectiveness dashboard (OMN-2279) */}
       <Route path="/llm-routing" component={LlmRoutingDashboard} />
