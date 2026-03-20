@@ -15,6 +15,7 @@
  */
 
 import { Info } from 'lucide-react';
+import { Link } from 'wouter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface FeatureNotEnabledBannerProps {
@@ -47,7 +48,10 @@ export function FeatureNotEnabledBanner({
             set to <code className="text-xs bg-muted px-1 py-0.5 rounded">true</code> in the
             producer&apos;s environment.
           </>
-        )}
+        )}{' '}
+        <Link href="/feature-flags" className="underline">
+          Manage feature flags
+        </Link>
       </AlertDescription>
     </Alert>
   );

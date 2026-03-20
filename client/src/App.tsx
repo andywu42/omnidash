@@ -92,6 +92,8 @@ import WiringHealthDashboard from '@/pages/WiringHealthDashboard';
 import DlqMonitorDashboard from '@/pages/DlqMonitorDashboard';
 // Circuit Breaker dashboard (OMN-5293)
 import CircuitBreakerDashboard from '@/pages/CircuitBreakerDashboard';
+// Feature Flags dashboard (OMN-5582)
+import FeatureFlagsDashboard from '@/pages/FeatureFlagsDashboard';
 
 // Phase 2: Category landing pages (OMN-2181)
 import SpeedCategory from '@/pages/SpeedCategory';
@@ -225,6 +227,9 @@ function Router() {
 
       {/* Circuit Breaker — infra circuit breaker state transitions (OMN-5293) */}
       <Route path="/circuit-breaker" component={CircuitBreakerDashboard} />
+
+      {/* Feature Flags — contract-declared feature flag management (OMN-5582) */}
+      <Route path="/feature-flags" component={FeatureFlagsDashboard} />
 
       {/* Model Efficiency Index dashboard (OMN-3941) */}
       <Route path="/model-efficiency" component={ModelEfficiencyDashboard} />

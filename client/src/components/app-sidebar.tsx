@@ -33,6 +33,7 @@ import {
   Network,
   ListChecks,
   AlertTriangle,
+  ToggleLeft,
 } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import {
@@ -327,6 +328,13 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         icon: Zap,
         description:
           'Infra circuit breaker state transitions — CLOSED / OPEN / HALF_OPEN per service (OMN-5293)',
+      },
+      {
+        title: 'Feature Flags',
+        url: '/feature-flags',
+        icon: ToggleLeft,
+        description:
+          'Contract-declared feature flags with runtime state and toggle controls (OMN-5582)',
       },
     ],
   },

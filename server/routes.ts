@@ -80,6 +80,8 @@ import memoryRoutes from './memory-routes';
 import { dlqRoutes } from './dlq-routes';
 // Circuit Breaker dashboard routes (OMN-5293)
 import { circuitBreakerRoutes } from './circuit-breaker-routes';
+// Feature Flags BFF routes (OMN-5581)
+import featureFlagRoutes from './feature-flag-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -233,6 +235,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Circuit Breaker dashboard routes (OMN-5293)
   app.use('/api/circuit-breaker', circuitBreakerRoutes);
+
+  // Feature Flags BFF routes (OMN-5581)
+  app.use('/api/feature-flags', featureFlagRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.
