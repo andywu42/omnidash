@@ -103,6 +103,8 @@ read_model_topics:
     handler: "projectComplianceEvaluated"
   - topic: "onex.evt.omniintelligence.episode-boundary.v1"
     handler: "projectEpisodeEvent"
+  - topic: "onex.evt.omniintelligence.intent-classified.v1"
+    handler: "projectIntentClassified"
 
   # --- omnimemory topics ---
   - topic: "onex.evt.omnimemory.document-discovered.v1"
@@ -132,7 +134,6 @@ read_model_topics:
 # poller checks for the actual broker topic name.
 monitored_topics:
   # --- omniintelligence topics ---
-  - topic: "onex.evt.omniintelligence.intent-classified.v1"
   - topic: "_omniintelligence.pattern-discovery.v1"
   - topic: "_omniintelligence.pattern-refined.v1"
 
