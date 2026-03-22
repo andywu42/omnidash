@@ -153,48 +153,38 @@ describe('PatternLearningSource', () => {
   describe('list()', () => {
     it('calls correct URL without params', async () => {
       const mockArtifacts = [createValidArtifact()];
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', createMockResponse(mockArtifacts)]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse(mockArtifacts)]]));
 
       const result = await patlearnSource.list();
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('artifact-001');
-      expect(global.fetch).toHaveBeenCalledWith('/api/intelligence/patterns/patlearn');
+      expect(global.fetch).toHaveBeenCalledWith('/api/patterns/patlearn');
     });
 
     it('handles single state param', async () => {
       const mockArtifacts = [createValidArtifact({ lifecycleState: 'validated' })];
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', createMockResponse(mockArtifacts)]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse(mockArtifacts)]]));
 
       await patlearnSource.list({ state: 'validated' });
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/intelligence/patterns/patlearn?state=validated'
-      );
+      expect(global.fetch).toHaveBeenCalledWith('/api/patterns/patlearn?state=validated');
     });
 
     it('handles array of states param', async () => {
       const mockArtifacts = [createValidArtifact()];
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', createMockResponse(mockArtifacts)]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse(mockArtifacts)]]));
 
       await patlearnSource.list({ state: ['candidate', 'provisional'] });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        '/api/intelligence/patterns/patlearn?state=candidate%2Cprovisional'
+        '/api/patterns/patlearn?state=candidate%2Cprovisional'
       );
     });
 
     it('handles all query params', async () => {
       const mockArtifacts = [createValidArtifact()];
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', createMockResponse(mockArtifacts)]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse(mockArtifacts)]]));
 
       await patlearnSource.list({
         state: 'validated',
@@ -215,7 +205,7 @@ describe('PatternLearningSource', () => {
       setupFetchMock(
         new Map([
           [
-            '/api/intelligence/patterns/patlearn',
+            '/api/patterns/patlearn',
             createMockResponse(null, { status: 500, statusText: 'Internal Server Error' }),
           ],
         ])
@@ -230,9 +220,7 @@ describe('PatternLearningSource', () => {
     });
 
     it('throws PatlearnFetchError on network error when fallback disabled', async () => {
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', new Error('Network failure')]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn', new Error('Network failure')]]));
 
       await expect(patlearnSource.list({}, { fallbackToMock: false })).rejects.toThrow(
         PatlearnFetchError
@@ -244,7 +232,7 @@ describe('PatternLearningSource', () => {
 
     it('returns empty array for non-array response (tests safeParseArray)', async () => {
       setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', createMockResponse({ notAnArray: true })]])
+        new Map([['/api/patterns/patlearn', createMockResponse({ notAnArray: true })]])
       );
 
       const result = await patlearnSource.list();
@@ -261,7 +249,7 @@ describe('PatternLearningSource', () => {
       setupFetchMock(
         new Map([
           [
-            '/api/intelligence/patterns/patlearn',
+            '/api/patterns/patlearn',
             createMockResponse([validArtifact, invalidArtifact, validArtifact]),
           ],
         ])
@@ -284,35 +272,31 @@ describe('PatternLearningSource', () => {
     it('calls correct URL with default window param', async () => {
       const mockSummary = createValidSummary();
       setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn/summary', createMockResponse(mockSummary)]])
+        new Map([['/api/patterns/patlearn/summary', createMockResponse(mockSummary)]])
       );
 
       const result = await patlearnSource.summary();
 
       expect(result).not.toBeNull();
       expect(result?.totalPatterns).toBe(150);
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/intelligence/patterns/patlearn/summary?window=24h'
-      );
+      expect(global.fetch).toHaveBeenCalledWith('/api/patterns/patlearn/summary?window=24h');
     });
 
     it('calls correct URL with custom window param', async () => {
       const mockSummary = createValidSummary({ window: '7d' });
       setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn/summary', createMockResponse(mockSummary)]])
+        new Map([['/api/patterns/patlearn/summary', createMockResponse(mockSummary)]])
       );
 
       await patlearnSource.summary('7d');
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/intelligence/patterns/patlearn/summary?window=7d'
-      );
+      expect(global.fetch).toHaveBeenCalledWith('/api/patterns/patlearn/summary?window=7d');
     });
 
     it('returns parsed summary with all fields', async () => {
       const mockSummary = createValidSummary();
       setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn/summary', createMockResponse(mockSummary)]])
+        new Map([['/api/patterns/patlearn/summary', createMockResponse(mockSummary)]])
       );
 
       const result = await patlearnSource.summary();
@@ -326,7 +310,7 @@ describe('PatternLearningSource', () => {
       setupFetchMock(
         new Map([
           [
-            '/api/intelligence/patterns/patlearn/summary',
+            '/api/patterns/patlearn/summary',
             createMockResponse(null, { status: 403, statusText: 'Forbidden' }),
           ],
         ])
@@ -344,7 +328,7 @@ describe('PatternLearningSource', () => {
       setupFetchMock(
         new Map([
           [
-            '/api/intelligence/patterns/patlearn/summary',
+            '/api/patterns/patlearn/summary',
             createMockResponse(null, { status: 500, statusText: 'Internal Server Error' }),
           ],
         ])
@@ -360,9 +344,7 @@ describe('PatternLearningSource', () => {
 
     it('returns null for invalid data (tests safeParseOne)', async () => {
       setupFetchMock(
-        new Map([
-          ['/api/intelligence/patterns/patlearn/summary', createMockResponse({ invalid: 'data' })],
-        ])
+        new Map([['/api/patterns/patlearn/summary', createMockResponse({ invalid: 'data' })]])
       );
 
       const result = await patlearnSource.summary();
@@ -383,7 +365,7 @@ describe('PatternLearningSource', () => {
       setupFetchMock(
         new Map([
           [
-            '/api/intelligence/patterns/patlearn/not-found-id',
+            '/api/patterns/patlearn/not-found-id',
             createMockResponse(null, { status: 404, statusText: 'Not Found' }),
           ],
         ])
@@ -398,7 +380,7 @@ describe('PatternLearningSource', () => {
       setupFetchMock(
         new Map([
           [
-            '/api/intelligence/patterns/patlearn/error-id',
+            '/api/patterns/patlearn/error-id',
             createMockResponse(null, { status: 500, statusText: 'Internal Server Error' }),
           ],
         ])
@@ -428,9 +410,7 @@ describe('PatternLearningSource', () => {
         ],
       };
       setupFetchMock(
-        new Map([
-          ['/api/intelligence/patterns/patlearn/detail-001', createMockResponse(mockResponse)],
-        ])
+        new Map([['/api/patterns/patlearn/detail-001', createMockResponse(mockResponse)]])
       );
 
       const result = await patlearnSource.detail('detail-001');
@@ -443,9 +423,7 @@ describe('PatternLearningSource', () => {
 
     it('returns empty similarPatterns array when not provided', async () => {
       const artifact = createValidArtifact();
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn/', createMockResponse({ artifact })]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn/', createMockResponse({ artifact })]]));
 
       const result = await patlearnSource.detail('artifact-001');
 
@@ -482,9 +460,7 @@ describe('PatternLearningSource', () => {
         ],
       };
       setupFetchMock(
-        new Map([
-          ['/api/intelligence/patterns/patlearn/filter-test', createMockResponse(mockResponse)],
-        ])
+        new Map([['/api/patterns/patlearn/filter-test', createMockResponse(mockResponse)]])
       );
 
       const result = await patlearnSource.detail('filter-test');
@@ -504,7 +480,7 @@ describe('PatternLearningSource', () => {
       setupFetchMock(
         new Map([
           [
-            '/api/intelligence/patterns/patlearn/invalid',
+            '/api/patterns/patlearn/invalid',
             createMockResponse({ artifact: { invalid: 'data' }, similarPatterns: [] }),
           ],
         ])
@@ -515,9 +491,7 @@ describe('PatternLearningSource', () => {
     });
 
     it('throws PatlearnFetchError on network error', async () => {
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn/network-error', new Error('Timeout')]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn/network-error', new Error('Timeout')]]));
 
       await expect(patlearnSource.detail('network-error')).rejects.toThrow(PatlearnFetchError);
     });
@@ -533,9 +507,7 @@ describe('PatternLearningSource', () => {
         createValidArtifact({ lifecycleState: 'candidate' }),
         createValidArtifact({ lifecycleState: 'provisional' }),
       ];
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', createMockResponse(mockArtifacts)]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse(mockArtifacts)]]));
 
       const result = await patlearnSource.candidates();
 
@@ -548,7 +520,7 @@ describe('PatternLearningSource', () => {
     });
 
     it('uses custom limit parameter', async () => {
-      setupFetchMock(new Map([['/api/intelligence/patterns/patlearn', createMockResponse([])]]));
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse([])]]));
 
       await patlearnSource.candidates(25);
 
@@ -556,7 +528,7 @@ describe('PatternLearningSource', () => {
     });
 
     it('uses default limit of 50', async () => {
-      setupFetchMock(new Map([['/api/intelligence/patterns/patlearn', createMockResponse([])]]));
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse([])]]));
 
       await patlearnSource.candidates();
 
@@ -567,9 +539,7 @@ describe('PatternLearningSource', () => {
   describe('validated()', () => {
     it('calls list with validated state', async () => {
       const mockArtifacts = [createValidArtifact({ lifecycleState: 'validated' })];
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', createMockResponse(mockArtifacts)]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse(mockArtifacts)]]));
 
       const result = await patlearnSource.validated();
 
@@ -580,7 +550,7 @@ describe('PatternLearningSource', () => {
     });
 
     it('uses custom limit parameter', async () => {
-      setupFetchMock(new Map([['/api/intelligence/patterns/patlearn', createMockResponse([])]]));
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse([])]]));
 
       await patlearnSource.validated(100);
 
@@ -591,9 +561,7 @@ describe('PatternLearningSource', () => {
   describe('deprecated()', () => {
     it('calls list with deprecated state and updated sort', async () => {
       const mockArtifacts = [createValidArtifact({ lifecycleState: 'deprecated' })];
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', createMockResponse(mockArtifacts)]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse(mockArtifacts)]]));
 
       const result = await patlearnSource.deprecated();
 
@@ -604,7 +572,7 @@ describe('PatternLearningSource', () => {
     });
 
     it('uses custom limit parameter', async () => {
-      setupFetchMock(new Map([['/api/intelligence/patterns/patlearn', createMockResponse([])]]));
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse([])]]));
 
       await patlearnSource.deprecated(10);
 
@@ -618,9 +586,7 @@ describe('PatternLearningSource', () => {
         createValidArtifact({ compositeScore: 0.95 }),
         createValidArtifact({ compositeScore: 0.9 }),
       ];
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', createMockResponse(mockArtifacts)]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse(mockArtifacts)]]));
 
       const result = await patlearnSource.topPatterns();
 
@@ -632,7 +598,7 @@ describe('PatternLearningSource', () => {
     });
 
     it('uses default limit of 20', async () => {
-      setupFetchMock(new Map([['/api/intelligence/patterns/patlearn', createMockResponse([])]]));
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse([])]]));
 
       await patlearnSource.topPatterns();
 
@@ -640,7 +606,7 @@ describe('PatternLearningSource', () => {
     });
 
     it('uses custom limit parameter', async () => {
-      setupFetchMock(new Map([['/api/intelligence/patterns/patlearn', createMockResponse([])]]));
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse([])]]));
 
       await patlearnSource.topPatterns(5);
 
@@ -657,7 +623,7 @@ describe('PatternLearningSource', () => {
       setupFetchMock(
         new Map([
           [
-            '/api/intelligence/patterns/patlearn',
+            '/api/patterns/patlearn',
             createMockResponse(null, { status: 401, statusText: 'Unauthorized' }),
           ],
         ])
@@ -678,7 +644,7 @@ describe('PatternLearningSource', () => {
       setupFetchMock(
         new Map([
           [
-            '/api/intelligence/patterns/patlearn',
+            '/api/patterns/patlearn',
             createMockResponse(null, { status: 429, statusText: 'Too Many Requests' }),
           ],
         ])
@@ -695,7 +661,7 @@ describe('PatternLearningSource', () => {
       setupFetchMock(
         new Map([
           [
-            '/api/intelligence/patterns/patlearn',
+            '/api/patterns/patlearn',
             createMockResponse(null, { status: 500, statusText: 'Internal Server Error' }),
           ],
         ])
@@ -715,9 +681,7 @@ describe('PatternLearningSource', () => {
     it('handles null response in array', async () => {
       const validArtifact = createValidArtifact();
       setupFetchMock(
-        new Map([
-          ['/api/intelligence/patterns/patlearn', createMockResponse([null, validArtifact, null])],
-        ])
+        new Map([['/api/patterns/patlearn', createMockResponse([null, validArtifact, null])]])
       );
 
       const result = await patlearnSource.list();
@@ -734,9 +698,7 @@ describe('PatternLearningSource', () => {
       delete artifact.language;
       artifact.scoringEvidence.labelAgreement.disagreements = undefined;
 
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', createMockResponse([artifact])]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse([artifact])]]));
 
       const result = await patlearnSource.list();
 
@@ -748,9 +710,7 @@ describe('PatternLearningSource', () => {
       const artifact = createValidArtifact();
       artifact.metrics.scoreHistory = [];
 
-      setupFetchMock(
-        new Map([['/api/intelligence/patterns/patlearn', createMockResponse([artifact])]])
-      );
+      setupFetchMock(new Map([['/api/patterns/patlearn', createMockResponse([artifact])]]));
 
       const result = await patlearnSource.list();
 

@@ -5,9 +5,9 @@
  * table. The learnedPatterns table has been removed; all pattern data now flows
  * through the pattern-projection.v1 Kafka topic into pattern_learning_artifacts.
  *
- * The canonical REST endpoint is `/api/intelligence/patterns/patlearn`
- * (see intelligence-routes.ts). This module preserves the `/api/patterns` surface
- * by proxying queries to pattern_learning_artifacts directly.
+ * The canonical REST endpoint is `/api/patterns/patlearn`
+ * (mounted via routes.ts -> pattern-routes.ts). This module preserves the
+ * `/api/patterns` surface by querying pattern_learning_artifacts directly.
  */
 
 import { Router } from 'express';

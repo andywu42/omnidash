@@ -67,8 +67,8 @@ const EXEMPT_FILES = new Set([
   'health-data-sources-routes.ts',
 
   // Backwards-compatibility shim — proxies /api/patterns to pattern_learning_artifacts.
-  // The canonical endpoint is /api/intelligence/patterns/patlearn (intelligence-routes.ts,
-  // already exempt). This route will be removed once all clients migrate to the canonical
+  // The canonical endpoint is /api/patterns/patlearn (pattern-routes.ts).
+  // This route will be removed once all clients migrate to the canonical
   // endpoint. TODO(OMN-2924-followup): delete once client migration is complete.
   'patterns-routes.ts',
 

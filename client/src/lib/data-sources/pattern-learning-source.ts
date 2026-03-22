@@ -115,7 +115,7 @@ function safeParseOne<T>(
 // ===========================
 
 class PatternLearningSource {
-  private baseUrl = '/api/intelligence/patterns/patlearn';
+  private baseUrl = '/api/patterns/patlearn';
 
   /** Track if we're currently using mock data (for UI indicator) */
   private _isUsingMockData = false;
