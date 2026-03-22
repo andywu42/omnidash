@@ -132,6 +132,13 @@ const LOCAL_IDLE_EXPECTED: Set<string> = new Set([
   'envSync',
   // Cost trends depend on LLM cost aggregation upstream service.
   'costTrends',
+  // OMN-5820: The following 3 sources depend on runtime services actively
+  // producing events. They show as "mock" in local dev when no agent session
+  // is running. Added here temporarily to prevent false alarms on the health
+  // panel. Remove each entry once its upstream data flow is verified end-to-end.
+  'executionGraph',
+  'enforcement',
+  'nodeRegistry',
 ]);
 
 // ============================================================================

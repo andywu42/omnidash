@@ -181,7 +181,8 @@ describe('GET /api/health/data-sources', () => {
     expect(dataSources.costTrends.status).toBe('expected_idle_local');
     // intents is in LOCAL_IDLE_EXPECTED → reclassified in test env
     expect(dataSources.intents.status).toBe('expected_idle_local');
-    expect(dataSources.nodeRegistry.status).toBe('mock');
+    // OMN-5820: nodeRegistry is now in LOCAL_IDLE_EXPECTED → reclassified in test env
+    expect(dataSources.nodeRegistry.status).toBe('expected_idle_local');
   });
 
   it('reports status: live for event-bus when projection has events', async () => {
