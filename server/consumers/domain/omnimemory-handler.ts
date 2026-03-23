@@ -1,9 +1,13 @@
 /**
- * OmniMemory domain handler [OMN-5191]
+ * OmniMemory domain handler [OMN-5191, OMN-6131]
  *
  * Handles topics with the omnimemory prefix:
  * - Intent stored events
  * - Intent query response events
+ * - Document discovered events (OMN-6131)
+ * - Memory stored events (OMN-6131)
+ * - Memory retrieval response events (OMN-6131)
+ * - Memory expired events (OMN-6131)
  */
 
 import crypto from 'node:crypto';
@@ -14,7 +18,14 @@ import {
   type IntentRecordPayload,
 } from '@shared/intent-types';
 import { getIntentEventEmitter } from '../../intent-events';
-import { SUFFIX_MEMORY_INTENT_STORED, SUFFIX_MEMORY_INTENT_QUERY_RESPONSE } from '@shared/topics';
+import {
+  SUFFIX_MEMORY_INTENT_STORED,
+  SUFFIX_MEMORY_INTENT_QUERY_RESPONSE,
+  SUFFIX_MEMORY_DOCUMENT_DISCOVERED,
+  SUFFIX_MEMORY_STORED,
+  SUFFIX_MEMORY_RETRIEVAL_RESPONSE,
+  SUFFIX_MEMORY_EXPIRED,
+} from '@shared/topics';
 import type {
   DomainHandler,
   ConsumerContext,
@@ -24,7 +35,14 @@ import type {
 import { intentLogger, sanitizeTimestamp } from './consumer-utils';
 
 /** All topic suffixes this handler responds to */
-const HANDLED_TOPICS = new Set([SUFFIX_MEMORY_INTENT_STORED, SUFFIX_MEMORY_INTENT_QUERY_RESPONSE]);
+const HANDLED_TOPICS = new Set([
+  SUFFIX_MEMORY_INTENT_STORED,
+  SUFFIX_MEMORY_INTENT_QUERY_RESPONSE,
+  SUFFIX_MEMORY_DOCUMENT_DISCOVERED,
+  SUFFIX_MEMORY_STORED,
+  SUFFIX_MEMORY_RETRIEVAL_RESPONSE,
+  SUFFIX_MEMORY_EXPIRED,
+]);
 
 // ============================================================================
 // Handler Functions
@@ -163,6 +181,95 @@ function handleIntentQueryResponse(event: RawIntentQueryResponseEvent, ctx: Cons
 }
 
 // ============================================================================
+// Document Lifecycle Handlers (OMN-6131)
+// ============================================================================
+
+/**
+ * Forward document-discovered events to the WebSocket event system.
+ * DB projection is handled separately by the read-model consumer;
+ * this handler ensures real-time WebSocket delivery.
+ */
+function handleDocumentDiscovered(event: Record<string, unknown>, ctx: ConsumerContext): void {
+  const documentId = (event.document_id as string) || (event.documentId as string) || 'unknown';
+  ctx.emit('memory-event', {
+    type: 'document-discovered',
+    topic: SUFFIX_MEMORY_DOCUMENT_DISCOVERED,
+    payload: {
+      documentId,
+      sourcePath: event.source_path ?? event.sourcePath ?? null,
+      sourceType: event.source_type ?? event.sourceType ?? null,
+      contentHash: event.content_hash ?? event.contentHash ?? null,
+      sizeBytes: event.size_bytes ?? event.sizeBytes ?? null,
+      correlationId: event.correlation_id ?? event.correlationId ?? null,
+      sessionId: event.session_id ?? event.sessionId ?? null,
+    },
+    timestamp: new Date().toISOString(),
+  });
+  intentLogger.info(`Processed document discovered: ${documentId}`);
+}
+
+/**
+ * Forward memory-stored events to the WebSocket event system.
+ */
+function handleMemoryStored(event: Record<string, unknown>, ctx: ConsumerContext): void {
+  const documentId = (event.document_id as string) || (event.documentId as string) || 'unknown';
+  ctx.emit('memory-event', {
+    type: 'memory-stored',
+    topic: SUFFIX_MEMORY_STORED,
+    payload: {
+      documentId,
+      sourcePath: event.source_path ?? event.sourcePath ?? null,
+      sourceType: event.source_type ?? event.sourceType ?? null,
+      memoryBackend: event.memory_backend ?? event.memoryBackend ?? null,
+      correlationId: event.correlation_id ?? event.correlationId ?? null,
+      sessionId: event.session_id ?? event.sessionId ?? null,
+    },
+    timestamp: new Date().toISOString(),
+  });
+  intentLogger.info(`Processed memory stored: ${documentId}`);
+}
+
+/**
+ * Forward retrieval-response events to the WebSocket event system.
+ */
+function handleRetrievalResponse(event: Record<string, unknown>, ctx: ConsumerContext): void {
+  const correlationId =
+    (event.correlation_id as string) || (event.correlationId as string) || 'unknown';
+  ctx.emit('memory-event', {
+    type: 'retrieval-response',
+    topic: SUFFIX_MEMORY_RETRIEVAL_RESPONSE,
+    payload: {
+      correlationId,
+      sessionId: event.session_id ?? event.sessionId ?? null,
+      queryType: event.query_type ?? event.queryType ?? null,
+      resultCount: event.result_count ?? event.resultCount ?? event.total_count ?? 0,
+      success: event.status === 'success' || event.success === true,
+      latencyMs: event.latency_ms ?? event.latencyMs ?? null,
+    },
+    timestamp: new Date().toISOString(),
+  });
+  intentLogger.info(`Processed retrieval response: ${correlationId}`);
+}
+
+/**
+ * Forward memory-expired events to the WebSocket event system.
+ */
+function handleMemoryExpired(event: Record<string, unknown>, ctx: ConsumerContext): void {
+  const documentId = (event.document_id as string) || (event.documentId as string) || 'unknown';
+  ctx.emit('memory-event', {
+    type: 'memory-expired',
+    topic: SUFFIX_MEMORY_EXPIRED,
+    payload: {
+      documentId,
+      correlationId: event.correlation_id ?? event.correlationId ?? null,
+      sessionId: event.session_id ?? event.sessionId ?? null,
+    },
+    timestamp: new Date().toISOString(),
+  });
+  intentLogger.info(`Processed memory expired: ${documentId}`);
+}
+
+// ============================================================================
 // DomainHandler Implementation
 // ============================================================================
 
@@ -194,6 +301,38 @@ export class OmnimemoryHandler implements DomainHandler {
           );
         }
         handleIntentQueryResponse(event as RawIntentQueryResponseEvent, ctx);
+        break;
+
+      case SUFFIX_MEMORY_DOCUMENT_DISCOVERED:
+        if (ctx.isDebug) {
+          intentLogger.debug(
+            `Processing document discovered: ${event.document_id || event.documentId}`
+          );
+        }
+        handleDocumentDiscovered(event, ctx);
+        break;
+
+      case SUFFIX_MEMORY_STORED:
+        if (ctx.isDebug) {
+          intentLogger.debug(`Processing memory stored: ${event.document_id || event.documentId}`);
+        }
+        handleMemoryStored(event, ctx);
+        break;
+
+      case SUFFIX_MEMORY_RETRIEVAL_RESPONSE:
+        if (ctx.isDebug) {
+          intentLogger.debug(
+            `Processing retrieval response: ${event.correlation_id || event.correlationId}`
+          );
+        }
+        handleRetrievalResponse(event, ctx);
+        break;
+
+      case SUFFIX_MEMORY_EXPIRED:
+        if (ctx.isDebug) {
+          intentLogger.debug(`Processing memory expired: ${event.document_id || event.documentId}`);
+        }
+        handleMemoryExpired(event, ctx);
         break;
     }
   }

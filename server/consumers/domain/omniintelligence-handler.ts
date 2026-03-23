@@ -35,6 +35,7 @@ import {
   SUFFIX_INTELLIGENCE_PATTERN_STORED,
   SUFFIX_PATTERN_DISCOVERED,
   SUFFIX_INTELLIGENCE_SESSION_OUTCOME_CMD,
+  SUFFIX_INTELLIGENCE_CI_DEBUG_ESCALATION,
   SUFFIX_VALIDATION_RUN_STARTED,
   SUFFIX_VALIDATION_VIOLATIONS_BATCH,
   SUFFIX_VALIDATION_RUN_COMPLETED,
@@ -78,6 +79,7 @@ const HANDLED_TOPICS = new Set([
   SUFFIX_INTELLIGENCE_PATTERN_STORED,
   SUFFIX_PATTERN_DISCOVERED,
   SUFFIX_INTELLIGENCE_SESSION_OUTCOME_CMD,
+  SUFFIX_INTELLIGENCE_CI_DEBUG_ESCALATION,
   SUFFIX_VALIDATION_RUN_STARTED,
   SUFFIX_VALIDATION_VIOLATIONS_BATCH,
   SUFFIX_VALIDATION_RUN_COMPLETED,
@@ -335,6 +337,23 @@ export class OmniintelligenceHandler implements DomainHandler {
       case SUFFIX_INTELLIGENCE_SESSION_OUTCOME_CMD:
         // intentional-skip: command routed to omniintelligence service, not a dashboard-projectable event.
         // Session outcome DATA is projected via SUFFIX_OMNICLAUDE_SESSION_OUTCOME (see omniclaude-handler).
+        break;
+
+      // CI debug escalation events (OMN-6143)
+      // DB projection handled by read-model consumer (omniintelligence-projections.ts).
+      // Forward to WebSocket for real-time /debug-escalation page updates.
+      case SUFFIX_INTELLIGENCE_CI_DEBUG_ESCALATION:
+        if (ctx.isDebug) {
+          intentLogger.debug(
+            `Processing CI debug escalation: ${event.escalation_id || event.escalationId || 'unknown'}`
+          );
+        }
+        ctx.emit('debug-escalation-event', {
+          type: 'ci-debug-escalation',
+          topic: SUFFIX_INTELLIGENCE_CI_DEBUG_ESCALATION,
+          payload: event,
+          timestamp: new Date().toISOString(),
+        });
         break;
     }
   }
