@@ -63,6 +63,7 @@ import {
   SUFFIX_OMNICLAUDE_PHASE_METRICS,
   SUFFIX_OMNICLAUDE_DEBUG_TRIGGER_RECORD,
   SUFFIX_OMNICLAUDE_SKILL_INVOKED,
+  SUFFIX_OMNICLAUDE_HOSTILE_REVIEWER_COMPLETED,
 } from '@shared/topics';
 import { llmRoutingProjection } from '../../projection-bootstrap';
 import { emitLlmRoutingInvalidate } from '../../llm-routing-events';
@@ -100,6 +101,7 @@ const OMNICLAUDE_TOPICS = new Set([
   SUFFIX_OMNICLAUDE_PHASE_METRICS,
   SUFFIX_OMNICLAUDE_DEBUG_TRIGGER_RECORD,
   SUFFIX_OMNICLAUDE_SKILL_INVOKED,
+  SUFFIX_OMNICLAUDE_HOSTILE_REVIEWER_COMPLETED,
 ]);
 
 export class OmniclaudeProjectionHandler implements ProjectionHandler {
@@ -155,6 +157,8 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
         return this.projectDebugTriggerRecord(data, fallbackId, context);
       case SUFFIX_OMNICLAUDE_SKILL_INVOKED:
         return this.projectSkillInvoked(data, context);
+      case SUFFIX_OMNICLAUDE_HOSTILE_REVIEWER_COMPLETED:
+        return this.projectHostileReviewerCompleted(data, fallbackId, context);
       default:
         return false;
     }
@@ -844,7 +848,30 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
 
     const correlationId =
       (data.correlation_id as string) || (data.correlationId as string) || fallbackId;
-    const epicRunId = (data.epic_run_id as string) || (data.epicRunId as string) || correlationId;
+    // Emitter sends run_id, DB column is epic_run_id
+    const epicRunId =
+      (data.run_id as string) || (data.epic_run_id as string) ||
+      (data.epicRunId as string) || correlationId;
+    // Emitter sends status, DB column is event_type — map status to event_type
+    const eventType =
+      (data.status as string) ?? (data.event_type as string) ??
+      (data.eventType as string) ?? 'unknown';
+    // epic_id is available from emitter — store in ticket_id column as the
+    // closest semantic match (the epic identifier being tracked)
+    const ticketId =
+      (data.epic_id as string) ?? (data.ticket_id as string) ??
+      (data.ticketId as string) ?? null;
+    // Build a summary payload from emitter fields not mapped to columns
+    const summaryPayload: Record<string, unknown> = {};
+    if (data.tickets_total != null) summaryPayload.tickets_total = data.tickets_total;
+    if (data.tickets_completed != null) summaryPayload.tickets_completed = data.tickets_completed;
+    if (data.tickets_failed != null) summaryPayload.tickets_failed = data.tickets_failed;
+    if (data.phase != null) summaryPayload.phase = data.phase;
+    const payloadJson = data.payload != null
+      ? JSON.stringify(data.payload)
+      : Object.keys(summaryPayload).length > 0
+        ? JSON.stringify(summaryPayload)
+        : null;
 
     try {
       await db.execute(sql`
@@ -854,11 +881,11 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
         ) VALUES (
           ${correlationId},
           ${epicRunId},
-          ${(data.event_type as string) ?? (data.eventType as string) ?? 'unknown'},
-          ${(data.ticket_id as string) ?? (data.ticketId as string) ?? null},
+          ${eventType},
+          ${ticketId},
           ${(data.repo as string) ?? null},
-          ${data.payload != null ? JSON.stringify(data.payload) : null},
-          ${safeParseDate(data.timestamp ?? data.created_at)}
+          ${payloadJson},
+          ${safeParseDate(data.emitted_at ?? data.timestamp ?? data.created_at)}
         )
         ON CONFLICT (correlation_id) DO NOTHING
       `);
@@ -915,6 +942,19 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
     const correlationId =
       (data.correlation_id as string) || (data.correlationId as string) || fallbackId;
 
+    // Build metadata from emitter fields not mapped to columns
+    const metadata: Record<string, unknown> = {};
+    if (data.run_id != null) metadata.run_id = data.run_id;
+    if (data.ticket_id != null) metadata.ticket_id = data.ticket_id;
+    if (data.review_cycles_used != null) metadata.review_cycles_used = data.review_cycles_used;
+    if (data.watch_duration_hours != null) metadata.watch_duration_hours = data.watch_duration_hours;
+    const existingMetadata = data.metadata != null ? data.metadata : null;
+    const metadataJson = existingMetadata
+      ? JSON.stringify(existingMetadata)
+      : Object.keys(metadata).length > 0
+        ? JSON.stringify(metadata)
+        : null;
+
     try {
       await db.execute(sql`
         INSERT INTO pr_watch_state (
@@ -924,11 +964,11 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
           ${correlationId},
           ${data.pr_number != null ? Number(data.pr_number) : null},
           ${(data.repo as string) ?? null},
-          ${(data.state as string) ?? 'unknown'},
+          ${(data.status as string) ?? (data.state as string) ?? 'unknown'},
           ${(data.checks_status as string) ?? (data.checksStatus as string) ?? null},
           ${(data.review_status as string) ?? (data.reviewStatus as string) ?? null},
-          ${data.metadata != null ? JSON.stringify(data.metadata) : null},
-          ${safeParseDate(data.timestamp ?? data.created_at)}
+          ${metadataJson},
+          ${safeParseDate(data.emitted_at ?? data.timestamp ?? data.created_at)}
         )
         ON CONFLICT (correlation_id) DO NOTHING
       `);
@@ -1312,6 +1352,67 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
       if (pgErr.code === '23505') return true;
       throw err;
     }
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
+  // Hostile reviewer completed -> hostile_reviewer_runs (OMN-5864)
+  // -------------------------------------------------------------------------
+
+  private async projectHostileReviewerCompleted(
+    data: Record<string, unknown>,
+    fallbackId: string,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const eventId =
+      (data.event_id as string) || (data.eventId as string) || fallbackId;
+    const correlationId =
+      (data.correlation_id as string) || (data.correlationId as string) || eventId;
+
+    // Serialize arrays as JSON for safe parameterized insertion (no sql.raw needed).
+    // PostgreSQL casts json text[] via ::text[] on the jsonb_array_elements_text result.
+    const modelsAttemptedJson = JSON.stringify(
+      ((data.models_attempted as string[]) || []).map(String)
+    );
+    const modelsSucceededJson = JSON.stringify(
+      ((data.models_succeeded as string[]) || []).map(String)
+    );
+
+    try {
+      await db.execute(sql`
+        INSERT INTO hostile_reviewer_runs (
+          event_id, correlation_id, mode, target,
+          models_attempted, models_succeeded, verdict,
+          total_findings, critical_count, major_count, created_at
+        ) VALUES (
+          ${eventId},
+          ${correlationId},
+          ${(data.mode as string) ?? 'unknown'},
+          ${(data.target as string) ?? 'unknown'},
+          (SELECT COALESCE(array_agg(elem), ARRAY[]::text[]) FROM jsonb_array_elements_text(${modelsAttemptedJson}::jsonb) AS elem),
+          (SELECT COALESCE(array_agg(elem), ARRAY[]::text[]) FROM jsonb_array_elements_text(${modelsSucceededJson}::jsonb) AS elem),
+          ${(data.verdict as string) ?? 'unknown'},
+          ${Number(data.total_findings ?? 0)},
+          ${Number(data.critical_count ?? data.criticalCount ?? 0)},
+          ${Number(data.major_count ?? data.majorCount ?? 0)},
+          ${safeParseDate(data.emitted_at ?? data.timestamp ?? data.created_at)}
+        )
+        ON CONFLICT (event_id) DO NOTHING
+      `);
+    } catch (err) {
+      if (isTableMissingError(err, 'hostile_reviewer_runs')) {
+        console.warn(
+          '[ReadModelConsumer] hostile_reviewer_runs table not yet created -- ' +
+            'run migrations to enable hostile reviewer projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+
     return true;
   }
 }

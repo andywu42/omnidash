@@ -245,6 +245,9 @@ app.use((req, res, next) => {
 
   // Validate and start Kafka event consumer
   try {
+    const brokerAddr = process.env.KAFKA_BOOTSTRAP_SERVERS || process.env.KAFKA_BROKERS || '(not configured)';
+    log(`   Kafka broker address: ${brokerAddr}`);
+
     // First validate that Kafka broker is reachable
     const isKafkaAvailable = await eventConsumer.validateConnection();
 
@@ -252,8 +255,10 @@ app.use((req, res, next) => {
       await eventConsumer.start();
       log('✅ Event consumer started successfully - real-time events enabled');
     } else {
-      log('⚠️  Kafka broker validation failed - continuing without real-time events');
-      log('   Dashboard will use database queries only (slower, no live updates)');
+      log(`⚠️  Kafka broker unreachable at ${brokerAddr} - continuing without real-time events`);
+      log('   WebSocket live-events and graph pages will show OFFLINE');
+      log('   Fix: ensure Redpanda is running (infra-up) and KAFKA_BOOTSTRAP_SERVERS=localhost:19092');
+      log('   Or use: npm run dev:local (forces local bus)');
     }
   } catch (error) {
     console.error('❌ Failed to start event consumer:', error);

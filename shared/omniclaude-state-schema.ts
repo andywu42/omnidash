@@ -296,3 +296,41 @@ export const dodPayloadSchema = z.object({
   trends: z.array(dodTrendPointSchema),
 });
 export type DodPayload = z.infer<typeof dodPayloadSchema>;
+
+// ============================================================================
+// Hostile Reviewer Runs (OMN-5864)
+// ============================================================================
+
+export const hostileReviewerRuns = pgTable('hostile_reviewer_runs', {
+  event_id: text('event_id').primaryKey(),
+  correlation_id: text('correlation_id').notNull(),
+  mode: text('mode').notNull(),
+  target: text('target').notNull(),
+  verdict: text('verdict').notNull(),
+  total_findings: integer('total_findings').notNull(),
+  critical_count: integer('critical_count').notNull(),
+  major_count: integer('major_count').notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull(),
+});
+
+export const hostileReviewerRunRowSchema = createSelectSchema(hostileReviewerRuns, {
+  created_at: z.coerce.string(),
+});
+export type HostileReviewerRunRow = Omit<
+  InferSelectModel<typeof hostileReviewerRuns>,
+  'created_at'
+> & {
+  created_at: string;
+};
+
+export const hostileReviewerSummarySchema = z.object({
+  total_runs: z.number(),
+  verdict_counts: z.record(z.string(), z.number()),
+});
+export type HostileReviewerSummary = z.infer<typeof hostileReviewerSummarySchema>;
+
+export const hostileReviewerPayloadSchema = z.object({
+  recent: z.array(hostileReviewerRunRowSchema),
+  summary: hostileReviewerSummarySchema,
+});
+export type HostileReviewerPayload = z.infer<typeof hostileReviewerPayloadSchema>;

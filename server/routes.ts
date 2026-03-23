@@ -28,6 +28,7 @@ import delegationRoutes from './delegation-routes';
 import statusRoutes, { linearSnapshotRouter } from './status-routes';
 // Wave 2 routes (OMN-2602)
 import gateDecisionsRoutes from './gate-decisions-routes';
+import hostileReviewerRoutes from './hostile-reviewer-routes';
 import epicRunRoutes from './epic-run-routes';
 import prWatchRoutes from './pr-watch-routes';
 import pipelineBudgetRoutes from './pipeline-budget-routes';
@@ -176,6 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mount Wave 2 omniclaude state event routes (OMN-2602)
   app.use('/api/gate-decisions', gateDecisionsRoutes);
+  app.use('/api/hostile-reviewer', hostileReviewerRoutes);
   app.use('/api/epic-run', epicRunRoutes);
   app.use('/api/pr-watch', prWatchRoutes);
   app.use('/api/pipeline-budget', pipelineBudgetRoutes);

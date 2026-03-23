@@ -41,6 +41,8 @@ read_model_topics:
     handler: "projectEpicRunUpdated"
   - topic: "onex.evt.omniclaude.gate-decision.v1"
     handler: "projectGateDecision"
+  - topic: "onex.evt.omniclaude.hostile-reviewer-completed.v1"
+    handler: "projectHostileReviewerCompleted"
   - topic: "onex.evt.omniclaude.llm-routing-decision.v1"
     handler: "projectLlmRoutingDecision"
   - topic: "onex.evt.omniclaude.pattern-enforcement.v1"

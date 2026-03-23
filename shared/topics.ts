@@ -419,6 +419,12 @@ export const SUFFIX_OMNICLAUDE_DOD_GUARD_FIRED = 'onex.evt.omniclaude.dod-guard-
  * Consumed by ReadModelConsumer to project into debug_trigger_records table. */
 export const SUFFIX_OMNICLAUDE_DEBUG_TRIGGER_RECORD = 'onex.evt.omniclaude.debug-trigger-record.v1';
 
+/** Hostile reviewer completed event (OMN-5864).
+ * Emitted by omniclaude hostile-reviewer skill on completion.
+ * Consumed by ReadModelConsumer to project into hostile_reviewer_runs table. */
+export const SUFFIX_OMNICLAUDE_HOSTILE_REVIEWER_COMPLETED =
+  'onex.evt.omniclaude.hostile-reviewer-completed.v1';
+
 /** DLQ message event (OMN-5287).
  * Emitted by platform consumer error handlers when a message fails processing and lands
  * in the dead-letter queue. Consumed by ReadModelConsumer to project into dlq_messages table. */

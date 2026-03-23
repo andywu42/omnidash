@@ -47,6 +47,7 @@ import { ContextEffectivenessProjection } from './projections/context-effectiven
 import { MemoryProjection } from './projections/memory-projection';
 // Skill invocation projection (OMN-5278)
 import { SkillProjection } from './projections/skill-projection';
+import { HostileReviewerProjection } from './projections/hostile-reviewer-projection';
 import { eventConsumer } from './event-consumer';
 import { eventBusDataSource } from './event-bus-data-source';
 import { extractActionFromTopic, extractProducerFromTopicOrDefault } from '@shared/topics';
@@ -162,6 +163,8 @@ export const contextEffectivenessProjection = new ContextEffectivenessProjection
 export const memoryProjection = new MemoryProjection();
 /** Skill invocation projection (OMN-5278). Queries skill_invocations table. */
 export const skillProjection = new SkillProjection();
+/** Hostile reviewer projection (OMN-5864). Queries hostile_reviewer_runs table. */
+export const hostileReviewerProjection = new HostileReviewerProjection();
 
 if (!projectionService.getView(extractionMetricsProjection.viewId)) {
   projectionService.registerView(extractionMetricsProjection);
@@ -232,6 +235,9 @@ if (!projectionService.getView(memoryProjection.viewId)) {
 }
 if (!projectionService.getView(skillProjection.viewId)) {
   projectionService.registerView(skillProjection);
+}
+if (!projectionService.getView(hostileReviewerProjection.viewId)) {
+  projectionService.registerView(hostileReviewerProjection);
 }
 
 // ============================================================================
