@@ -38,6 +38,7 @@ consumed_topics:
   - "onex.evt.omniclaude.routing-decision.v1"
   - "onex.evt.omniclaude.agent-transformation.v1"
   - "onex.evt.omniclaude.performance-metrics.v1"
+  - "onex.evt.onex-change-control.contract-drift-detected.v1"
 
 dependencies:
   - name: "postgresql"
