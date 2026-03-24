@@ -48,6 +48,8 @@ import { MemoryProjection } from './projections/memory-projection';
 // Skill invocation projection (OMN-5278)
 import { SkillProjection } from './projections/skill-projection';
 import { HostileReviewerProjection } from './projections/hostile-reviewer-projection';
+// Review calibration projection (OMN-6176)
+import { ReviewCalibrationProjection } from './projections/review-calibration-projection';
 import { eventConsumer } from './event-consumer';
 import { eventBusDataSource } from './event-bus-data-source';
 import { extractActionFromTopic, extractProducerFromTopicOrDefault } from '@shared/topics';
@@ -165,6 +167,8 @@ export const memoryProjection = new MemoryProjection();
 export const skillProjection = new SkillProjection();
 /** Hostile reviewer projection (OMN-5864). Queries hostile_reviewer_runs table. */
 export const hostileReviewerProjection = new HostileReviewerProjection();
+/** Review calibration projection (OMN-6176). Queries review_calibration_runs_rm table. */
+export const reviewCalibrationProjection = new ReviewCalibrationProjection();
 
 if (!projectionService.getView(extractionMetricsProjection.viewId)) {
   projectionService.registerView(extractionMetricsProjection);
@@ -238,6 +242,9 @@ if (!projectionService.getView(skillProjection.viewId)) {
 }
 if (!projectionService.getView(hostileReviewerProjection.viewId)) {
   projectionService.registerView(hostileReviewerProjection);
+}
+if (!projectionService.getView(reviewCalibrationProjection.viewId)) {
+  projectionService.registerView(reviewCalibrationProjection);
 }
 
 // ============================================================================

@@ -21,6 +21,7 @@ import {
   routingFeedbackEvents,
   complianceEvaluations,
   rlEpisodes,
+  reviewCalibrationRuns,
 } from '@shared/intelligence-schema';
 import type {
   InsertLlmCostAggregate,
@@ -43,6 +44,7 @@ import {
   SUFFIX_INTELLIGENCE_COMPLIANCE_EVALUATED,
   SUFFIX_INTELLIGENCE_CONTEXT_EFFECTIVENESS,
   SUFFIX_INTELLIGENCE_EPISODE_BOUNDARY,
+  SUFFIX_INTELLIGENCE_CALIBRATION_RUN_COMPLETED,
 } from '@shared/topics';
 import { emitEffectivenessUpdate } from '../../effectiveness-events';
 import {
@@ -147,6 +149,7 @@ const OMNIINTELLIGENCE_TOPICS = new Set([
   SUFFIX_INTELLIGENCE_COMPLIANCE_EVALUATED,
   SUFFIX_INTELLIGENCE_CONTEXT_EFFECTIVENESS,
   SUFFIX_INTELLIGENCE_EPISODE_BOUNDARY,
+  SUFFIX_INTELLIGENCE_CALIBRATION_RUN_COMPLETED,
 ]);
 
 export class OmniintelligenceProjectionHandler implements ProjectionHandler {
@@ -198,6 +201,8 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
         return this.projectContextEffectiveness(context);
       case SUFFIX_INTELLIGENCE_EPISODE_BOUNDARY:
         return this.projectEpisodeEvent(data, context);
+      case SUFFIX_INTELLIGENCE_CALIBRATION_RUN_COMPLETED:
+        return this.projectCalibrationRunCompleted(data, context);
       default:
         return false;
     }
@@ -1150,6 +1155,61 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
         console.warn(
           '[ReadModelConsumer] rl_episodes table not yet created -- ' +
             'run migrations to enable episode projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
+  // Calibration run completed -> review_calibration_runs_rm (OMN-6176)
+  // -------------------------------------------------------------------------
+
+  private async projectCalibrationRunCompleted(
+    data: Record<string, unknown>,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const runId = String(data.run_id ?? data.runId ?? '');
+    if (!runId) {
+      console.warn('[ReadModelConsumer] calibration-run-completed missing run_id -- skipping');
+      return true;
+    }
+
+    const groundTruthModel = String(data.ground_truth_model ?? data.groundTruthModel ?? 'unknown');
+    const challengerModel = String(data.challenger_model ?? data.challengerModel ?? 'unknown');
+    const precision = Number(data.precision ?? 0);
+    const recall = Number(data.recall ?? 0);
+    const f1 = Number(data.f1 ?? 0);
+    const noiseRatio = Number(data.noise_ratio ?? data.noiseRatio ?? 0);
+    const sampleSize =
+      data.sample_size != null || data.sampleSize != null
+        ? Number(data.sample_size ?? data.sampleSize)
+        : null;
+    const createdAt = safeParseDate(data.created_at ?? data.createdAt);
+
+    try {
+      await db.insert(reviewCalibrationRuns).values({
+        runId,
+        groundTruthModel,
+        challengerModel,
+        precision,
+        recall,
+        f1,
+        noiseRatio,
+        sampleSize,
+        createdAt,
+      });
+    } catch (err) {
+      if (isTableMissingError(err, 'review_calibration_runs_rm')) {
+        console.warn(
+          '[ReadModelConsumer] review_calibration_runs_rm table not yet created -- ' +
+            'run migrations to enable calibration projection'
         );
         return true;
       }

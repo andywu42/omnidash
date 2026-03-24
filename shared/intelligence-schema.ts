@@ -2495,3 +2495,34 @@ export const routingShadowDecisions = pgTable(
 export const insertRoutingShadowDecisionSchema = createInsertSchema(routingShadowDecisions);
 export type RoutingShadowDecisionRow = typeof routingShadowDecisions.$inferSelect;
 export type InsertRoutingShadowDecision = typeof routingShadowDecisions.$inferInsert;
+
+// ============================================================================
+// Review Calibration Runs Table (OMN-6176)
+// Stores calibration run results projected from Kafka events. Used by the
+// review calibration dashboard to display model accuracy over time.
+// ============================================================================
+
+export const reviewCalibrationRuns = pgTable(
+  'review_calibration_runs_rm',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    runId: text('run_id').notNull(),
+    groundTruthModel: text('ground_truth_model').notNull(),
+    challengerModel: text('challenger_model').notNull(),
+    precision: doublePrecision('precision').notNull(),
+    recall: doublePrecision('recall').notNull(),
+    f1: doublePrecision('f1').notNull(),
+    noiseRatio: doublePrecision('noise_ratio').notNull(),
+    sampleSize: integer('sample_size'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    projectedAt: timestamp('projected_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_rcr_run_id').on(table.runId),
+    index('idx_rcr_challenger_model').on(table.challengerModel),
+    index('idx_rcr_created_at').on(table.createdAt),
+  ]
+);
+
+export type ReviewCalibrationRunRow = typeof reviewCalibrationRuns.$inferSelect;
+export type InsertReviewCalibrationRun = typeof reviewCalibrationRuns.$inferInsert;

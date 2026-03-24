@@ -130,6 +130,10 @@ read_model_topics:
   - topic: "onex.evt.omnimemory.memory-stored.v1"
     handler: "projectMemoryStored"
 
+  # --- review-pairing topics ---
+  - topic: "onex.evt.review-pairing.calibration-run-completed.v1"
+    handler: "projectCalibrationRunCompleted"
+
   # --- omniintelligence command topics (backfill source) ---
   - topic: "onex.cmd.omniintelligence.pattern-learning.v1"
     handler: "projectPatternLearningRequested"

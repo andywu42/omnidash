@@ -87,6 +87,8 @@ import featureFlagRoutes from './feature-flag-routes';
 import { consumerHealthRoutes } from './consumer-health-routes';
 // Runtime Errors dashboard routes (OMN-5528)
 import { runtimeErrorsRoutes } from './runtime-errors-routes';
+// Review Calibration dashboard routes (OMN-6176)
+import reviewCalibrationRoutes from './review-calibration-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -250,6 +252,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Runtime Errors dashboard routes (OMN-5528)
   app.use('/api/runtime-errors', runtimeErrorsRoutes);
+
+  // Review Calibration dashboard routes (OMN-6176)
+  app.use('/api/review-calibration', reviewCalibrationRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.

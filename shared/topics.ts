@@ -399,6 +399,12 @@ export const TOPIC_INTELLIGENCE_PLAN_REVIEW_STRATEGY_RUN_COMPLETED =
  * Consumed by ReadModelConsumer to project into rl_episodes table. */
 export const SUFFIX_INTELLIGENCE_EPISODE_BOUNDARY = 'onex.evt.omniintelligence.episode-boundary.v1';
 
+/** Review calibration run completed event (OMN-6176).
+ * Emitted by omniintelligence review-pairing calibration runner after a calibration run.
+ * Consumed by ReadModelConsumer to project into review_calibration_runs_rm table. */
+export const SUFFIX_INTELLIGENCE_CALIBRATION_RUN_COMPLETED =
+  'onex.evt.review-pairing.calibration-run-completed.v1';
+
 /** PR validation rollup events for the Model Efficiency Index (MEI) dashboard (OMN-3933).
  * Emitted by omniclaude pr-validation pipeline after a PR run completes.
  * Consumed only by the read-model-consumer via READ_MODEL_TOPICS. */
