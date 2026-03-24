@@ -1,13 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-name: Test
+name: CI
 
 on:
   push:
-    branches: [main, feature/**]
+    branches: [main]
   pull_request:
     branches: [main]
   merge_group:
+  workflow_dispatch:
 
 jobs:
   # Architectural invariant: omnidash must never query upstream databases directly.
