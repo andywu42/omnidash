@@ -955,6 +955,20 @@ export const queryKeys = {
     messages: (limit: number) => ['dlq', 'messages', limit] as const,
     timeline: () => ['dlq', 'timeline'] as const,
   },
+  // ============================================================================
+  // Review Calibration (OMN-6177)
+  // ============================================================================
+
+  /** Review calibration loop dashboard query keys */
+  reviewCalibration: {
+    all: ['review-calibration'] as const,
+    history: (model?: string) =>
+      model
+        ? (['review-calibration', 'history', model] as const)
+        : (['review-calibration', 'history'] as const),
+    scores: () => ['review-calibration', 'scores'] as const,
+    fewshotLog: () => ['review-calibration', 'fewshot-log'] as const,
+  },
 } as const;
 
 /**

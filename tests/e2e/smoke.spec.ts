@@ -112,6 +112,7 @@ const DASHBOARD_ROUTES = [
   '/decisions',
   '/dod',
   '/intent-drift',
+  '/review-calibration',
 
   // Preview pages
   '/preview/analytics',
@@ -155,14 +156,17 @@ test.describe('Dashboard Smoke Tests [OMN-5638]', () => {
       expect(response?.status(), `${route} should return HTTP 200`).toBe(200);
 
       // 2. Assert page is not the "Not Found" fallback
-      const notFoundVisible = await page.locator('text=Page Not Found').isVisible().catch(() => false);
+      const notFoundVisible = await page
+        .locator('text=Page Not Found')
+        .isVisible()
+        .catch(() => false);
       expect(notFoundVisible, `${route} should not show "Page Not Found"`).toBe(false);
 
       // 3. Assert the page has rendered meaningful content
       // A completely broken page (missing import, crash before any render)
       // will have an almost-empty body. Pages with ErrorBoundary fallbacks
       // still render content, which is acceptable — the page is not "dark".
-      const bodyText = await page.textContent('body') ?? '';
+      const bodyText = (await page.textContent('body')) ?? '';
       const trimmedBody = bodyText.replace(/\s+/g, ' ').trim();
       expect(
         trimmedBody.length,
@@ -200,8 +204,8 @@ test('route catalog is comprehensive (matches App.tsx)', async () => {
 
   // Known exclusions (redirects, deprecated, or login-only pages)
   const EXCLUDED_ROUTES = new Set([
-    '/insights',       // Redirects to /patterns
-    '/events-legacy',  // Deprecated
+    '/insights', // Redirects to /patterns
+    '/events-legacy', // Deprecated
   ]);
 
   // Find routes in App.tsx that are missing from our smoke test list
@@ -215,7 +219,7 @@ test('route catalog is comprehensive (matches App.tsx)', async () => {
   expect(
     missingFromSmoke,
     `These routes exist in App.tsx but are missing from smoke.spec.ts DASHBOARD_ROUTES. ` +
-    `Add them to the smoke test or to EXCLUDED_ROUTES if they should be skipped:\n` +
-    missingFromSmoke.map(r => `  - ${r}`).join('\n')
+      `Add them to the smoke test or to EXCLUDED_ROUTES if they should be skipped:\n` +
+      missingFromSmoke.map((r) => `  - ${r}`).join('\n')
   ).toHaveLength(0);
 });

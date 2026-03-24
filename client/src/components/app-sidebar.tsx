@@ -268,6 +268,13 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         description:
           'Document ingestion stats, memory store status, and retrieval metrics (OMN-5290)',
       },
+      {
+        title: 'Review Calibration',
+        url: '/review-calibration',
+        icon: Target,
+        description:
+          'Calibration loop convergence, noise trends, model scores, few-shot injection log (OMN-6177)',
+      },
     ],
   },
   {

@@ -100,6 +100,8 @@ import ConsumerHealthDashboard from '@/pages/ConsumerHealthDashboard';
 import RuntimeErrorsDashboard from '@/pages/RuntimeErrorsDashboard';
 // RL Routing Comparison dashboard (OMN-5570)
 import RLRouting from '@/pages/RLRouting';
+// Review Calibration dashboard (OMN-6177)
+import ReviewCalibrationDashboard from '@/pages/ReviewCalibrationDashboard';
 
 // Phase 2: Category landing pages (OMN-2181)
 import SpeedCategory from '@/pages/SpeedCategory';
@@ -245,6 +247,9 @@ function Router() {
 
       {/* RL Routing Comparison — shadow mode vs static routing (OMN-5570) */}
       <Route path="/rl-routing" component={RLRouting} />
+
+      {/* Review Calibration — convergence metrics, noise trends, model scores (OMN-6177) */}
+      <Route path="/review-calibration" component={ReviewCalibrationDashboard} />
 
       {/* Model Efficiency Index dashboard (OMN-3941) */}
       <Route path="/model-efficiency" component={ModelEfficiencyDashboard} />
