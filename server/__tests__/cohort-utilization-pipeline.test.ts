@@ -68,15 +68,15 @@ describe('OMN-4967: Treatment/Control Cohort Pipeline', () => {
       expect(event.cohort).toBe('treatment');
     });
 
-    it('rejects events missing required cohort field', () => {
-      const badEvent = {
+    it('accepts events missing cohort field (cohort is now optional per OMN-6392)', () => {
+      const event = {
         session_id: 'sess-004',
         correlation_id: 'corr-004',
-        // missing cohort
+        // cohort is optional since OMN-6392 — handlers default to 'unknown'
         utilization_score: 0.5,
       };
 
-      expect(isContextUtilizationEvent(badEvent)).toBe(false);
+      expect(isContextUtilizationEvent(event)).toBe(true);
     });
   });
 

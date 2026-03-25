@@ -144,3 +144,47 @@ export function safeAlertInterval(timeWindow: string): SQL {
   // Alert helpers pass raw interval strings directly
   return safeInterval(timeWindow);
 }
+
+// ============================================================================
+// Safe identifier helpers (for internal allowlisted table/column names)
+// ============================================================================
+
+/**
+ * PostgreSQL identifier validation regex.
+ * Only allows alphanumeric characters and underscores — no quotes, spaces,
+ * semicolons, or other injection vectors.
+ */
+const SAFE_IDENTIFIER_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+/**
+ * Return a safe SQL fragment for `SELECT COUNT(*) AS count FROM "<table>"`.
+ *
+ * @throws {Error} if `tableName` contains unsafe characters
+ */
+export function safeCountQuery(tableName: string): SQL {
+  if (!SAFE_IDENTIFIER_RE.test(tableName)) {
+    throw new Error(
+      `safeCountQuery: rejected table name "${tableName}" — must match ${SAFE_IDENTIFIER_RE}`
+    );
+  }
+  return sql.raw(`SELECT COUNT(*) AS count FROM "${tableName}"`);
+}
+
+/**
+ * Return a safe SQL fragment for `SELECT MAX("<tsCol>") AS last_updated FROM "<table>"`.
+ *
+ * @throws {Error} if `tableName` or `tsCol` contain unsafe characters
+ */
+export function safeMaxTimestampQuery(tableName: string, tsCol: string): SQL {
+  if (!SAFE_IDENTIFIER_RE.test(tableName)) {
+    throw new Error(
+      `safeMaxTimestampQuery: rejected table name "${tableName}" — must match ${SAFE_IDENTIFIER_RE}`
+    );
+  }
+  if (!SAFE_IDENTIFIER_RE.test(tsCol)) {
+    throw new Error(
+      `safeMaxTimestampQuery: rejected column name "${tsCol}" — must match ${SAFE_IDENTIFIER_RE}`
+    );
+  }
+  return sql.raw(`SELECT MAX("${tsCol}") AS last_updated FROM "${tableName}"`);
+}

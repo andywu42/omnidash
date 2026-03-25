@@ -7,6 +7,11 @@
  * Seeds pattern_learning_artifacts table with realistic demo data for dashboard demos.
  * All demo records are marked with { __demo: true } in metadata for easy cleanup.
  *
+ * WARNING (OMN-6394): When generating seed/demo data, always use dates within the
+ * current year. Using historical dates (2024, 2025, etc.) pollutes dashboards with
+ * unrealistic data and requires migration-based cleanup. Prefer Date.now() or dates
+ * from the current month.
+ *
  * Usage:
  *   npm run seed-demo-patterns     # Seed demo data
  *   npm run cleanup-demo-patterns  # Remove all demo data

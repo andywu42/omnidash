@@ -178,14 +178,21 @@ function isNonEmptyString(v: unknown): v is string {
 
 /**
  * Base structural check shared by all extraction event type guards.
- * Validates that the payload is a non-null object with non-empty string
- * `session_id` and `cohort` — the two fields required by every extraction
- * event interface. Callers add type-specific field checks on top.
+ * Validates that the payload is a non-null object with a non-empty string
+ * `session_id` (or camelCase `sessionId`). The `cohort` field is optional
+ * since many upstream producers omit it — handlers should default to
+ * 'unknown' when absent.
+ *
+ * Accepts both snake_case and camelCase field names to handle producer
+ * inconsistencies (OMN-6392).
  */
 function isExtractionBaseEvent(e: unknown): e is { session_id: string; cohort: string } {
   if (typeof e !== 'object' || e === null) return false;
   const obj = e as Record<string, unknown>;
-  return isNonEmptyString(obj.session_id) && isNonEmptyString(obj.cohort);
+  // Accept both snake_case and camelCase for session_id
+  const hasSessionId = isNonEmptyString(obj.session_id) || isNonEmptyString(obj.sessionId);
+  // cohort is no longer required — too many producers omit it (98% drop rate)
+  return hasSessionId;
 }
 
 /**
@@ -224,10 +231,11 @@ export function isAgentMatchEvent(e: unknown): e is AgentMatchEvent {
 /**
  * Narrow an unknown Kafka payload to a LatencyBreakdownEvent.
  *
- * Validates all required fields: `session_id`, `cohort` (via base),
- * and `prompt_id` (unique to latency events, distinguishing from
- * context-utilization and agent-match events).
+ * Validates required fields: `session_id` (via base) and `prompt_id`.
+ * Accepts both snake_case and camelCase variants (OMN-6392).
  */
 export function isLatencyBreakdownEvent(e: unknown): e is LatencyBreakdownEvent {
-  return isExtractionBaseEvent(e) && isNonEmptyString((e as Record<string, unknown>).prompt_id);
+  if (!isExtractionBaseEvent(e)) return false;
+  const obj = e as Record<string, unknown>;
+  return isNonEmptyString(obj.prompt_id) || isNonEmptyString(obj.promptId);
 }

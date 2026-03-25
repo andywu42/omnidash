@@ -140,7 +140,13 @@ export class ReadModelConsumer {
         const skippedTopics: string[] = [];
         for (const topic of finalTopics) {
           try {
-            await this.consumer.subscribe({ topic, fromBeginning: false });
+            // OMN-6393: Intentionally set to true so the consumer replays all events
+            // still within Kafka's retention window on startup (or after a consumer
+            // group reset). All projection handlers are idempotent (ON CONFLICT DO
+            // UPDATE / DO NOTHING), so replay is safe. This was previously false,
+            // which caused 56 of 70 tables to remain empty since historical events
+            // were never projected.
+            await this.consumer.subscribe({ topic, fromBeginning: true });
             subscribedTopics.push(topic);
           } catch (e) {
             skippedTopics.push(topic);
@@ -341,7 +347,19 @@ export class ReadModelConsumer {
     if (!message.value) return null;
     try {
       const raw = JSON.parse(message.value.toString());
+      // Unwrap ONEX envelope: { payload: { ... } } or { data: { ... } }
+      // Many producers use 'payload', others use 'data' as the envelope key.
       if (raw.payload && typeof raw.payload === 'object') return { ...raw.payload, _envelope: raw };
+      if (raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data)) {
+        // Heuristic: if 'data' contains domain fields (not just metadata), unwrap it.
+        // Preserve envelope-level fields like event_type, correlation_id as fallbacks.
+        return {
+          ...raw.data,
+          _envelope: raw,
+          _event_type: raw.event_type,
+          _correlation_id: raw.correlation_id,
+        };
+      }
       return raw;
     } catch {
       return null;

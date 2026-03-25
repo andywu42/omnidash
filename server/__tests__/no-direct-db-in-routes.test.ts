@@ -76,6 +76,15 @@ const EXEMPT_FILES = new Set([
   // TODO(OMN-3445-followup): migrate to event-sourced projection.
   'routing-config-routes.ts',
 
+  // Projection health diagnostic — infrastructure probe that queries every table
+  // for row counts and watermarks. Direct DB access is inherent to the purpose.
+  // Not a data-access read path. (OMN-6390)
+  'projection-health-routes.ts',
+
+  // Staleness API — infrastructure probe that queries MAX(timestamp) from key tables.
+  // Direct DB access is inherent to the purpose. Not a data-access read path. (OMN-6398)
+  'staleness-routes.ts',
+
   // Model Efficiency Index reads VTS metrics from model_efficiency_snapshots.
   // Table is populated by a backend reducer (OMN-3923). Once a ProjectionService
   // view is defined for this domain, migrate off direct DB access.
