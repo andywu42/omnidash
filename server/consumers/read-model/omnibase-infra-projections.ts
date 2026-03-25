@@ -47,7 +47,12 @@ import {
 import { wiringHealthProjection } from '../../projections/wiring-health-projection';
 import type { TopicWiringRecord } from '../../projections/wiring-health-projection';
 
-import type { ProjectionHandler, ProjectionContext, MessageMeta } from './types';
+import type {
+  ProjectionHandler,
+  ProjectionContext,
+  MessageMeta,
+  ProjectionHandlerStats,
+} from './types';
 import {
   safeParseDate,
   safeParseDateOrMin,
@@ -57,6 +62,8 @@ import {
   MAX_BATCH_ROWS,
   VALID_PROMOTION_ACTIONS,
   VALID_CONFIDENCE_LEVELS,
+  createHandlerStats,
+  registerHandlerStats,
 } from './types';
 
 const BASELINES_TOPIC = SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED;
@@ -79,11 +86,33 @@ const OMNIBASE_INFRA_TOPICS = new Set([
 ]);
 
 export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
+  readonly stats: ProjectionHandlerStats = createHandlerStats();
+
+  constructor() {
+    registerHandlerStats('OmnibaseInfraProjectionHandler', this.stats);
+  }
+
   canHandle(topic: string): boolean {
     return OMNIBASE_INFRA_TOPICS.has(topic);
   }
 
   async projectEvent(
+    topic: string,
+    data: Record<string, unknown>,
+    context: ProjectionContext,
+    meta: MessageMeta
+  ): Promise<boolean> {
+    this.stats.received++;
+    const result = await this._dispatch(topic, data, context, meta);
+    if (result) {
+      this.stats.projected++;
+    } else {
+      this.stats.dropped.db_unavailable++;
+    }
+    return result;
+  }
+
+  private async _dispatch(
     topic: string,
     data: Record<string, unknown>,
     context: ProjectionContext,
@@ -122,8 +151,12 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
 
     const id = String(data.id ?? data.event_id ?? '').trim();
     const serviceName = String(data.service_name ?? data.serviceName ?? '').trim();
-    const state = String(data.state ?? '').trim().toLowerCase();
-    const previousState = String(data.previous_state ?? data.previousState ?? '').trim().toLowerCase();
+    const state = String(data.state ?? '')
+      .trim()
+      .toLowerCase();
+    const previousState = String(data.previous_state ?? data.previousState ?? '')
+      .trim()
+      .toLowerCase();
 
     if (!serviceName || !state || !previousState) {
       console.warn('[ReadModelConsumer] circuit-breaker event missing required fields', {
@@ -563,7 +596,8 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
     // Prefer correlation_id from the event; fall back to Kafka coordinates.
     const correlationId = String(data.correlation_id ?? data.correlationId ?? '').trim();
     const sourceEventId =
-      correlationId || deterministicCorrelationId(SAVINGS_ESTIMATED_TOPIC, meta.partition, meta.offset);
+      correlationId ||
+      deterministicCorrelationId(SAVINGS_ESTIMATED_TOPIC, meta.partition, meta.offset);
 
     const eventTimestamp = safeParseDate(data.timestamp_iso ?? data.timestamp ?? data.emitted_at);
 
@@ -574,16 +608,18 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
       schemaVersion: String(data.schema_version ?? '1.0'),
       actualTotalTokens: Number(data.actual_total_tokens ?? data.actualTotalTokens ?? 0),
       actualCostUsd: String(Number(data.actual_cost_usd ?? data.actualCostUsd ?? 0)),
-      actualModelId: data.actual_model_id != null
-        ? String(data.actual_model_id)
-        : data.actualModelId != null
-          ? String(data.actualModelId)
-          : null,
-      counterfactualModelId: data.counterfactual_model_id != null
-        ? String(data.counterfactual_model_id)
-        : data.counterfactualModelId != null
-          ? String(data.counterfactualModelId)
-          : null,
+      actualModelId:
+        data.actual_model_id != null
+          ? String(data.actual_model_id)
+          : data.actualModelId != null
+            ? String(data.actualModelId)
+            : null,
+      counterfactualModelId:
+        data.counterfactual_model_id != null
+          ? String(data.counterfactual_model_id)
+          : data.counterfactualModelId != null
+            ? String(data.counterfactualModelId)
+            : null,
       directSavingsUsd: String(Number(data.direct_savings_usd ?? data.directSavingsUsd ?? 0)),
       directTokensSaved: Number(data.direct_tokens_saved ?? data.directTokensSaved ?? 0),
       estimatedTotalSavingsUsd: String(
@@ -600,20 +636,20 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
       estimationMethod: String(
         data.estimation_method ?? data.estimationMethod ?? 'tiered_attribution_v1'
       ),
-      treatmentGroup: data.treatment_group != null
-        ? String(data.treatment_group)
-        : data.treatmentGroup != null
-          ? String(data.treatmentGroup)
-          : null,
+      treatmentGroup:
+        data.treatment_group != null
+          ? String(data.treatment_group)
+          : data.treatmentGroup != null
+            ? String(data.treatmentGroup)
+            : null,
       isMeasured: Boolean(data.is_measured ?? data.isMeasured ?? false),
-      completenessStatus: String(
-        data.completeness_status ?? data.completenessStatus ?? 'complete'
-      ),
-      pricingManifestVersion: data.pricing_manifest_version != null
-        ? String(data.pricing_manifest_version)
-        : data.pricingManifestVersion != null
-          ? String(data.pricingManifestVersion)
-          : null,
+      completenessStatus: String(data.completeness_status ?? data.completenessStatus ?? 'complete'),
+      pricingManifestVersion:
+        data.pricing_manifest_version != null
+          ? String(data.pricing_manifest_version)
+          : data.pricingManifestVersion != null
+            ? String(data.pricingManifestVersion)
+            : null,
       eventTimestamp,
     };
 
@@ -676,7 +712,8 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
     const exceptionType = String(data.exception_type ?? data.exceptionType ?? '').trim();
     const stackTrace = String(data.stack_trace ?? data.stackTrace ?? '').trim();
     const container = String(data.container ?? '').trim();
-    const emittedAtRaw = data.detected_at ?? data.detectedAt ?? data.first_seen_at ?? data.firstSeenAt;
+    const emittedAtRaw =
+      data.detected_at ?? data.detectedAt ?? data.first_seen_at ?? data.firstSeenAt;
     const emittedAt = safeParseDate(emittedAtRaw) ?? new Date();
 
     if (!fingerprint) {
@@ -736,7 +773,9 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
     const actionStatus = String(data.action_status ?? data.actionStatus ?? 'SUCCESS').trim();
 
     if (!fingerprint || !action) {
-      console.warn('[ReadModelConsumer] error-triaged event missing fingerprint or action, skipping');
+      console.warn(
+        '[ReadModelConsumer] error-triaged event missing fingerprint or action, skipping'
+      );
       return true;
     }
 
@@ -757,7 +796,9 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
       severity: String(data.severity ?? 'MEDIUM').trim(),
       errorCategory: String(data.error_category ?? data.errorCategory ?? 'UNKNOWN').trim(),
       container: String(data.container ?? '').trim(),
-      operatorAttentionRequired: Boolean(data.operator_attention_required ?? data.operatorAttentionRequired ?? false),
+      operatorAttentionRequired: Boolean(
+        data.operator_attention_required ?? data.operatorAttentionRequired ?? false
+      ),
       recurrenceCount: Number(data.recurrence_count ?? data.recurrenceCount ?? 1),
       firstSeenAt,
       lastSeenAt: triagedAt,

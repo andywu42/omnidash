@@ -39,6 +39,7 @@ const POLL_INTERVAL_MS = 30_000;
 const WATCHED_CONSUMER_GROUPS: string[] = [
   'omnidash-consumer',
   'omnidash-read-model',
+  'omnidash-read-model-v1',
   'omniintelligence-consumer',
   'omnimemory-consumer',
 ];
@@ -63,6 +64,48 @@ function buildExpectedTopics(): string[] {
 }
 
 export const EXPECTED_TOPICS: string[] = buildExpectedTopics();
+
+// ============================================================================
+// Consumer Group Lag Tracking (OMN-6402)
+// ============================================================================
+
+/** Lag status based on total messages behind. */
+export type ConsumerLagStatus = 'healthy' | 'degraded' | 'critical';
+
+/** Per-topic partition lag entry. */
+export interface PartitionLag {
+  topic: string;
+  partition: number;
+  currentOffset: number;
+  logEndOffset: number;
+  lag: number;
+}
+
+/** Aggregate lag for the read-model consumer group. */
+export interface ConsumerGroupLag {
+  groupId: string;
+  totalLag: number;
+  status: ConsumerLagStatus;
+  partitions: PartitionLag[];
+  lastCheckedAt: string;
+}
+
+const DEGRADED_LAG_THRESHOLD = 10_000;
+const CRITICAL_LAG_THRESHOLD = 100_000;
+
+/** In-memory latest lag snapshot for the read-model consumer group. */
+let readModelConsumerLag: ConsumerGroupLag | null = null;
+
+/** Get the latest consumer group lag snapshot (called by projection-health). */
+export function getReadModelConsumerLag(): ConsumerGroupLag | null {
+  return readModelConsumerLag;
+}
+
+function lagStatus(totalLag: number): ConsumerLagStatus {
+  if (totalLag >= CRITICAL_LAG_THRESHOLD) return 'critical';
+  if (totalLag >= DEGRADED_LAG_THRESHOLD) return 'degraded';
+  return 'healthy';
+}
 
 /** DLQ topic suffix pattern — topics ending with .dlq or -dlq. */
 const DLQ_SUFFIX_RE = /\.(dlq)$|-dlq$/i;
@@ -135,6 +178,36 @@ async function pollEventBusHealth(): Promise<void> {
     } catch {
       // Group may not exist yet — skip silently
     }
+  }
+
+  // OMN-6402: Track read-model consumer group lag specifically
+  try {
+    const rmOffsets = await fetchGroupOffsets('omnidash-read-model-v1');
+    const partitions: PartitionLag[] = [];
+    let rmTotalLag = 0;
+    for (const entry of rmOffsets) {
+      for (const p of entry.partitions) {
+        const logEnd = p.log_end_offset ?? p.offset;
+        const lag = Math.max(0, logEnd - p.offset);
+        rmTotalLag += lag;
+        partitions.push({
+          topic: entry.topic,
+          partition: p.partition,
+          currentOffset: p.offset,
+          logEndOffset: logEnd,
+          lag,
+        });
+      }
+    }
+    readModelConsumerLag = {
+      groupId: 'omnidash-read-model-v1',
+      totalLag: rmTotalLag,
+      status: lagStatus(rmTotalLag),
+      partitions,
+      lastCheckedAt: new Date().toISOString(),
+    };
+  } catch {
+    // Consumer group may not exist yet — leave null
   }
 
   // Determine the union of topics to report: broker topics + expected topics

@@ -6,17 +6,25 @@
  * - dod-guard-fired.v1 -> dod_guard_events (append-only, no dedup key)
  */
 
-import {
-  dodVerifyRuns,
-  dodGuardEvents,
-} from '@shared/intelligence-schema';
+import { dodVerifyRuns, dodGuardEvents } from '@shared/intelligence-schema';
 import {
   SUFFIX_OMNICLAUDE_DOD_VERIFY_COMPLETED,
   SUFFIX_OMNICLAUDE_DOD_GUARD_FIRED,
 } from '@shared/topics';
 
-import type { ProjectionHandler, ProjectionContext, MessageMeta } from './types';
-import { safeParseDate, sanitizeSessionId, isTableMissingError } from './types';
+import type {
+  ProjectionHandler,
+  ProjectionContext,
+  MessageMeta,
+  ProjectionHandlerStats,
+} from './types';
+import {
+  safeParseDate,
+  sanitizeSessionId,
+  isTableMissingError,
+  createHandlerStats,
+  registerHandlerStats,
+} from './types';
 
 const DOD_TOPICS = new Set([
   SUFFIX_OMNICLAUDE_DOD_VERIFY_COMPLETED,
@@ -24,6 +32,12 @@ const DOD_TOPICS = new Set([
 ]);
 
 export class DodProjectionHandler implements ProjectionHandler {
+  readonly stats: ProjectionHandlerStats = createHandlerStats();
+
+  constructor() {
+    registerHandlerStats('DodProjectionHandler', this.stats);
+  }
+
   canHandle(topic: string): boolean {
     return DOD_TOPICS.has(topic);
   }
@@ -32,7 +46,22 @@ export class DodProjectionHandler implements ProjectionHandler {
     topic: string,
     data: Record<string, unknown>,
     context: ProjectionContext,
-    meta: MessageMeta
+    _meta: MessageMeta
+  ): Promise<boolean> {
+    this.stats.received++;
+    const result = await this._dispatch(topic, data, context);
+    if (result) {
+      this.stats.projected++;
+    } else {
+      this.stats.dropped.db_unavailable++;
+    }
+    return result;
+  }
+
+  private async _dispatch(
+    topic: string,
+    data: Record<string, unknown>,
+    context: ProjectionContext
   ): Promise<boolean> {
     switch (topic) {
       case SUFFIX_OMNICLAUDE_DOD_VERIFY_COMPLETED:

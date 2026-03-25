@@ -5,7 +5,13 @@
  * read-model consumer orchestrator.
  */
 
-export type { ProjectionHandler, ProjectionContext, MessageMeta } from './types';
+export type {
+  ProjectionHandler,
+  ProjectionContext,
+  MessageMeta,
+  ProjectionHandlerStats,
+  DropReason,
+} from './types';
 export {
   deterministicCorrelationId,
   sanitizeSessionId,
@@ -16,6 +22,9 @@ export {
   MAX_BATCH_ROWS,
   VALID_PROMOTION_ACTIONS,
   VALID_CONFIDENCE_LEVELS,
+  createHandlerStats,
+  registerHandlerStats,
+  getAllHandlerStats,
 } from './types';
 
 export { OmniclaudeProjectionHandler } from './omniclaude-projections';

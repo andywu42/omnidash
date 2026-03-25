@@ -16,6 +16,8 @@ import {
   type ReactNode,
   type ErrorInfo,
 } from 'react';
+import { useFeatureStaleness } from '@/hooks/useStaleness';
+import { StalenessIndicator } from '@/components/StalenessIndicator';
 import { useSearch } from 'wouter';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -267,6 +269,7 @@ function StatsCard({
 
 function PatternLearningContent() {
   const { isDemoMode } = useDemoMode();
+  const patternsLastUpdated = useFeatureStaleness('patterns');
 
   // Get URL search string for initial filter state
   const searchString = useSearch();
@@ -447,10 +450,13 @@ function PatternLearningContent() {
             PATLEARN dashboard with evidence-based score debugging
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleRefresh}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-3">
+          <StalenessIndicator lastUpdated={patternsLastUpdated} label="Patterns" />
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Demo Mode Banner - shown when database is unavailable */}

@@ -12,6 +12,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useDemoMode } from '@/contexts/DemoModeContext';
+import { useFeatureStaleness } from '@/hooks/useStaleness';
+import { StalenessIndicator } from '@/components/StalenessIndicator';
 import { enforcementSource } from '@/lib/data-sources/enforcement-source';
 import { DemoBanner } from '@/components/DemoBanner';
 import { FeatureNotEnabledBanner } from '@/components/FeatureNotEnabledBanner';
@@ -364,6 +366,7 @@ function ViolatedPatternsTable({
 export default function PatternEnforcement() {
   const [timeWindow, setTimeWindow] = useState<EnforcementTimeWindow>('7d');
   const { isDemoMode } = useDemoMode();
+  const enforcementLastUpdated = useFeatureStaleness('enforcement');
 
   // ── Queries ──────────────────────────────────────────────────────────────
 
@@ -472,6 +475,7 @@ export default function PatternEnforcement() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <StalenessIndicator lastUpdated={enforcementLastUpdated} label="Enforcement" />
           <WindowSelector value={timeWindow} onChange={setTimeWindow} />
           <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -495,13 +499,17 @@ export default function PatternEnforcement() {
       )}
 
       {/* Feature not enabled banner — shown when API returns zero data (not mock, not demo) */}
-      {allSettled && !isDemoMode && !isUsingMockData && !summaryError && (summary?.total_evaluations ?? 0) === 0 && (
-        <FeatureNotEnabledBanner
-          featureName="Pattern Enforcement"
-          eventTopic="onex.evt.omniclaude.pattern-enforcement.v1"
-          flagHint="ENABLE_PATTERN_ENFORCEMENT"
-        />
-      )}
+      {allSettled &&
+        !isDemoMode &&
+        !isUsingMockData &&
+        !summaryError &&
+        (summary?.total_evaluations ?? 0) === 0 && (
+          <FeatureNotEnabledBanner
+            featureName="Pattern Enforcement"
+            eventTopic="onex.evt.omniclaude.pattern-enforcement.v1"
+            flagHint="ENABLE_PATTERN_ENFORCEMENT"
+          />
+        )}
 
       {/* Error Banner */}
       {summaryError && (

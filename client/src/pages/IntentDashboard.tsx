@@ -29,6 +29,8 @@ import { useState, useMemo } from 'react';
 import { IntentDistribution, RecentIntents, SessionTimeline } from '@/components/intent';
 import { useIntentProjectionStream } from '@/hooks/useIntentProjectionStream';
 import { useDemoMode } from '@/contexts/DemoModeContext';
+import { useFeatureStaleness } from '@/hooks/useStaleness';
+import { StalenessIndicator } from '@/components/StalenessIndicator';
 import { DemoBanner } from '@/components/DemoBanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -391,6 +393,7 @@ function IntentDetail({ intent, onClose }: IntentDetailProps) {
 
 export default function IntentDashboard() {
   const { isDemoMode } = useDemoMode();
+  const intentLastUpdated = useFeatureStaleness('intent-signals');
 
   // State
   const [timeRange, setTimeRange] = useState<TimeRangeHours>('24');
@@ -516,6 +519,7 @@ export default function IntentDashboard() {
         <DashboardPageHeader
           title="Intent Classification Dashboard"
           description="Real-time classification of user intents across sessions"
+          statusBadge={<StalenessIndicator lastUpdated={intentLastUpdated} label="Intents" />}
           isConnected={isConnected}
           connectionStatus={connectionStatus}
           lastUpdated={

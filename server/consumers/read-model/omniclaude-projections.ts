@@ -92,8 +92,20 @@ import {
   emitCircuitBreakerInvalidate,
 } from '../../omniclaude-state-events';
 
-import type { ProjectionHandler, ProjectionContext, MessageMeta } from './types';
-import { safeParseDate, sanitizeSessionId, isTableMissingError, UUID_RE } from './types';
+import type {
+  ProjectionHandler,
+  ProjectionContext,
+  MessageMeta,
+  ProjectionHandlerStats,
+} from './types';
+import {
+  safeParseDate,
+  sanitizeSessionId,
+  isTableMissingError,
+  UUID_RE,
+  createHandlerStats,
+  registerHandlerStats,
+} from './types';
 
 const OMNICLAUDE_TOPICS = new Set([
   TOPIC_OMNICLAUDE_ROUTING_DECISIONS,
@@ -125,11 +137,33 @@ const OMNICLAUDE_TOPICS = new Set([
 const extractionAggregator = new ExtractionMetricsAggregator();
 
 export class OmniclaudeProjectionHandler implements ProjectionHandler {
+  readonly stats: ProjectionHandlerStats = createHandlerStats();
+
+  constructor() {
+    registerHandlerStats('OmniclaudeProjectionHandler', this.stats);
+  }
+
   canHandle(topic: string): boolean {
     return OMNICLAUDE_TOPICS.has(topic);
   }
 
   async projectEvent(
+    topic: string,
+    data: Record<string, unknown>,
+    context: ProjectionContext,
+    meta: MessageMeta
+  ): Promise<boolean> {
+    this.stats.received++;
+    const result = await this._dispatch(topic, data, context, meta);
+    if (result) {
+      this.stats.projected++;
+    } else {
+      this.stats.dropped.db_unavailable++;
+    }
+    return result;
+  }
+
+  private async _dispatch(
     topic: string,
     data: Record<string, unknown>,
     context: ProjectionContext,

@@ -14,8 +14,18 @@ import {
   SUFFIX_PLATFORM_DLQ_MESSAGE,
 } from '@shared/topics';
 
-import type { ProjectionHandler, ProjectionContext, MessageMeta } from './types';
-import { safeParseDate, isTableMissingError } from './types';
+import type {
+  ProjectionHandler,
+  ProjectionContext,
+  MessageMeta,
+  ProjectionHandlerStats,
+} from './types';
+import {
+  safeParseDate,
+  isTableMissingError,
+  createHandlerStats,
+  registerHandlerStats,
+} from './types';
 
 const PLATFORM_TOPICS = new Set([
   SUFFIX_MEMORY_INTENT_STORED,
@@ -24,11 +34,33 @@ const PLATFORM_TOPICS = new Set([
 ]);
 
 export class PlatformProjectionHandler implements ProjectionHandler {
+  readonly stats: ProjectionHandlerStats = createHandlerStats();
+
+  constructor() {
+    registerHandlerStats('PlatformProjectionHandler', this.stats);
+  }
+
   canHandle(topic: string): boolean {
     return PLATFORM_TOPICS.has(topic);
   }
 
   async projectEvent(
+    topic: string,
+    data: Record<string, unknown>,
+    context: ProjectionContext,
+    meta: MessageMeta
+  ): Promise<boolean> {
+    this.stats.received++;
+    const result = await this._dispatch(topic, data, context, meta);
+    if (result) {
+      this.stats.projected++;
+    } else {
+      this.stats.dropped.db_unavailable++;
+    }
+    return result;
+  }
+
+  private async _dispatch(
     topic: string,
     data: Record<string, unknown>,
     context: ProjectionContext,

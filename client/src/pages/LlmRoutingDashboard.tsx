@@ -18,6 +18,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useFeatureStaleness } from '@/hooks/useStaleness';
+import { StalenessIndicator } from '@/components/StalenessIndicator';
 import {
   llmRoutingSource,
   fetchByModel,
@@ -747,6 +749,7 @@ function ByModelTable({
 export default function LlmRoutingDashboard() {
   const [timeWindow, setTimeWindow] = useState<LlmRoutingTimeWindow>('7d');
   const queryClient = useQueryClient();
+  const llmRoutingLastUpdated = useFeatureStaleness('llm-routing');
 
   // Clear singleton mock state on mount so a remount always starts from a
   // clean slate.  Runs before any queries fire (queries are declared below),
@@ -942,6 +945,7 @@ export default function LlmRoutingDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
+          <StalenessIndicator lastUpdated={llmRoutingLastUpdated} label="LLM Routing" />
           <ModelSwitcher />
           <PromptBumpButton />
           <WindowSelector value={timeWindow} onChange={setTimeWindow} />

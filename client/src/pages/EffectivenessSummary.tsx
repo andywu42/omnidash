@@ -13,6 +13,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useDemoMode } from '@/contexts/DemoModeContext';
+import { useFeatureStaleness } from '@/hooks/useStaleness';
+import { StalenessIndicator } from '@/components/StalenessIndicator';
 import { effectivenessSource } from '@/lib/data-sources/effectiveness-source';
 import { DemoBanner } from '@/components/DemoBanner';
 import { MetricCard } from '@/components/MetricCard';
@@ -72,6 +74,7 @@ import {
  */
 export default function EffectivenessSummary() {
   const { isDemoMode } = useDemoMode();
+  const effectivenessLastUpdated = useFeatureStaleness('effectiveness');
 
   // ---------------------------------------------------------------------------
   // WebSocket: subscribe to effectiveness topic for real-time invalidation
@@ -261,6 +264,7 @@ export default function EffectivenessSummary() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <StalenessIndicator lastUpdated={effectivenessLastUpdated} label="Effectiveness" />
           {effectivenessSource.isUsingMockData && (
             <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
               Demo Data

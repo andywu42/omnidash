@@ -54,8 +54,19 @@ import {
   validateEvent,
 } from '@shared/event-schemas';
 
-import type { ProjectionHandler, ProjectionContext, MessageMeta } from './types';
-import { safeParseDate, isTableMissingError, UUID_RE } from './types';
+import type {
+  ProjectionHandler,
+  ProjectionContext,
+  MessageMeta,
+  ProjectionHandlerStats,
+} from './types';
+import {
+  safeParseDate,
+  isTableMissingError,
+  UUID_RE,
+  createHandlerStats,
+  registerHandlerStats,
+} from './types';
 
 // -------------------------------------------------------------------------
 // Pattern signature display-name derivation (OMN-5644)
@@ -153,11 +164,33 @@ const OMNIINTELLIGENCE_TOPICS = new Set([
 ]);
 
 export class OmniintelligenceProjectionHandler implements ProjectionHandler {
+  readonly stats: ProjectionHandlerStats = createHandlerStats();
+
+  constructor() {
+    registerHandlerStats('OmniintelligenceProjectionHandler', this.stats);
+  }
+
   canHandle(topic: string): boolean {
     return OMNIINTELLIGENCE_TOPICS.has(topic);
   }
 
   async projectEvent(
+    topic: string,
+    data: Record<string, unknown>,
+    context: ProjectionContext,
+    meta: MessageMeta
+  ): Promise<boolean> {
+    this.stats.received++;
+    const result = await this._dispatch(topic, data, context, meta);
+    if (result) {
+      this.stats.projected++;
+    } else {
+      this.stats.dropped.db_unavailable++;
+    }
+    return result;
+  }
+
+  private async _dispatch(
     topic: string,
     data: Record<string, unknown>,
     context: ProjectionContext,

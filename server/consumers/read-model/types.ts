@@ -176,6 +176,60 @@ export function isTableMissingError(err: unknown, tableName: string): boolean {
   return pgCode === '42P01' || (msg.includes(tableName) && msg.includes('does not exist'));
 }
 
+// ---------------------------------------------------------------------------
+// ProjectionHandlerStats — per-handler observability counters (OMN-6400)
+// ---------------------------------------------------------------------------
+
+/** Reasons an event may be dropped during projection. */
+export type DropReason = 'missing_field' | 'guard_failed' | 'db_unavailable' | 'table_missing';
+
+/**
+ * In-memory counters for a single projection handler.
+ * Exposed via GET /api/projection-health.
+ */
+export interface ProjectionHandlerStats {
+  /** Total events received by this handler. */
+  received: number;
+  /** Events successfully projected into the read-model. */
+  projected: number;
+  /** Events dropped, broken down by reason. */
+  dropped: Record<DropReason, number>;
+}
+
+/** Create a fresh zero-value stats object. */
+export function createHandlerStats(): ProjectionHandlerStats {
+  return {
+    received: 0,
+    projected: 0,
+    dropped: {
+      missing_field: 0,
+      guard_failed: 0,
+      db_unavailable: 0,
+      table_missing: 0,
+    },
+  };
+}
+
+/**
+ * Global registry of handler stats keyed by handler class name.
+ * Each projection handler registers itself on construction.
+ */
+const handlerStatsRegistry = new Map<string, ProjectionHandlerStats>();
+
+/** Register stats for a handler. Called once per handler instance. */
+export function registerHandlerStats(name: string, stats: ProjectionHandlerStats): void {
+  handlerStatsRegistry.set(name, stats);
+}
+
+/** Get a snapshot of all handler stats. */
+export function getAllHandlerStats(): Record<string, ProjectionHandlerStats> {
+  const result: Record<string, ProjectionHandlerStats> = {};
+  for (const [name, stats] of handlerStatsRegistry) {
+    result[name] = { ...stats, dropped: { ...stats.dropped } };
+  }
+  return result;
+}
+
 // UUID validation regex -- hoisted to module scope so it is compiled once.
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

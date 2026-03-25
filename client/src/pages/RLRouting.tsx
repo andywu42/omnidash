@@ -23,6 +23,8 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useFeatureStaleness } from '@/hooks/useStaleness';
+import { StalenessIndicator } from '@/components/StalenessIndicator';
 import { buildApiUrl } from '@/lib/data-sources/api-base';
 // Query keys are inlined (no entry in query-keys.ts until API endpoints land)
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -259,6 +261,7 @@ const CHART_COLORS = [
 
 export default function RLRouting() {
   const [timeWindow, setTimeWindow] = useState<string>('24h');
+  const rlEpisodesLastUpdated = useFeatureStaleness('rl-episodes');
 
   // Fetch shadow summary
   const { data: summary, isLoading: summaryLoading } = useQuery({
@@ -373,6 +376,7 @@ export default function RLRouting() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <StalenessIndicator lastUpdated={rlEpisodesLastUpdated} label="RL Episodes" />
           <Badge variant="outline" className="font-mono text-xs">
             Policy: {s.policy_version}
           </Badge>

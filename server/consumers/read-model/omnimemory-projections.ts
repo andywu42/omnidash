@@ -19,8 +19,18 @@ import {
   SUFFIX_MEMORY_INTENT_STORED,
 } from '@shared/topics';
 
-import type { ProjectionHandler, ProjectionContext, MessageMeta } from './types';
-import { safeParseDate, isTableMissingError } from './types';
+import type {
+  ProjectionHandler,
+  ProjectionContext,
+  MessageMeta,
+  ProjectionHandlerStats,
+} from './types';
+import {
+  safeParseDate,
+  isTableMissingError,
+  createHandlerStats,
+  registerHandlerStats,
+} from './types';
 
 const OMNIMEMORY_TOPICS = new Set([
   SUFFIX_MEMORY_DOCUMENT_DISCOVERED,
@@ -31,6 +41,12 @@ const OMNIMEMORY_TOPICS = new Set([
 ]);
 
 export class OmniMemoryProjectionHandler implements ProjectionHandler {
+  readonly stats: ProjectionHandlerStats = createHandlerStats();
+
+  constructor() {
+    registerHandlerStats('OmniMemoryProjectionHandler', this.stats);
+  }
+
   canHandle(topic: string): boolean {
     return OMNIMEMORY_TOPICS.has(topic);
   }
@@ -40,6 +56,21 @@ export class OmniMemoryProjectionHandler implements ProjectionHandler {
     data: Record<string, unknown>,
     context: ProjectionContext,
     _meta: MessageMeta
+  ): Promise<boolean> {
+    this.stats.received++;
+    const result = await this._dispatch(topic, data, context);
+    if (result) {
+      this.stats.projected++;
+    } else {
+      this.stats.dropped.db_unavailable++;
+    }
+    return result;
+  }
+
+  private async _dispatch(
+    topic: string,
+    data: Record<string, unknown>,
+    context: ProjectionContext
   ): Promise<boolean> {
     switch (topic) {
       case SUFFIX_MEMORY_DOCUMENT_DISCOVERED:
