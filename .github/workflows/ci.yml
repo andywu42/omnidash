@@ -27,6 +27,8 @@ jobs:
           # omnidash should never open a connection to it directly.
           # Exclude comment lines (// and * and JSDoc) and markdown files to
           # prevent false positives on documentation references (F7/OMN-6477).
+          # grep -rn output is "file:line:content" — comment filters must
+          # match content after the second colon, not the full line (F7/OMN-6640).
           VIOLATIONS=$(grep -rn ":5436" \
             --include="*.ts" --include="*.tsx" \
             --exclude-dir=node_modules \
@@ -34,9 +36,9 @@ jobs:
             --exclude-dir=.git \
             --exclude-dir=coverage \
             . \
-            | grep -v '^\s*//' \
-            | grep -v '^\s*\*' \
-            | grep -v '^\s*/\*' \
+            | grep -v ':[0-9]*:\s*//' \
+            | grep -v ':[0-9]*:\s*\*' \
+            | grep -v ':[0-9]*:\s*/\*' \
             | grep -v '\.md:' \
             || true)
           if [ -n "$VIOLATIONS" ]; then
