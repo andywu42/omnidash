@@ -364,11 +364,18 @@ function handleCanonicalNodeIntrospection(message: KafkaMessage, ctx: ConsumerCo
         version: nodeVersion ?? '1.0.0',
         current_state: resolvedState,
         capabilities: payload.capabilities ?? [],
-        metadata: {},
+        metadata: payload.metadata ?? {},
         endpoints: {},
         reason: null,
-        event_bus: {},
+        event_bus: payload.event_bus ?? {},
         emitted_at: envelope_timestamp,
+        // Thread top-level fields the projection uses for display (OMN-6405)
+        ...((payload as Record<string, unknown>).description != null
+          ? { description: (payload as Record<string, unknown>).description }
+          : {}),
+        ...((payload as Record<string, unknown>).node_name != null
+          ? { node_name: (payload as Record<string, unknown>).node_name }
+          : {}),
       },
       'nodeIntrospectionUpdate'
     )

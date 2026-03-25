@@ -26,8 +26,11 @@ export const BridgeNodeIntrospectionSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
   endpoints: z.record(z.unknown()).optional(),
   reason: z.string().nullable().optional(),
-  event_bus: z.record(z.unknown()).optional(),
+  event_bus: z.record(z.unknown()).nullable().optional(),
   emitted_at: z.string().optional(),
+  // Top-level fields threaded from canonical introspection payload (OMN-6405)
+  description: z.string().optional(),
+  node_name: z.string().optional(),
 });
 
 export const BridgeNodeHeartbeatSchema = z.object({
@@ -49,7 +52,7 @@ export const BridgeNodeStateChangeSchema = z.object({
 
 export const BridgeNodeBecameActiveSchema = z.object({
   node_id: z.string(),
-  capabilities: z.unknown().optional(),
+  capabilities: z.unknown().nullable().optional(),
   emitted_at: z.string().optional(),
 });
 

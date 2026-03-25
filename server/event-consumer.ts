@@ -289,10 +289,26 @@ export class EventConsumer extends EventEmitter {
   ): EventEnvelope<T> | null {
     try {
       const raw = JSON.parse(message.value?.toString() || '{}');
-      return {
-        ...EventEnvelopeSchema.parse(raw),
-        payload: payloadSchema.parse(EventEnvelopeSchema.parse(raw).payload),
-      };
+      const envelope = EventEnvelopeSchema.parse(raw);
+      const payloadResult = payloadSchema.safeParse(envelope.payload);
+      if (!payloadResult.success) {
+        const rawPayload = envelope.payload as Record<string, unknown> | undefined;
+        console.warn(
+          JSON.stringify({
+            level: 'warn',
+            event: 'envelope_payload_validation_failed',
+            node_id: rawPayload?.node_id ?? null,
+            issues: payloadResult.error.issues.map((i) => ({
+              path: i.path.join('.'),
+              code: i.code,
+              expected: (i as unknown as Record<string, unknown>).expected,
+              received: (i as unknown as Record<string, unknown>).received,
+            })),
+          })
+        );
+        return null;
+      }
+      return { ...envelope, payload: payloadResult.data };
     } catch (e) {
       console.warn(
         '[EventConsumer] Failed to parse envelope:',
@@ -373,7 +389,8 @@ export class EventConsumer extends EventEmitter {
     try {
       await this.connectWithRetry();
       this.emit('connected');
-      if (process.env.ENABLE_EVENT_PRELOAD !== 'false') { // ONEX_FLAG_EXEMPT: migration
+      if (process.env.ENABLE_EVENT_PRELOAD !== 'false') {
+        // ONEX_FLAG_EXEMPT: migration
         try {
           await this.preloadFromDatabase();
         } catch (e) {

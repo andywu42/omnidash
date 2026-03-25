@@ -123,18 +123,21 @@ export type NodeCapabilities = z.infer<typeof NodeCapabilitiesSchema>;
 // node-became-active payload
 export const NodeBecameActivePayloadSchema = z.object({
   node_id: z.string().uuid(),
-  capabilities: NodeCapabilitiesSchema,
+  capabilities: NodeCapabilitiesSchema.nullable(),
 });
 export type NodeBecameActivePayload = z.infer<typeof NodeBecameActivePayloadSchema>;
 
 // node-heartbeat payload
+// Python (Pydantic) always emits every field — None becomes null on the wire,
+// never absent. Use .nullable() (accepts null) instead of .optional() (accepts
+// undefined / missing key) so Zod does not reject canonical heartbeat events.
 export const NodeHeartbeatPayloadSchema = z.object({
   node_id: z.string().uuid(),
-  node_type: z.string().optional(),
-  uptime_seconds: z.number().optional(),
-  memory_usage_mb: z.number().optional(),
-  cpu_usage_percent: z.number().optional(),
-  active_operations_count: z.number().optional(),
+  node_type: z.string(),
+  uptime_seconds: z.number(),
+  memory_usage_mb: z.number().nullable(),
+  cpu_usage_percent: z.number().nullable(),
+  active_operations_count: z.number(),
 });
 export type NodeHeartbeatPayload = z.infer<typeof NodeHeartbeatPayloadSchema>;
 
@@ -177,15 +180,18 @@ export const NodeEventBusConfigSchema = z.object({
 export type NodeEventBusConfig = z.infer<typeof NodeEventBusConfigSchema>;
 
 // node-introspection payload
+// Python (Pydantic) always emits every field — None becomes null on the wire,
+// never absent. Use .nullable() so Zod accepts null values from the runtime.
+//
 // node_version may arrive as a plain semver string or as a Python ModelSemVer
 // object { major, minor, patch } — accept both shapes (OMN-4098).
 //
-// event_bus (OMN-5023): optional block carrying the node's declared publish/subscribe
-// topics from its ONEX contract. Backward-compatible — absent for nodes that have
-// not yet been updated to emit event_bus data in their introspection payload.
+// event_bus (OMN-5023): block carrying the node's declared publish/subscribe
+// topics from its ONEX contract. Always present in the payload but may be null
+// for nodes that have not declared event_bus in their contract.
 export const NodeIntrospectionPayloadSchema = z.object({
   node_id: z.string().uuid(),
-  node_type: z.string().optional(),
+  node_type: z.string(),
   node_version: z
     .union([
       z.string(),
@@ -195,10 +201,10 @@ export const NodeIntrospectionPayloadSchema = z.object({
         patch: z.number(),
       }),
     ])
-    .optional(),
-  capabilities: NodeCapabilitiesSchema.optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  current_state: z.string().nullable().optional(),
-  event_bus: NodeEventBusConfigSchema.optional(),
+    .nullable(),
+  capabilities: NodeCapabilitiesSchema.nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  current_state: z.string().nullable(),
+  event_bus: NodeEventBusConfigSchema.nullable(),
 });
 export type NodeIntrospectionPayload = z.infer<typeof NodeIntrospectionPayloadSchema>;

@@ -79,20 +79,28 @@ describe('NodeEventBusConfigSchema', () => {
 });
 
 describe('NodeIntrospectionPayloadSchema with event_bus', () => {
-  it('parses payload without event_bus (backward compat)', () => {
+  it('parses payload with event_bus as null (backward compat)', () => {
     const result = NodeIntrospectionPayloadSchema.parse({
       node_id: VALID_UUID,
       node_type: 'EFFECT',
       node_version: '1.0.0',
+      capabilities: null,
+      metadata: null,
+      current_state: null,
+      event_bus: null,
     });
     expect(result.node_id).toBe(VALID_UUID);
-    expect(result.event_bus).toBeUndefined();
+    expect(result.event_bus).toBeNull();
   });
 
   it('parses payload with event_bus containing publish_topics', () => {
     const result = NodeIntrospectionPayloadSchema.parse({
       node_id: VALID_UUID,
       node_type: 'EFFECT',
+      node_version: '1.0.0',
+      capabilities: null,
+      metadata: null,
+      current_state: null,
       event_bus: {
         publish_topics: [
           { topic: 'onex.evt.omniclaude.session-started.v1', direction: 'publish' },
@@ -110,6 +118,11 @@ describe('NodeIntrospectionPayloadSchema with event_bus', () => {
   it('parses payload with event_bus containing both publish and subscribe', () => {
     const result = NodeIntrospectionPayloadSchema.parse({
       node_id: VALID_UUID,
+      node_type: 'EFFECT',
+      node_version: null,
+      capabilities: null,
+      metadata: null,
+      current_state: null,
       event_bus: {
         publish_topics: [{ topic: 'onex.evt.platform.node-heartbeat.v1' }],
         subscribe_topics: [{ topic: 'onex.cmd.platform.request-introspection.v1' }],
@@ -122,6 +135,11 @@ describe('NodeIntrospectionPayloadSchema with event_bus', () => {
   it('parses payload with empty event_bus object', () => {
     const result = NodeIntrospectionPayloadSchema.parse({
       node_id: VALID_UUID,
+      node_type: 'COMPUTE',
+      node_version: null,
+      capabilities: null,
+      metadata: null,
+      current_state: null,
       event_bus: {},
     });
     expect(result.event_bus).toBeDefined();

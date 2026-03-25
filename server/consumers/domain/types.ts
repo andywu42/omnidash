@@ -96,7 +96,7 @@ export interface CanonicalOnexNode {
   state: OnexNodeState;
   node_type?: string;
   node_version?: string;
-  capabilities?: Record<string, unknown>;
+  capabilities?: Record<string, unknown> | null;
   activated_at?: number;
   last_heartbeat_at?: number;
   last_introspection_at?: number;
@@ -448,10 +448,10 @@ export interface ConsumerContext {
   /** Propagate heartbeat metrics to registered node */
   propagateHeartbeatMetrics(payload: {
     node_id: string;
-    uptime_seconds?: number;
-    memory_usage_mb?: number;
-    cpu_usage_percent?: number;
-    active_operations_count?: number;
+    uptime_seconds?: number | null;
+    memory_usage_mb?: number | null;
+    cpu_usage_percent?: number | null;
+    active_operations_count?: number | null;
   }): void;
 
   /** Clean up old metrics entries */

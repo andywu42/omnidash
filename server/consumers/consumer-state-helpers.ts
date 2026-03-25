@@ -1,3 +1,4 @@
+// no-migration: OMN-6405 type-only change (added | null to optional heartbeat fields)
 /**
  * Consumer state helpers — pure functions for state management [OMN-5191]
  *
@@ -66,10 +67,10 @@ export function propagateHeartbeatMetrics(
   registeredNodes: Map<string, RegisteredNode>,
   payload: {
     node_id: string;
-    uptime_seconds?: number;
-    memory_usage_mb?: number;
-    cpu_usage_percent?: number;
-    active_operations_count?: number;
+    uptime_seconds?: number | null;
+    memory_usage_mb?: number | null;
+    cpu_usage_percent?: number | null;
+    active_operations_count?: number | null;
   }
 ): void {
   const regNode = registeredNodes.get(payload.node_id);
