@@ -65,8 +65,8 @@ export class GateDecisionsProjection extends DbBackedProjectionView<GateDecision
         db.execute(sql`
           SELECT
             COUNT(*)::int AS total,
-            COUNT(*) FILTER (WHERE outcome = 'passed')::int AS passed,
-            COUNT(*) FILTER (WHERE outcome = 'failed')::int AS failed,
+            COUNT(*) FILTER (WHERE outcome = 'ACCEPTED')::int AS passed,
+            COUNT(*) FILTER (WHERE outcome IN ('REJECTED', 'TIMEOUT'))::int AS failed,
             COUNT(*) FILTER (WHERE blocking = true)::int AS blocked
           FROM gate_decisions
           WHERE created_at >= NOW() - INTERVAL '7 days'
@@ -93,7 +93,10 @@ export class GateDecisionsProjection extends DbBackedProjectionView<GateDecision
       // Graceful degrade: table may not exist yet
       const pgCode = (err as { code?: string }).code;
       const msg = err instanceof Error ? err.message : String(err);
-      if (pgCode === '42P01' || (msg.includes('gate_decisions') && msg.includes('does not exist'))) {
+      if (
+        pgCode === '42P01' ||
+        (msg.includes('gate_decisions') && msg.includes('does not exist'))
+      ) {
         return this.emptyPayload();
       }
       throw err;
