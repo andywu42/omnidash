@@ -32,20 +32,20 @@ import { DataSourceEmptyState } from '@/components/EmptyState';
 // ============================================================================
 
 interface SkillSummaryRow {
-  skill_name: string;
+  skillName: string;
   invocations: number;
-  avg_ms: number | null;
-  success_rate: number;
+  avgMs: number | null;
+  successRate: number;
 }
 
 interface SkillInvocationRow {
   id: number;
-  skill_name: string;
-  session_id: string | null;
-  duration_ms: number | null;
+  skillName: string;
+  sessionId: string | null;
+  durationMs: number | null;
   success: boolean;
   error: string | null;
-  created_at: string;
+  createdAt: string;
 }
 
 interface SkillTotals {
@@ -151,11 +151,11 @@ function SkillsBarChart({ skills, isLoading }: { skills: SkillSummaryRow[]; isLo
           <div className="space-y-3">
             {skills.map((row) => {
               const widthPct = Math.round((row.invocations / maxInvocations) * 100);
-              const successPct = row.success_rate ?? 0;
+              const successPct = row.successRate ?? 0;
               return (
-                <div key={row.skill_name} className="space-y-1">
+                <div key={row.skillName} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-mono truncate max-w-[200px]">{row.skill_name}</span>
+                    <span className="font-mono truncate max-w-[200px]">{row.skillName}</span>
                     <div className="flex items-center gap-4 text-muted-foreground text-xs">
                       <span>{row.invocations} calls</span>
                       <span
@@ -169,7 +169,7 @@ function SkillsBarChart({ skills, isLoading }: { skills: SkillSummaryRow[]; isLo
                       >
                         {fmtPct(successPct)} ok
                       </span>
-                      <span>{fmtMs(row.avg_ms)} avg</span>
+                      <span>{fmtMs(row.avgMs)} avg</span>
                     </div>
                   </div>
                   <div className="h-2 w-full bg-muted rounded">
@@ -226,7 +226,7 @@ function RecentInvocationsTable({
             <TableBody>
               {rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="font-mono text-xs">{row.skill_name}</TableCell>
+                  <TableCell className="font-mono text-xs">{row.skillName}</TableCell>
                   <TableCell>
                     {row.success ? (
                       <Badge variant="default" className="text-xs">
@@ -243,14 +243,14 @@ function RecentInvocationsTable({
                   <TableCell className="text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {fmtMs(row.duration_ms)}
+                      {fmtMs(row.durationMs)}
                     </span>
                   </TableCell>
                   <TableCell className="font-mono text-xs max-w-[120px] truncate">
-                    {row.session_id ?? '—'}
+                    {row.sessionId ?? '—'}
                   </TableCell>
                   <TableCell className="text-right text-xs text-muted-foreground">
-                    {relativeTime(row.created_at)}
+                    {relativeTime(row.createdAt)}
                   </TableCell>
                 </TableRow>
               ))}
