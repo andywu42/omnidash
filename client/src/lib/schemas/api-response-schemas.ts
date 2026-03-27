@@ -587,7 +587,7 @@ export function safeParseResponse<T>(
 ): T | undefined {
   const result = schema.safeParse(data);
   if (!result.success) {
-    console.error(`[API Validation Error] ${context}:`, result.error.format());
+    console.warn(`[API Validation] ${context}:`, result.error.format());
     return undefined;
   }
   return result.data;
@@ -601,7 +601,7 @@ export function parseResponse<T>(schema: z.ZodSchema<T>, data: unknown, context:
   try {
     return schema.parse(data);
   } catch (error) {
-    console.error(`[API Validation Error] ${context}:`, error);
+    console.warn(`[API Validation] ${context}:`, error);
     throw new Error(`Invalid API response format for ${context}`);
   }
 }
@@ -616,7 +616,7 @@ export function parseArrayResponse<T>(
   context: string
 ): T[] {
   if (!Array.isArray(data)) {
-    console.error(`[API Validation Error] ${context}: Expected array, got ${typeof data}`);
+    console.warn(`[API Validation] ${context}: Expected array, got ${typeof data}`);
     return [];
   }
 
@@ -626,7 +626,7 @@ export function parseArrayResponse<T>(
     if (result.success) {
       validItems.push(result.data);
     } else {
-      console.error(`[API Validation Error] ${context}[${index}]:`, result.error.format());
+      console.warn(`[API Validation] ${context}[${index}]:`, result.error.format());
     }
   });
 
