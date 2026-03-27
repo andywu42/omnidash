@@ -108,6 +108,8 @@ import ComplianceDashboard from '@/pages/ComplianceDashboard';
 import RoutingFeedbackDashboard from '@/pages/RoutingFeedbackDashboard';
 // Pattern Lifecycle dashboard (OMN-5283)
 import PatternLifecycleDashboard from '@/pages/PatternLifecycleDashboard';
+// Hostile Reviewer dashboard (OMN-6610)
+import HostileReviewerDashboard from '@/pages/HostileReviewerDashboard';
 // Empty route scaffolds (OMN-6753)
 import AgentsDashboard from '@/pages/AgentsDashboard';
 import DriftDashboard from '@/pages/DriftDashboard';
@@ -261,6 +263,9 @@ function Router() {
 
       {/* Review Calibration — convergence metrics, noise trends, model scores (OMN-6177) */}
       <Route path="/review-calibration" component={ReviewCalibrationDashboard} />
+
+      {/* Hostile Reviewer — run history, convergence metrics, verdict breakdown (OMN-6610) */}
+      <Route path="/hostile-reviewer" component={HostileReviewerDashboard} />
 
       {/* Compliance dashboard (OMN-5285) */}
       <Route path="/compliance" component={ComplianceDashboard} />

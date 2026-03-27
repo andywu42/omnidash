@@ -173,6 +173,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         description: 'CI failure pattern analysis and escalation trigger timeline (OMN-5282)',
       },
       {
+        title: 'Hostile Reviewer',
+        url: '/hostile-reviewer',
+        icon: ShieldAlert,
+        description: 'Hostile reviewer run history and convergence metrics (OMN-6610)',
+      },
+      {
         title: 'Epic Pipeline',
         url: '/epic-pipeline',
         icon: GitBranch,

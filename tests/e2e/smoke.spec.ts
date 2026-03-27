@@ -116,6 +116,7 @@ const DASHBOARD_ROUTES = [
   '/compliance',
   '/routing-feedback',
   '/pattern-lifecycle',
+  '/hostile-reviewer',
 
   // Empty route scaffolds (OMN-6753)
   '/agents',
