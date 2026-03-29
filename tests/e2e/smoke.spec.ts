@@ -63,6 +63,7 @@ const DASHBOARD_ROUTES = [
   '/context-effectiveness',
   '/llm-routing',
   '/memory',
+  '/savings',
 
   // Advanced — System
   '/registry',
@@ -133,7 +134,6 @@ const DASHBOARD_ROUTES = [
   '/preview/tech-debt',
   '/preview/pattern-lineage',
   '/preview/composer',
-  '/preview/savings',
   '/preview/agent-registry',
   '/preview/agent-network',
   '/preview/intelligence-analytics',

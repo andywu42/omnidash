@@ -321,6 +321,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         icon: Sparkles,
         description: 'Pattern creation, promotion, deprecation, and retirement (OMN-5283)',
       },
+      {
+        title: 'Token Savings',
+        url: '/savings',
+        icon: DollarSign,
+        description: 'Token and cost savings from pattern injection (OMN-6968)',
+      },
     ],
   },
   {

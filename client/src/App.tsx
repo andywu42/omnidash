@@ -306,7 +306,8 @@ function Router() {
       <Route path="/preview/tech-debt" component={TechDebtAnalysis} />
       <Route path="/preview/pattern-lineage" component={PatternLineage} />
       <Route path="/preview/composer" component={NodeNetworkComposer} />
-      <Route path="/preview/savings" component={IntelligenceSavings} />
+      {/* Token Savings — promoted from /preview/savings to /savings (OMN-6968) */}
+      <Route path="/savings" component={IntelligenceSavings} />
       <Route path="/preview/agent-registry" component={AgentRegistry} />
       <Route path="/preview/agent-network" component={AgentNetwork} />
       <Route path="/preview/intelligence-analytics" component={IntelligenceAnalytics} />
