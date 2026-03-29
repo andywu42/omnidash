@@ -32,9 +32,11 @@ export interface HealthProbeResponse {
   services: {
     eventConsumer: 'up' | 'down';
     eventBus: 'up' | 'down';
-    database: 'up' | 'down';
+    database: 'up' | 'degraded' | 'down';
   };
   checkedAt: string;
+  /** Present when a probe itself errors (distinct from dependency being down). */
+  probeErrors?: string[];
 }
 
 const router = Router();
@@ -83,16 +85,23 @@ router.get('/', async (_req, res) => {
       // Leave as 'down'
     }
 
-    // --- Database + migration parity probe [OMN-5365] ---
-    let databaseStatus: 'up' | 'down' = 'down';
+    // --- Database + migration parity probe [OMN-5365, OMN-6973] ---
+    // Probe logic errors must surface as 'degraded' (not false 'down').
+    // False 'down' from internal exceptions hides that the DB is actually healthy.
+    let databaseStatus: 'up' | 'degraded' | 'down' = 'down';
+    const probeErrors: string[] = [];
     try {
       const schemaHealth = await checkSchemaParity();
       databaseStatus = schemaHealth.schema_ok ? 'up' : 'down';
-    } catch {
-      // Leave as 'down'
+    } catch (err) {
+      // Probe logic error — report as degraded, NOT as dependency down.
+      // The database may be perfectly healthy; the probe itself failed.
+      databaseStatus = 'degraded';
+      const msg = err instanceof Error ? err.message : String(err);
+      probeErrors.push(`schema-parity probe error: ${msg}`);
     }
 
-    // Aggregate: "up" if all up, "degraded" if some up, "down" if all down
+    // Aggregate: "up" if all up, "degraded" if some up/degraded, "down" if all down
     const statuses = [eventConsumerStatus, eventBusStatus, databaseStatus];
     const allUp = statuses.every((s) => s === 'up');
     const allDown = statuses.every((s) => s === 'down');
@@ -110,6 +119,7 @@ router.get('/', async (_req, res) => {
         database: databaseStatus,
       },
       checkedAt: new Date().toISOString(),
+      ...(probeErrors.length > 0 ? { probeErrors } : {}),
     };
 
     cache = { response, expiresAt: Date.now() + 10_000 };

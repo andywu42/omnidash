@@ -1,10 +1,15 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import { AgentExecutionTracker } from './agent-execution-tracker';
 import { PolymorphicAgentIntegration } from './polymorphic-agent-integration';
 import { agentRoutingProjection } from './projection-bootstrap';
+
+// ESM-compatible __dirname (esbuild --format=esm strips CJS globals)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = Router();
 

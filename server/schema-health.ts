@@ -21,9 +21,14 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Router } from 'express';
 import { tryGetIntelligenceDb } from './storage';
 import { sql } from 'drizzle-orm';
+
+// ESM-compatible __dirname (esbuild --format=esm strips CJS globals)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export interface SchemaHealthResponse {
   applied_migrations_count: number;
