@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import React from 'react';
 
@@ -8,7 +8,17 @@ import React from 'react';
  *
  * These tests import the sidebar nav data directly to avoid needing
  * a full router/sidebar provider setup.
+ *
+ * The wiring-status module is mocked so that all pages are visible
+ * regardless of their pipeline status. Wiring-based filtering is
+ * covered separately in sidebar-wiring-filter.test.tsx.
  */
+
+// Mock wiring-status so all routes are visible (bypass pipeline status filtering).
+vi.mock('@shared/wiring-status', () => ({
+  isRouteVisible: () => true,
+  getRouteWiringStatus: () => 'working',
+}));
 
 // We test the nav item data declaratively by importing the module
 // and checking the advancedSubGroups array programmatically.

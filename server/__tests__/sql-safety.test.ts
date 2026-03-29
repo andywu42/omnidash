@@ -15,6 +15,7 @@ import {
   timeWindowToInterval,
   truncUnitForWindow,
   ACCEPTED_WINDOWS,
+  safeCountAndMaxTimestampQuery,
 } from '../sql-safety';
 
 describe('sql-safety [OMN-5196]', () => {
@@ -117,6 +118,41 @@ describe('sql-safety [OMN-5196]', () => {
 
     it('returns "day" for 30d', () => {
       expect(truncUnitForWindow('30d')).toBe('day');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // safeCountAndMaxTimestampQuery [OMN-6975]
+  // -------------------------------------------------------------------------
+
+  describe('safeCountAndMaxTimestampQuery', () => {
+    it('accepts valid table and column names', () => {
+      const result = safeCountAndMaxTimestampQuery('agent_actions', 'created_at');
+      expect(result).toBeDefined();
+    });
+
+    it('rejects table names with SQL injection', () => {
+      expect(() => safeCountAndMaxTimestampQuery('"; DROP TABLE users; --', 'created_at')).toThrow(
+        /safeCountAndMaxTimestampQuery: rejected table name/
+      );
+    });
+
+    it('rejects column names with SQL injection', () => {
+      expect(() =>
+        safeCountAndMaxTimestampQuery('agent_actions', '"; DROP TABLE users; --')
+      ).toThrow(/safeCountAndMaxTimestampQuery: rejected column name/);
+    });
+
+    it('rejects empty table name', () => {
+      expect(() => safeCountAndMaxTimestampQuery('', 'created_at')).toThrow(
+        /safeCountAndMaxTimestampQuery: rejected table name/
+      );
+    });
+
+    it('rejects table names with spaces', () => {
+      expect(() => safeCountAndMaxTimestampQuery('my table', 'created_at')).toThrow(
+        /safeCountAndMaxTimestampQuery: rejected table name/
+      );
     });
   });
 

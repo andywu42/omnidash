@@ -59,6 +59,7 @@ import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import { useDemoMode } from '@/contexts/DemoModeContext';
+import { isRouteVisible, getRouteWiringStatus } from '@shared/wiring-status';
 
 /** A single sidebar navigation entry with its route, icon, and description. */
 interface NavItem {
@@ -464,6 +465,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         icon: Workflow,
         description: 'Unified pipeline health and status overview (OMN-6753)',
       },
+      {
+        title: 'Wiring Status',
+        url: '/wiring-status',
+        icon: Activity,
+        description: 'Pipeline wiring status for all dashboard pages (OMN-6975)',
+      },
     ],
   },
   {
@@ -568,10 +575,44 @@ function NavGroup({ label, items, location }: NavGroupProps) {
 /** Props for {@link AdvancedNavSection}. */
 interface AdvancedNavSectionProps {
   location: string;
+  /** When true, show all pages regardless of wiring status (demo/dev mode). */
+  showAll?: boolean;
+}
+
+/**
+ * Filter advanced sub-groups by wiring status.
+ * Pages with status 'working' or 'partial' are always shown.
+ * Pages with 'preview', 'stub', or 'missing' are hidden unless showAll is true.
+ * Empty groups after filtering are omitted entirely.
+ */
+function filterSubGroups(groups: AdvancedSubGroup[], showAll: boolean): AdvancedSubGroup[] {
+  if (showAll) return groups;
+  return groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => isRouteVisible(item.url)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
+
+/** Wiring status badge for partial-status pages. */
+function WiringBadge({ url }: { url: string }) {
+  const status = getRouteWiringStatus(url);
+  if (status === 'partial') {
+    return (
+      <span
+        className="ml-auto text-[9px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 uppercase tracking-wider"
+        data-testid={`wiring-badge-${url.slice(1)}`}
+      >
+        Partial
+      </span>
+    );
+  }
+  return null;
 }
 
 /** Collapsible Advanced section containing all granular drill-down pages. */
-function AdvancedNavSection({ location }: AdvancedNavSectionProps) {
+function AdvancedNavSection({ location, showAll = false }: AdvancedNavSectionProps) {
   const hasActiveChild = isAdvancedRoute(location);
   const [isOpen, setIsOpen] = useState(hasActiveChild);
 
@@ -586,6 +627,8 @@ function AdvancedNavSection({ location }: AdvancedNavSectionProps) {
     }
   }, [hasActiveChild]);
 
+  const filteredGroups = filterSubGroups(advancedSubGroups, showAll);
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} data-testid="advanced-section">
       <SidebarGroup>
@@ -599,7 +642,7 @@ function AdvancedNavSection({ location }: AdvancedNavSectionProps) {
 
         <CollapsibleContent>
           <SidebarGroupContent>
-            {advancedSubGroups.map((subGroup, groupIdx) => (
+            {filteredGroups.map((subGroup, groupIdx) => (
               <div key={subGroup.label}>
                 {groupIdx > 0 && <SidebarSeparator className="my-1" />}
                 <div className="px-3 py-1.5">
@@ -625,8 +668,10 @@ function AdvancedNavSection({ location }: AdvancedNavSectionProps) {
                           <Link href={item.url}>
                             <item.icon className="w-4 h-4" />
                             <span>{item.title}</span>
-                            {isActive && (
+                            {isActive ? (
                               <ChevronRight className="w-4 h-4 ml-auto text-sidebar-accent-foreground" />
+                            ) : (
+                              <WiringBadge url={item.url} />
                             )}
                           </Link>
                         </SidebarMenuButton>
@@ -652,7 +697,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <NavGroup label="Dashboards" items={categories} location={location} />
-        <AdvancedNavSection location={location} />
+        <AdvancedNavSection location={location} showAll={isDemoMode} />
       </SidebarContent>
 
       <SidebarFooter className="p-2">

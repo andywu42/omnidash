@@ -188,3 +188,22 @@ export function safeMaxTimestampQuery(tableName: string, tsCol: string): SQL {
   }
   return sql.raw(`SELECT MAX("${tsCol}") AS last_updated FROM "${tableName}"`);
 }
+
+/**
+ * Return a safe SQL fragment for `SELECT COUNT(*)::int AS cnt, MAX("<tsCol>") AS last_event FROM "<table>"`.
+ *
+ * @throws {Error} if `tableName` or `tsCol` contain unsafe characters
+ */
+export function safeCountAndMaxTimestampQuery(tableName: string, tsCol: string): SQL {
+  if (!SAFE_IDENTIFIER_RE.test(tableName)) {
+    throw new Error(
+      `safeCountAndMaxTimestampQuery: rejected table name "${tableName}" — must match ${SAFE_IDENTIFIER_RE}`
+    );
+  }
+  if (!SAFE_IDENTIFIER_RE.test(tsCol)) {
+    throw new Error(
+      `safeCountAndMaxTimestampQuery: rejected column name "${tsCol}" — must match ${SAFE_IDENTIFIER_RE}`
+    );
+  }
+  return sql.raw(`SELECT COUNT(*)::int AS cnt, MAX("${tsCol}") AS last_event FROM "${tableName}"`);
+}

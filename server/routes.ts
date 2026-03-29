@@ -95,6 +95,8 @@ import projectionHealthRoutes from './projection-health-routes';
 import stalenessRoutes from './staleness-routes';
 // Compliance dashboard routes (OMN-5285)
 import complianceRoutes from './compliance-routes';
+// Wiring Status dashboard routes (OMN-6975)
+import wiringStatusRoutes from './wiring-status-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -270,6 +272,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Compliance dashboard routes (OMN-5285)
   app.use('/api/compliance', complianceRoutes);
+
+  // Wiring Status dashboard routes (OMN-6975)
+  app.use('/api/wiring-status', wiringStatusRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.

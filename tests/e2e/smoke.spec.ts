@@ -119,6 +119,9 @@ const DASHBOARD_ROUTES = [
   '/pattern-lifecycle',
   '/hostile-reviewer',
 
+  // Wiring status (OMN-6974/OMN-6975)
+  '/wiring-status',
+
   // Empty route scaffolds (OMN-6753)
   '/agents',
   '/drift',
