@@ -68,6 +68,10 @@ import {
   SUFFIX_OMNICLAUDE_CONTEXT_UTILIZATION,
   SUFFIX_OMNICLAUDE_AGENT_MATCH,
   SUFFIX_OMNICLAUDE_LATENCY_BREAKDOWN,
+  SUFFIX_OMNICLAUDE_TASK_ASSIGNED,
+  SUFFIX_OMNICLAUDE_TASK_PROGRESS,
+  SUFFIX_OMNICLAUDE_TASK_COMPLETED,
+  SUFFIX_OMNICLAUDE_EVIDENCE_WRITTEN,
 } from '@shared/topics';
 import { ExtractionMetricsAggregator } from '../../extraction-aggregator';
 import type {
@@ -133,6 +137,10 @@ const OMNICLAUDE_TOPICS = new Set([
   SUFFIX_OMNICLAUDE_CONTEXT_UTILIZATION,
   SUFFIX_OMNICLAUDE_AGENT_MATCH,
   SUFFIX_OMNICLAUDE_LATENCY_BREAKDOWN,
+  SUFFIX_OMNICLAUDE_TASK_ASSIGNED,
+  SUFFIX_OMNICLAUDE_TASK_PROGRESS,
+  SUFFIX_OMNICLAUDE_TASK_COMPLETED,
+  SUFFIX_OMNICLAUDE_EVIDENCE_WRITTEN,
 ]);
 
 /** Shared extraction aggregator instance for context-utilization, agent-match, latency-breakdown */
@@ -223,8 +231,57 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
         return this.projectAgentMatch(data, meta);
       case SUFFIX_OMNICLAUDE_LATENCY_BREAKDOWN:
         return this.projectLatencyBreakdown(data, meta);
+      case SUFFIX_OMNICLAUDE_TASK_ASSIGNED:
+      case SUFFIX_OMNICLAUDE_TASK_PROGRESS:
+      case SUFFIX_OMNICLAUDE_TASK_COMPLETED:
+      case SUFFIX_OMNICLAUDE_EVIDENCE_WRITTEN:
+        return this.projectTeamEvent(topic, data, fallbackId, context);
       default:
         return false;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Team events -> team_events (OMN-7036)
+  // -------------------------------------------------------------------------
+
+  private async projectTeamEvent(
+    topic: string,
+    data: Record<string, unknown>,
+    fallbackId: string,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    // Derive event_type from topic: e.g. "onex.evt.omniclaude.task-assigned.v1" -> "task-assigned"
+    const topicParts = topic.split('.');
+    const eventType = topicParts[topicParts.length - 2] || topic;
+
+    const eventId = (data.event_id as string) || (data.eventId as string) || fallbackId;
+    const correlationId =
+      (data.correlation_id as string) || (data.correlationId as string) || fallbackId;
+
+    try {
+      await db.execute(sql`
+        INSERT INTO team_events (event_id, correlation_id, task_id, event_type, dispatch_surface, agent_model, status, payload, emitted_at)
+        VALUES (
+          ${eventId},
+          ${correlationId},
+          ${(data.task_id as string) || (data.taskId as string) || ''},
+          ${eventType},
+          ${(data.dispatch_surface as string) || (data.dispatchSurface as string) || 'unknown'},
+          ${(data.agent_model as string) || (data.agentModel as string) || null},
+          ${(data.status as string) || null},
+          ${data.payload ? JSON.stringify(data.payload) : null},
+          ${safeParseDate((data.emitted_at as string) || (data.emittedAt as string) || (data.timestamp as string))}
+        )
+        ON CONFLICT (event_id) DO NOTHING
+      `);
+      return true;
+    } catch (err) {
+      if (isTableMissingError(err, 'team_events')) return false;
+      throw err;
     }
   }
 

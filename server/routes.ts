@@ -99,6 +99,8 @@ import complianceRoutes from './compliance-routes';
 import wiringStatusRoutes from './wiring-status-routes';
 // Subsystem Health dashboard routes (OMN-7007)
 import subsystemHealthRoutes from './subsystem-health-routes';
+// Agent Coordination dashboard routes (OMN-7036)
+import teamCoordinationRoutes from './team-coordination-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -280,6 +282,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Subsystem Health dashboard routes (OMN-7007)
   app.use('/api/subsystem-health', subsystemHealthRoutes);
+
+  // Agent Coordination dashboard routes (OMN-7036)
+  app.use('/api/team-coordination', teamCoordinationRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.

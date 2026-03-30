@@ -181,6 +181,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         description: 'Hostile reviewer run history and convergence metrics (OMN-6610)',
       },
       {
+        title: 'Agent Coordination',
+        url: '/agent-coordination',
+        icon: Users,
+        description: 'Cross-surface agent task timeline with dispatch surface filtering (OMN-7036)',
+      },
+      {
         title: 'Epic Pipeline',
         url: '/epic-pipeline',
         icon: GitBranch,

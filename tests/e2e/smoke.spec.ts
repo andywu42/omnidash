@@ -125,6 +125,9 @@ const DASHBOARD_ROUTES = [
   // Subsystem health (OMN-7007)
   '/subsystem-health',
 
+  // Agent coordination (OMN-7036)
+  '/agent-coordination',
+
   // Empty route scaffolds (OMN-6753)
   '/agents',
   '/drift',

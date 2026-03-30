@@ -261,6 +261,13 @@ export const TOPIC_OMNIBASE_INFRA_WIRING_HEALTH_SNAPSHOT =
  * consumed only by the read-model-consumer via READ_MODEL_TOPICS. */
 export const SUFFIX_OMNICLAUDE_CORRELATION_TRACE = 'onex.evt.omniclaude.correlation-trace.v1';
 
+/** Agent team coordination topics (OMN-7036).
+ * NOTE: Consumed only by the read-model-consumer via READ_MODEL_TOPICS. */
+export const SUFFIX_OMNICLAUDE_TASK_ASSIGNED = 'onex.evt.omniclaude.task-assigned.v1';
+export const SUFFIX_OMNICLAUDE_TASK_PROGRESS = 'onex.evt.omniclaude.task-progress.v1';
+export const SUFFIX_OMNICLAUDE_TASK_COMPLETED = 'onex.evt.omniclaude.task-completed.v1';
+export const SUFFIX_OMNICLAUDE_EVIDENCE_WRITTEN = 'onex.evt.omniclaude.evidence-written.v1';
+
 /** Context enrichment events emitted per enrichment operation (OMN-2280).
  * NOTE: Intentionally excluded from buildSubscriptionTopics() / subscription groups —
  * consumed only by the read-model-consumer via READ_MODEL_TOPICS. */

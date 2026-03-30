@@ -334,3 +334,39 @@ export const hostileReviewerPayloadSchema = z.object({
   summary: hostileReviewerSummarySchema,
 });
 export type HostileReviewerPayload = z.infer<typeof hostileReviewerPayloadSchema>;
+
+// ============================================================================
+// Team Events (OMN-7036 — Agent Coordination Dashboard)
+// ============================================================================
+
+export const teamEvents = pgTable('team_events', {
+  event_id: text('event_id').primaryKey(),
+  correlation_id: text('correlation_id').notNull(),
+  task_id: text('task_id').notNull(),
+  event_type: text('event_type').notNull(),
+  dispatch_surface: text('dispatch_surface').notNull(),
+  agent_model: text('agent_model'),
+  status: text('status'),
+  payload: text('payload'),
+  emitted_at: timestamp('emitted_at', { withTimezone: true }).notNull(),
+});
+
+export const teamEventRowSchema = createSelectSchema(teamEvents, {
+  emitted_at: z.coerce.string(),
+});
+export type TeamEventRow = Omit<InferSelectModel<typeof teamEvents>, 'emitted_at'> & {
+  emitted_at: string;
+};
+
+export const teamEventsSummarySchema = z.object({
+  total_events: z.number(),
+  surface_counts: z.record(z.string(), z.number()),
+  event_type_counts: z.record(z.string(), z.number()),
+});
+export type TeamEventsSummary = z.infer<typeof teamEventsSummarySchema>;
+
+export const teamEventsPayloadSchema = z.object({
+  recent: z.array(teamEventRowSchema),
+  summary: teamEventsSummarySchema,
+});
+export type TeamEventsPayload = z.infer<typeof teamEventsPayloadSchema>;

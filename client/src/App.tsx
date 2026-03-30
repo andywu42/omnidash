@@ -119,6 +119,8 @@ import SettingsDashboard from '@/pages/SettingsDashboard';
 import WiringStatusPage from '@/pages/WiringStatus';
 // Subsystem Health dashboard (OMN-7007)
 import SubsystemHealthPage from '@/pages/SubsystemHealthPage';
+// Agent Coordination dashboard (OMN-7036)
+import AgentCoordinationDashboard from '@/pages/AgentCoordinationDashboard';
 
 // Phase 2: Category landing pages (OMN-2181)
 import SpeedCategory from '@/pages/SpeedCategory';
@@ -305,6 +307,8 @@ function Router() {
       <Route path="/wiring-status" component={WiringStatusPage} />
       {/* Subsystem Health dashboard (OMN-7007) */}
       <Route path="/subsystem-health" component={SubsystemHealthPage} />
+      {/* Agent Coordination dashboard (OMN-7036) */}
+      <Route path="/agent-coordination" component={AgentCoordinationDashboard} />
 
       {/* Preview routes */}
       <Route path="/preview/analytics" component={EnhancedAnalytics} />
