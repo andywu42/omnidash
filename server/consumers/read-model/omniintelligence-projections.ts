@@ -440,6 +440,28 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
           (pattern.domain_id as string) ||
           'unknown';
 
+        // OMN-7014: Reject placeholder patterns that add no analytical value.
+        // These accumulate as duplicates (1,950+ "learning_requested" copies).
+        const REJECTED_PATTERN_NAMES = new Set([
+          'learning_requested',
+          'learning requested',
+          'general',
+          'stored_placeholder',
+        ]);
+        if (REJECTED_PATTERN_NAMES.has(patternName.toLowerCase())) {
+          continue; // Skip placeholder patterns
+        }
+
+        // OMN-7014: Reject zero-score unmeasured patterns — never promoted, no value.
+        const rawCompositeScore = Number(
+          pattern.quality_score ?? pattern.composite_score ?? pattern.compositeScore ?? 0
+        );
+        const rawEvidenceTier =
+          (pattern.evidence_tier as string) ?? (pattern.evidenceTier as string) ?? 'unmeasured';
+        if (rawCompositeScore === 0 && rawEvidenceTier === 'unmeasured') {
+          continue; // Skip zero-score unmeasured patterns
+        }
+
         const patternType =
           patternTypeFromSig ||
           ((pattern.pattern_type as string) !== 'unmeasured'
