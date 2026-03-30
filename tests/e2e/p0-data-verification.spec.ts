@@ -26,6 +26,11 @@
 
 import { test, expect } from '@playwright/test';
 
+// When KAFKA_BOOTSTRAP_SERVERS is empty or unset, Kafka-dependent pages
+// will show empty state because no events have been projected into the DB.
+// Skip those pages in CI where Kafka is unavailable.
+const KAFKA_AVAILABLE = !!process.env.KAFKA_BOOTSTRAP_SERVERS;
+
 // P0 pages that must render real data (not just load without error).
 // Each entry specifies a route, a selector for data elements, and a label.
 //
@@ -39,24 +44,31 @@ const P0_PAGES = [
     // Structural selector: table rows or event cards.
     dataSelector: 'table tbody tr, [class*="event-row"], [class*="EventRow"]',
     label: 'Event Bus Monitor',
+    requiresKafka: true,
   },
   {
     route: '/patterns',
     // Pattern Intelligence page shows patterns in a table or card grid.
     dataSelector: 'table tbody tr, [class*="pattern"], [class*="card"]',
     label: 'Pattern Intelligence',
+    requiresKafka: false,
   },
   {
     route: '/wiring-status',
     // Wiring status page shows subsystem status cards/rows.
     dataSelector: 'table tbody tr, [class*="status"], [class*="card"]',
     label: 'Wiring Status',
+    requiresKafka: false,
   },
 ];
 
 test.describe('P0 Data Verification (OMN-7003)', () => {
   for (const page of P0_PAGES) {
+    // Skip Kafka-dependent pages when Kafka is not available (CI)
+    const shouldSkip = page.requiresKafka && !KAFKA_AVAILABLE;
+
     test(`${page.label} (${page.route}) renders real data`, async ({ page: browserPage }) => {
+      test.skip(shouldSkip, 'Skipped: requires Kafka (KAFKA_BOOTSTRAP_SERVERS not set)');
       await browserPage.goto(page.route);
       await browserPage.waitForLoadState('networkidle');
 
@@ -97,12 +109,15 @@ test.describe('P0 Data Verification (OMN-7003)', () => {
     // Verify API endpoints directly — more reliable than DOM selectors
     // since API shapes are stable contracts.
     const apiChecks = [
-      { url: '/api/patterns', field: 'patterns' },
-      { url: '/api/intents/recent', field: 'intents' },
-      { url: '/api/effectiveness/summary', field: null },
+      { url: '/api/patterns', field: 'patterns', requiresKafka: false },
+      { url: '/api/intents/recent', field: 'intents', requiresKafka: true },
+      { url: '/api/effectiveness/summary', field: null, requiresKafka: false },
     ];
 
     for (const check of apiChecks) {
+      if (check.requiresKafka && !KAFKA_AVAILABLE) {
+        continue; // Skip Kafka-dependent API checks in CI
+      }
       const response = await browserPage.request.get(check.url);
       expect(response.status(), `${check.url} should return 200`).toBe(200);
 
