@@ -21,7 +21,7 @@ import { defineConfig } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: ['dataflow.spec.ts', 'behavioral.spec.ts'],
+  testMatch: ['dataflow.spec.ts', 'behavioral.spec.ts', 'p0-data-verification.spec.ts'],
 
   // Data-flow tests may wait for Kafka -> projection -> render pipeline
   timeout: 60_000,
