@@ -14,6 +14,7 @@ import {
   SUFFIX_GITHUB_PR_MERGED,
   SUFFIX_GITHUB_PUSH_TO_MAIN,
   SUFFIX_GITHUB_CHECK_SUITE_COMPLETED,
+  TOPIC_OMNICLAUDE_HOOK_HEALTH_ERROR,
 } from '../../shared/topics';
 
 // ============================================================================
@@ -37,6 +38,11 @@ describe('validateOnexTopicFormat', () => {
       expect(result).toBe('valid');
       expect(reason).toBe('');
     });
+  });
+
+  it('validates TOPIC_OMNICLAUDE_HOOK_HEALTH_ERROR format', () => {
+    const [result] = validateOnexTopicFormat(TOPIC_OMNICLAUDE_HOOK_HEALTH_ERROR);
+    expect(result).toBe('valid');
   });
 
   describe('valid legacy DLQ topics', () => {

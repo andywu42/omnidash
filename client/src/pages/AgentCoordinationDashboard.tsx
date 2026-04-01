@@ -35,7 +35,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Users, Bot, Terminal, Cpu, Clock, CheckCircle2, PlayCircle, FileText } from 'lucide-react';
+import {
+  Users,
+  Bot,
+  Terminal,
+  Cpu,
+  Clock,
+  CheckCircle2,
+  PlayCircle,
+  FileText,
+  AlertTriangle,
+  ShieldAlert,
+  ShieldCheck,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ============================================================================
@@ -63,6 +75,21 @@ interface TeamEventsSummary {
 interface TeamEventsResponse {
   recent: TeamEvent[];
   summary: TeamEventsSummary;
+}
+
+interface HookHealthSummary {
+  total_errors: number;
+  tier_counts: Record<string, number>;
+  category_counts: Record<string, number>;
+  hook_counts: Record<string, number>;
+  top_fingerprints: Array<{
+    fingerprint: string;
+    hook_name: string;
+    error_category: string;
+    error_message: string;
+    occurrence_count: number;
+    last_seen: string;
+  }>;
 }
 
 // ============================================================================
@@ -146,6 +173,20 @@ export default function AgentCoordinationDashboard() {
     refetchInterval: 10_000,
   });
 
+  const {
+    data: hookHealth,
+    isLoading: isHookHealthLoading,
+    isError: isHookHealthError,
+  } = useQuery<HookHealthSummary>({
+    queryKey: ['hook-health'],
+    queryFn: async () => {
+      const res = await fetch('/api/hook-health/summary?window=24h');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    },
+    refetchInterval: 10_000,
+  });
+
   const summary = data?.summary;
   const events = data?.recent ?? [];
 
@@ -199,6 +240,90 @@ export default function AgentCoordinationDashboard() {
           );
         })}
       </div>
+
+      {/* Hook Health card (OMN-7162) */}
+      <Card data-testid="hook-health-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <ShieldAlert className="h-5 w-5" />
+            Hook Health (24h)
+          </CardTitle>
+          <CardDescription>Structured hook error events by tier</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4 mb-4">
+            {(hookHealth?.tier_counts?.interpreter ?? 0) > 0 ? (
+              <Badge variant="destructive" className="text-sm">
+                <AlertTriangle className="h-3.5 w-3.5 mr-1" />
+                {hookHealth?.tier_counts?.interpreter ?? 0} interpreter
+              </Badge>
+            ) : null}
+            {(hookHealth?.tier_counts?.degraded ?? 0) > 0 ? (
+              <Badge
+                variant="secondary"
+                className="text-sm bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+              >
+                <AlertTriangle className="h-3.5 w-3.5 mr-1" />
+                {hookHealth?.tier_counts?.degraded ?? 0} degraded
+              </Badge>
+            ) : null}
+            {(hookHealth?.tier_counts?.intentional_block ?? 0) > 0 ? (
+              <Badge variant="secondary" className="text-sm">
+                <ShieldCheck className="h-3.5 w-3.5 mr-1" />
+                {hookHealth?.tier_counts?.intentional_block ?? 0} intentional
+              </Badge>
+            ) : null}
+            {!isHookHealthLoading && !isHookHealthError && (hookHealth?.total_errors ?? 0) === 0 ? (
+              <Badge
+                variant="secondary"
+                className="text-sm bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 mr-1" />
+                No errors
+              </Badge>
+            ) : null}
+            <span className="text-sm text-muted-foreground ml-auto">
+              {isHookHealthLoading
+                ? 'Loading\u2026'
+                : isHookHealthError
+                  ? 'Unavailable'
+                  : `${hookHealth?.total_errors ?? 0} total errors`}
+            </span>
+          </div>
+          {(hookHealth?.top_fingerprints?.length ?? 0) > 0 && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Hook</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Message</TableHead>
+                  <TableHead className="text-right">Count</TableHead>
+                  <TableHead>Last Seen</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {hookHealth?.top_fingerprints?.slice(0, 5).map((fp) => (
+                  <TableRow key={fp.fingerprint}>
+                    <TableCell className="font-mono text-xs">{fp.hook_name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {fp.error_category}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[300px] truncate">
+                      {fp.error_message}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">{fp.occurrence_count}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatAge(fp.last_seen)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Event timeline table */}
       <Card>

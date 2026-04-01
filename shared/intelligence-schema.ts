@@ -2399,6 +2399,40 @@ export type RuntimeErrorEventRow = typeof runtimeErrorEvents.$inferSelect;
 export type InsertRuntimeErrorEvent = typeof runtimeErrorEvents.$inferInsert;
 
 // ============================================================================
+// Hook Health Error Events Table (OMN-7157)
+// Stores structured hook error events for the Hook Health dashboard card.
+// Source topic: onex.evt.omniclaude.hook-health-error.v1
+// Replay policy: INSERT (append-only, dedup by id).
+// ============================================================================
+
+export const hookHealthEvents = pgTable(
+  'hook_health_events',
+  {
+    id: text('id').primaryKey(),
+    hookName: text('hook_name').notNull(),
+    errorTier: text('error_tier').notNull(),
+    errorCategory: text('error_category').notNull(),
+    errorMessage: text('error_message').notNull().default(''),
+    sessionId: text('session_id').notNull().default(''),
+    pythonVersion: text('python_version').notNull().default(''),
+    fingerprint: text('fingerprint').notNull().default(''),
+    emittedAt: timestamp('emitted_at', { withTimezone: true }).notNull(),
+    ingestedAt: timestamp('ingested_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_hhe_error_tier').on(table.errorTier),
+    index('idx_hhe_error_category').on(table.errorCategory),
+    index('idx_hhe_emitted_at').on(table.emittedAt),
+    index('idx_hhe_fingerprint').on(table.fingerprint),
+    index('idx_hhe_hook_name').on(table.hookName),
+  ]
+);
+
+export const insertHookHealthEventSchema = createInsertSchema(hookHealthEvents);
+export type HookHealthEventRow = typeof hookHealthEvents.$inferSelect;
+export type InsertHookHealthEvent = typeof hookHealthEvents.$inferInsert;
+
+// ============================================================================
 // Runtime Error Triage State Table (OMN-5652)
 // Fingerprint-scoped triage results from NodeRuntimeErrorTriageEffect.
 // Source topic: onex.evt.omnibase-infra.error-triaged.v1

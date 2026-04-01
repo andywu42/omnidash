@@ -31,6 +31,7 @@ import {
   sessionOutcomes,
   phaseMetricsEvents,
   skillInvocations,
+  hookHealthEvents,
 } from '@shared/intelligence-schema';
 import type {
   InsertAgentRoutingDecision,
@@ -72,6 +73,7 @@ import {
   SUFFIX_OMNICLAUDE_TASK_PROGRESS,
   SUFFIX_OMNICLAUDE_TASK_COMPLETED,
   SUFFIX_OMNICLAUDE_EVIDENCE_WRITTEN,
+  TOPIC_OMNICLAUDE_HOOK_HEALTH_ERROR,
 } from '@shared/topics';
 import { ExtractionMetricsAggregator } from '../../extraction-aggregator';
 import type {
@@ -141,6 +143,7 @@ const OMNICLAUDE_TOPICS = new Set([
   SUFFIX_OMNICLAUDE_TASK_PROGRESS,
   SUFFIX_OMNICLAUDE_TASK_COMPLETED,
   SUFFIX_OMNICLAUDE_EVIDENCE_WRITTEN,
+  TOPIC_OMNICLAUDE_HOOK_HEALTH_ERROR,
 ]);
 
 /** Shared extraction aggregator instance for context-utilization, agent-match, latency-breakdown */
@@ -236,6 +239,8 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
       case SUFFIX_OMNICLAUDE_TASK_COMPLETED:
       case SUFFIX_OMNICLAUDE_EVIDENCE_WRITTEN:
         return this.projectTeamEvent(topic, data, fallbackId, context);
+      case TOPIC_OMNICLAUDE_HOOK_HEALTH_ERROR:
+        return this.projectHookHealthError(data, fallbackId, context);
       default:
         return false;
     }
@@ -1701,6 +1706,65 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
       }
       throw err;
     }
+    return true;
+  }
+
+  // --------------------------------------------------------------------------
+  // Hook health error event projection (OMN-7160)
+  // --------------------------------------------------------------------------
+
+  private async projectHookHealthError(
+    data: Record<string, unknown>,
+    fallbackId: string,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const id = String(data.event_id ?? data.eventId ?? data.id ?? fallbackId ?? '').trim();
+    const hookName = String(data.hook_name ?? data.hookName ?? '').trim();
+    const errorTier = String(data.error_tier ?? data.errorTier ?? '').trim();
+    const errorCategory = String(data.error_category ?? data.errorCategory ?? '').trim();
+
+    if (!hookName || !errorTier || !errorCategory) {
+      console.warn('[ReadModelConsumer] hook-health-error event missing required fields', {
+        hookName,
+        errorTier,
+        errorCategory,
+      });
+      return true;
+    }
+
+    const emittedAt = safeParseDate(data.emitted_at ?? data.emittedAt);
+
+    const row = {
+      id: id || crypto.randomUUID(),
+      hookName,
+      errorTier,
+      errorCategory,
+      errorMessage: String(data.error_message ?? data.errorMessage ?? '').slice(0, 1000),
+      sessionId: String(data.session_id ?? data.sessionId ?? ''),
+      pythonVersion: String(data.python_version ?? data.pythonVersion ?? ''),
+      fingerprint: String(data.fingerprint ?? ''),
+      emittedAt,
+    };
+
+    try {
+      await db.insert(hookHealthEvents).values(row).onConflictDoNothing();
+      console.log(
+        `[ReadModelConsumer] Projected hook-health-error (hook=${hookName}, tier=${errorTier})`
+      );
+    } catch (err) {
+      if (isTableMissingError(err, 'hook_health_events')) {
+        console.warn(
+          '[ReadModelConsumer] hook_health_events table not yet created -- ' +
+            'run migrations to enable hook health projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+
     return true;
   }
 }

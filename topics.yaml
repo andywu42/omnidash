@@ -45,6 +45,8 @@ read_model_topics:
     handler: "projectEpicRunUpdated"
   - topic: "onex.evt.omniclaude.gate-decision.v1"
     handler: "projectGateDecision"
+  - topic: "onex.evt.omniclaude.hook-health-error.v1"
+    handler: "projectHookHealthError"
   - topic: "onex.evt.omniclaude.hostile-reviewer-completed.v1"
     handler: "projectHostileReviewerCompleted"
   - topic: "onex.evt.omniclaude.latency-breakdown.v1"

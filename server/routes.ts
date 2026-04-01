@@ -105,6 +105,8 @@ import wiringStatusRoutes from './wiring-status-routes';
 import subsystemHealthRoutes from './subsystem-health-routes';
 // Agent Coordination dashboard routes (OMN-7036)
 import teamCoordinationRoutes from './team-coordination-routes';
+// Hook Health dashboard routes (OMN-7161)
+import { hookHealthRoutes } from './hook-health-routes';
 // Contract Drift dashboard routes (OMN-6753)
 import contractDriftRoutes from './contract-drift-routes';
 // Pipeline Overview dashboard routes (OMN-6753)
@@ -299,6 +301,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Agent Coordination dashboard routes (OMN-7036)
   app.use('/api/team-coordination', teamCoordinationRoutes);
+
+  // Hook Health dashboard routes (OMN-7161)
+  app.use('/api/hook-health', hookHealthRoutes);
 
   // Contract Drift dashboard routes (OMN-6753)
   app.use('/api/contract-drift', contractDriftRoutes);
