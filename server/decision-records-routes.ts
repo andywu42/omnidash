@@ -312,6 +312,35 @@ router.get('/intent-vs-plan', (req: Request, res: Response) => {
 });
 
 // ============================================================================
+// GET /api/decisions/recent
+// ============================================================================
+//
+// Returns the most recent DecisionRecords across all sessions.
+// Accepts optional ?limit=N query param (default 50, max 500).
+//
+// Response: { total: number, decisions: DecisionRecord[] }
+
+router.get('/recent', (_req: Request, res: Response) => {
+  try {
+    const limit = Math.min(
+      Math.max(1, parseInt((_req.query.limit as string) || '50', 10) || 50),
+      500
+    );
+
+    const allRecords = getAllDecisionRecords();
+    const decisions = allRecords.slice(0, limit);
+
+    return res.json({
+      total: decisions.length,
+      decisions,
+    });
+  } catch (error) {
+    console.error('[decision-records] Error fetching recent decisions:', error);
+    return res.status(500).json({ error: 'Failed to fetch recent decisions' });
+  }
+});
+
+// ============================================================================
 // GET /api/decisions/:decision_id
 // ============================================================================
 //

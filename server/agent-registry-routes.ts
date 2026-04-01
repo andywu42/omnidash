@@ -255,7 +255,15 @@ router.get('/summary', (req, res) => {
   try {
     const registry = loadAgentRegistry();
     if (!registry || !registry.agents) {
-      return res.status(500).json({ error: 'Failed to load agent registry' });
+      // Return empty summary when registry file is unavailable (not a server error)
+      return res.json({
+        totalAgents: 0,
+        activeAgents: 0,
+        totalRuns: 0,
+        successRate: 0,
+        avgExecutionTime: 0,
+        totalSavings: 0,
+      });
     }
 
     const agents = Object.entries(registry.agents).map(([key, agentData]: [string, any]) => {
