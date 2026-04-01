@@ -533,6 +533,11 @@ export const SUFFIX_MEMORY_EXPIRED = 'onex.evt.omnimemory.memory-expired.v1';
 /** GitHub PR status events emitted by the CI/CD Kafka producer (OMN-2656). */
 export const SUFFIX_GITHUB_PR_STATUS = 'onex.evt.github.pr-status.v1';
 
+/** GitHub webhook bridge events (OMN-7096). */
+export const SUFFIX_GITHUB_PR_MERGED = 'onex.evt.github.pr-merged.v1';
+export const SUFFIX_GITHUB_PUSH_TO_MAIN = 'onex.evt.github.push-to-main.v1';
+export const SUFFIX_GITHUB_CHECK_SUITE_COMPLETED = 'onex.evt.github.check-suite-completed.v1';
+
 /** Git hook events emitted on pre-commit / post-receive triggers (OMN-2656). */
 export const SUFFIX_GIT_HOOK = 'onex.evt.git.hook.v1';
 

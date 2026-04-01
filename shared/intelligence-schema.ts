@@ -2592,3 +2592,22 @@ export const contractDriftEvents = pgTable(
 
 export type ContractDriftEventRow = typeof contractDriftEvents.$inferSelect;
 export type InsertContractDriftEvent = typeof contractDriftEvents.$inferInsert;
+
+/**
+ * GitHub Webhook Deliveries Table (OMN-6722)
+ * Tracks processed webhook delivery IDs for idempotency.
+ */
+export const githubWebhookDeliveries = pgTable(
+  'github_webhook_deliveries',
+  {
+    deliveryId: uuid('delivery_id').primaryKey(),
+    eventType: text('event_type').notNull(),
+    repo: text('repo').notNull(),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+  },
+  (table) => [index('idx_github_webhook_deliveries_received_at').on(table.receivedAt)]
+);
+
+export type GitHubWebhookDeliveryRow = typeof githubWebhookDeliveries.$inferSelect;
+export type InsertGitHubWebhookDelivery = typeof githubWebhookDeliveries.$inferInsert;

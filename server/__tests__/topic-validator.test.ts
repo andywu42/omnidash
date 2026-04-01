@@ -10,6 +10,11 @@ import {
   enforceTopicFormat,
   getEnforcementMode,
 } from '../topic-validator';
+import {
+  SUFFIX_GITHUB_PR_MERGED,
+  SUFFIX_GITHUB_PUSH_TO_MAIN,
+  SUFFIX_GITHUB_CHECK_SUITE_COMPLETED,
+} from '../../shared/topics';
 
 // ============================================================================
 // validateOnexTopicFormat
@@ -60,6 +65,20 @@ describe('validateOnexTopicFormat', () => {
       const [result, reason] = validateOnexTopicFormat(topic);
       expect(result).toBe('invalid');
       expect(reason).not.toBe('');
+    });
+  });
+
+  describe('GitHub webhook topic constants (OMN-6720)', () => {
+    const githubTopics = [
+      SUFFIX_GITHUB_PR_MERGED,
+      SUFFIX_GITHUB_PUSH_TO_MAIN,
+      SUFFIX_GITHUB_CHECK_SUITE_COMPLETED,
+    ];
+
+    it.each(githubTopics)('should accept %s as valid', (topic) => {
+      const [result, reason] = validateOnexTopicFormat(topic);
+      expect(result).toBe('valid');
+      expect(reason).toBe('');
     });
   });
 
