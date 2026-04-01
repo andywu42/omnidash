@@ -59,8 +59,8 @@ function extractMigrationTables(migrationsDir: string): Set<string> {
 
 // Tables defined as read-model views or created outside the migration chain.
 // Each entry must have a tracking ticket.
-const MISSING_MIGRATION_ALLOWLIST = new Set([
-  'review_calibration_runs_rm', // read-model table created by consumer projection
+const MISSING_MIGRATION_ALLOWLIST = new Set<string>([
+  // All previously-missing migrations have been created.
 ]);
 
 // Tables intentionally defined in multiple schema files (e.g. shared between

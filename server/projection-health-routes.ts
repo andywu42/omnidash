@@ -131,7 +131,7 @@ const TIMESTAMP_COLUMNS: Record<string, string> = {
   runtime_error_events: 'created_at',
   runtime_error_triage_state: 'updated_at',
   routing_shadow_decisions: 'created_at',
-  review_calibration_runs: 'created_at',
+  review_calibration_runs_rm: 'created_at',
 };
 
 // ---------------------------------------------------------------------------
