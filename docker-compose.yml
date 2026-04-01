@@ -1,0 +1,31 @@
+# omnidash/docker-compose.yml
+# Standalone omnidash development/deployment stack.
+# For infra services (postgres, redpanda), use omnibase_infra's infra-up.
+#
+# Usage:
+#   docker compose up -d                              # omnidash only
+#   docker compose -f docker-compose.yml -f docker-compose.posthog.yml up -d  # with PostHog (Phase 2)
+
+services:
+  omnidash:
+    build:
+      context: .
+      dockerfile: ../omninode_infra/docker/omnidash/Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    networks:
+      - omnibase-infra-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/registry/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  omnibase-infra-network:
+    external: true

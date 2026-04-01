@@ -61,6 +61,7 @@ import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import { useDemoMode } from '@/contexts/DemoModeContext';
 import { isRouteVisible, getRouteWiringStatus } from '@shared/wiring-status';
+import { Analytics } from '@/lib/analytics-events';
 
 /** A single sidebar navigation entry with its route, icon, and description. */
 interface NavItem {
@@ -571,7 +572,7 @@ function NavGroup({ label, items, location }: NavGroupProps) {
                   className={cn('group', isActive && 'bg-sidebar-accent')}
                   data-testid={`nav-${item.url.slice(1).replace(/\//g, '-')}`}
                 >
-                  <Link href={item.url}>
+                  <Link href={item.url} onClick={() => Analytics.sidebarNavigation(item.url)}>
                     <item.icon className="w-4 h-4" />
                     <span>{item.title}</span>
                   </Link>
@@ -678,7 +679,7 @@ function AdvancedNavSection({ location, showAll = false }: AdvancedNavSectionPro
                           className={cn('group pl-5', isActive && 'bg-sidebar-accent')}
                           data-testid={`nav-${item.url.slice(1).replace(/\//g, '-')}`}
                         >
-                          <Link href={item.url}>
+                          <Link href={item.url} onClick={() => Analytics.sidebarNavigation(item.url)}>
                             <item.icon className="w-4 h-4" />
                             <span>{item.title}</span>
                             {isActive ? (

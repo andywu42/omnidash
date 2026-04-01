@@ -2,6 +2,7 @@ import { useDemoMode } from '@/contexts/DemoModeContext';
 import { Button } from '@/components/ui/button';
 import { Play, Square } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Analytics } from '@/lib/analytics-events';
 
 export function DemoModeToggle() {
   const { isDemoMode, toggleDemoMode } = useDemoMode();
@@ -10,7 +11,10 @@ export function DemoModeToggle() {
     <Button
       variant={isDemoMode ? 'default' : 'outline'}
       size="sm"
-      onClick={toggleDemoMode}
+      onClick={() => {
+        toggleDemoMode();
+        Analytics.demoModeToggled(!isDemoMode);
+      }}
       className="relative"
     >
       {isDemoMode ? (

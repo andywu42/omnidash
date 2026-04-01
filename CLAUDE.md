@@ -495,6 +495,28 @@ All tables use Drizzle ORM with Zod validation schemas auto-generated via `creat
 
 See `docs/architecture/OVERVIEW.md` for system architecture, `docs/architecture/READ_MODEL_PROJECTION_ARCHITECTURE.md` for projection details, and `docs/reference/API_ENDPOINT_CATALOG.md` for all endpoint documentation.
 
+## Analytics (PostHog)
+
+PostHog product analytics tracks page usage and key interactions. Phase 1 uses PostHog Cloud; Phase 2 will self-host.
+
+**Configuration** (in `.env`):
+- `VITE_POSTHOG_API_KEY` — PostHog project API key (leave empty to disable)
+- `VITE_POSTHOG_API_HOST` — PostHog ingest endpoint (default: `https://us.i.posthog.com`)
+
+**Architecture**:
+- `client/src/lib/posthog.ts` — Init + helpers (`initPostHog`, `trackPageView`, `trackEvent`, `identifyUser`)
+- `client/src/hooks/use-posthog-pageview.ts` — Wouter route change tracking (auto-pageviews)
+- `client/src/lib/analytics-events.ts` — Standardized custom event definitions
+
+**Adding custom events**:
+```typescript
+import { Analytics } from '@/lib/analytics-events';
+Analytics.sidebarNavigation('/patterns');
+Analytics.themeToggled('dark');
+```
+
+**Graceful degradation**: When `VITE_POSTHOG_API_KEY` is empty, all tracking functions are no-ops. No errors, no network requests.
+
 ## Design System Reference
 
 See `design_guidelines.md` for comprehensive Carbon Design System implementation details including:
