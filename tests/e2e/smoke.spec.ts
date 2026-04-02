@@ -74,6 +74,8 @@ const DASHBOARD_ROUTES = [
   // Advanced — Tools
   '/trace',
   '/showcase',
+  '/event-ledger',
+  '/doc-freshness',
 
   // Platform pages
   '/intelligence',

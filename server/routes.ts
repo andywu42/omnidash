@@ -113,6 +113,10 @@ import contractDriftRoutes from './contract-drift-routes';
 import pipelineOverviewRoutes from './pipeline-overview-routes';
 // Eval Results dashboard routes (OMN-6780)
 import evalResultsRoutes from './eval-results-routes';
+// Event Ledger dashboard routes (feature-hookup Phase 1)
+import ledgerRoutes from './ledger-routes';
+// Doc Freshness dashboard routes (feature-hookup Phase 2)
+import docFreshnessRoutes from './doc-freshness-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -315,6 +319,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Eval Results dashboard routes (OMN-6780)
   app.use('/api/eval-results', evalResultsRoutes);
+
+  // Event Ledger dashboard routes (feature-hookup Phase 1)
+  app.use('/api/ledger', ledgerRoutes);
+
+  // Doc Freshness dashboard routes (feature-hookup Phase 2)
+  app.use('/api/doc-freshness', docFreshnessRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.

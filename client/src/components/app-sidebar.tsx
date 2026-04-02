@@ -41,6 +41,7 @@ import {
   Workflow,
   Settings,
   CheckCircle2,
+  FileText,
 } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import {
@@ -456,6 +457,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         description: 'Contract compliance status and violation tracking (OMN-5285)',
       },
       {
+        title: 'Doc Freshness',
+        url: '/doc-freshness',
+        icon: FileText,
+        description: 'Documentation freshness sweep results and stale content tracking',
+      },
+      {
         title: 'Agents',
         url: '/agents',
         icon: Bot,
@@ -490,6 +497,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
   {
     label: 'Tools',
     items: [
+      {
+        title: 'Event Ledger',
+        url: '/event-ledger',
+        icon: Database,
+        description: 'Browse the immutable audit log of all ONEX event bus events',
+      },
       {
         title: 'Correlation Trace',
         url: '/trace',
@@ -679,7 +692,10 @@ function AdvancedNavSection({ location, showAll = false }: AdvancedNavSectionPro
                           className={cn('group pl-5', isActive && 'bg-sidebar-accent')}
                           data-testid={`nav-${item.url.slice(1).replace(/\//g, '-')}`}
                         >
-                          <Link href={item.url} onClick={() => Analytics.sidebarNavigation(item.url)}>
+                          <Link
+                            href={item.url}
+                            onClick={() => Analytics.sidebarNavigation(item.url)}
+                          >
                             <item.icon className="w-4 h-4" />
                             <span>{item.title}</span>
                             {isActive ? (

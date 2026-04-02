@@ -136,6 +136,11 @@ const EXEMPT_FILES = new Set([
   // are not yet representable as a ProjectionService view.
   // TODO(OMN-6780-followup): migrate to ProjectionService view.
   'eval-results-routes.ts',
+
+  // Doc freshness routes query skill_invocations (populated by ReadModelConsumer
+  // projection via Kafka). Aggregation queries (sweep summaries, paginated history)
+  // are not yet representable as a ProjectionService view.
+  'doc-freshness-routes.ts',
 ]);
 
 /**
