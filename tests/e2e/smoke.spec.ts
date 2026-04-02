@@ -130,6 +130,9 @@ const DASHBOARD_ROUTES = [
   // Agent coordination (OMN-7036)
   '/agent-coordination',
 
+  // Security posture (OMN-7240)
+  '/security-posture',
+
   // Empty route scaffolds (OMN-6753)
   '/agents',
   '/drift',

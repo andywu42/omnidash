@@ -128,6 +128,8 @@ import AgentCoordinationDashboard from '@/pages/AgentCoordinationDashboard';
 import EventLedgerDashboard from '@/pages/EventLedgerDashboard';
 // Doc Freshness dashboard (feature-hookup Phase 2)
 import DocFreshnessDashboard from '@/pages/DocFreshnessDashboard';
+// Security Posture dashboard (feature-hookup Phase 4)
+import SecurityPostureDashboard from '@/pages/SecurityPostureDashboard';
 
 // Phase 2: Category landing pages (OMN-2181)
 import SpeedCategory from '@/pages/SpeedCategory';
@@ -285,6 +287,9 @@ function Router() {
 
       {/* Compliance dashboard (OMN-5285) */}
       <Route path="/compliance" component={ComplianceDashboard} />
+
+      {/* Security Posture dashboard (feature-hookup Phase 4) */}
+      <Route path="/security-posture" component={SecurityPostureDashboard} />
 
       {/* Routing Feedback dashboard (OMN-5284) */}
       <Route path="/routing-feedback" component={RoutingFeedbackDashboard} />

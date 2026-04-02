@@ -931,6 +931,13 @@ export const queryKeys = {
     trend: (window: string) => ['compliance', 'trend', window] as const,
   },
 
+  /** Security posture dashboard query keys */
+  securityPosture: {
+    all: ['security-posture'] as const,
+    runs: ['security-posture', 'runs'] as const,
+    sbom: ['security-posture', 'sbom'] as const,
+  },
+
   // ============================================================================
   // Context Effectiveness Dashboard (OMN-5286)
   // ============================================================================
