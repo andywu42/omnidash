@@ -504,6 +504,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
     label: 'Tools',
     items: [
       {
+        title: 'Integration Catalog',
+        url: '/integrations',
+        icon: Globe,
+        description: 'Active platform integrations with live health status',
+      },
+      {
         title: 'Event Ledger',
         url: '/event-ledger',
         icon: Database,

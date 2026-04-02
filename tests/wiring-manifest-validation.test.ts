@@ -147,6 +147,7 @@ const KNOWN_SPECIAL_PAGES = new Set([
   '/savings', // preview page
   '/patterns', // PatternLearning.tsx (not Patterns*.tsx)
   '/worker-health', // WorkerHealthPage in components/worker-health/
+  '/integrations', // IntegrationCatalogDashboard.tsx (name mismatch with route)
 ]);
 
 // ---------------------------------------------------------------------------

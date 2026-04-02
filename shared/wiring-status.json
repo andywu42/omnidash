@@ -62,6 +62,7 @@
     "/settings": { "status": "stub", "table": null, "description": "Settings — runtime config display" },
     "/wiring-status": { "status": "working", "table": null, "description": "Wiring status for all dashboard pages" },
     "/alert-history": { "status": "partial", "table": "skill_invocations", "description": "Alert history — queries alert-related skill invocations + active alert engine" },
+    "/integrations": { "status": "working", "table": null, "description": "Active platform integrations with live health status" },
 
     "/category/speed": { "status": "working", "table": null, "description": "Speed category landing page" },
     "/category/success": { "status": "working", "table": null, "description": "Success category landing page" },

@@ -136,6 +136,9 @@ const DASHBOARD_ROUTES = [
   // Alert history dashboard
   '/alert-history',
 
+  // Integration catalog (OMN-7239)
+  '/integrations',
+
   // Empty route scaffolds (OMN-6753)
   '/agents',
   '/drift',
