@@ -50,9 +50,9 @@ function mockHealthyDb() {
   return {
     execute: vi.fn().mockResolvedValue({
       rows: [
-        { topic: 'topic-a', last_offset: 100, updated_at: now },
-        { topic: 'topic-b', last_offset: 200, updated_at: now },
-        { topic: 'topic-c', last_offset: 300, updated_at: now },
+        { projection_name: 'topic-a:0', last_offset: 100, updated_at: now },
+        { projection_name: 'topic-b:0', last_offset: 200, updated_at: now },
+        { projection_name: 'topic-c:0', last_offset: 300, updated_at: now },
       ],
     }),
   };
@@ -197,9 +197,9 @@ describe('Health Probe Honesty (OMN-6973)', () => {
     const staleDb = {
       execute: vi.fn().mockResolvedValue({
         rows: [
-          { topic: 'topic-a', last_offset: 100, updated_at: staleTime },
-          { topic: 'topic-b', last_offset: 200, updated_at: staleTime },
-          { topic: 'topic-c', last_offset: 300, updated_at: staleTime },
+          { projection_name: 'topic-a:0', last_offset: 100, updated_at: staleTime },
+          { projection_name: 'topic-b:0', last_offset: 200, updated_at: staleTime },
+          { projection_name: 'topic-c:0', last_offset: 300, updated_at: staleTime },
         ],
       }),
     };

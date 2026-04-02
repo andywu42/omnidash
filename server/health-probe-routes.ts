@@ -75,7 +75,7 @@ router.get('/', async (_req, res) => {
       const db = tryGetIntelligenceDb();
       if (db) {
         const watermarkRows = await db.execute(sql`
-          SELECT topic, last_offset, updated_at
+          SELECT projection_name, last_offset, updated_at
           FROM projection_watermarks
           ORDER BY updated_at DESC
           LIMIT 20

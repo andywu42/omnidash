@@ -242,9 +242,9 @@ describe('Service Health Checks', () => {
       // Return DB connectivity check first, then watermark rows.
       const recentDate = new Date().toISOString();
       const watermarkRows = [
-        { topic: 'topic-a', last_offset: '100', updated_at: recentDate },
-        { topic: 'topic-b', last_offset: '200', updated_at: recentDate },
-        { topic: 'topic-c', last_offset: '50', updated_at: recentDate },
+        { projection_name: 'topic-a:0', last_offset: '100', updated_at: recentDate },
+        { projection_name: 'topic-b:0', last_offset: '200', updated_at: recentDate },
+        { projection_name: 'topic-c:0', last_offset: '50', updated_at: recentDate },
       ];
       vi.mocked(mockDb.execute).mockResolvedValue({ rows: watermarkRows } as any);
 
