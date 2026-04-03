@@ -42,7 +42,7 @@ describe('GitHubPrMergedPayloadSchema', () => {
   });
 
   it('should reject missing required fields', () => {
-    const { repo, ...missing } = validPayload;
+    const { repo: _repo, ...missing } = validPayload;
     const result = GitHubPrMergedPayloadSchema.safeParse(missing);
     expect(result.success).toBe(false);
   });
@@ -103,7 +103,7 @@ describe('GitHubPushToMainPayloadSchema', () => {
   });
 
   it('should reject missing ref', () => {
-    const { ref, ...missing } = validPayload;
+    const { ref: _ref, ...missing } = validPayload;
     const result = GitHubPushToMainPayloadSchema.safeParse(missing);
     expect(result.success).toBe(false);
   });
@@ -150,7 +150,7 @@ describe('GitHubCheckSuiteCompletedPayloadSchema', () => {
   });
 
   it('should reject missing check_suite_id', () => {
-    const { check_suite_id, ...missing } = validPayload;
+    const { check_suite_id: _check_suite_id, ...missing } = validPayload;
     const result = GitHubCheckSuiteCompletedPayloadSchema.safeParse(missing);
     expect(result.success).toBe(false);
   });

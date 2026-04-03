@@ -142,7 +142,7 @@ describe('Health Probe Contract Compliance (OMN-5820)', () => {
     it('every profile in the contract covers only valid data source keys', () => {
       const validKeys = new Set<string>(ALL_DATA_SOURCE_KEYS);
 
-      for (const [profile, expectation] of Object.entries(HEALTH_PROBE_CONTRACT)) {
+      for (const [_profile, expectation] of Object.entries(HEALTH_PROBE_CONTRACT)) {
         for (const key of expectation.mustBeLive) {
           expect(validKeys.has(key)).toBe(true);
         }

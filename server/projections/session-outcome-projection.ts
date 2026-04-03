@@ -7,8 +7,7 @@
  * Source table: session_outcomes (defined in shared/intelligence-schema.ts)
  */
 
-import { sql, gte } from 'drizzle-orm';
-import { sessionOutcomes } from '@shared/intelligence-schema';
+import { sql } from 'drizzle-orm';
 import { DbBackedProjectionView } from './db-backed-projection-view';
 import { tryGetIntelligenceDb } from '../storage';
 
@@ -63,7 +62,10 @@ function truncUnit(window: SessionOutcomeWindow): 'hour' | 'day' {
 export class SessionOutcomeProjection extends DbBackedProjectionView<SessionOutcomePayload> {
   readonly viewId = 'session-outcomes';
 
-  private windowCache = new Map<SessionOutcomeWindow, { payload: SessionOutcomePayload; ts: number }>();
+  private windowCache = new Map<
+    SessionOutcomeWindow,
+    { payload: SessionOutcomePayload; ts: number }
+  >();
 
   emptyPayload(): SessionOutcomePayload {
     return {
@@ -107,7 +109,10 @@ export class SessionOutcomeProjection extends DbBackedProjectionView<SessionOutc
     return this.queryForWindow(db, '7d');
   }
 
-  private async queryForWindow(db: Db, window: SessionOutcomeWindow): Promise<SessionOutcomePayload> {
+  private async queryForWindow(
+    db: Db,
+    window: SessionOutcomeWindow
+  ): Promise<SessionOutcomePayload> {
     const cutoff = windowCutoff(window);
     const unit = truncUnit(window);
 
@@ -132,7 +137,15 @@ export class SessionOutcomeProjection extends DbBackedProjectionView<SessionOutc
         WHERE emitted_at >= ${cutoff}
         GROUP BY bucket
         ORDER BY bucket ASC
-      `) as unknown as Promise<{ rows: Array<{ bucket: unknown; success: number; failed: number; abandoned: number; unknown: number }> }>,
+      `) as unknown as Promise<{
+        rows: Array<{
+          bucket: unknown;
+          success: number;
+          failed: number;
+          abandoned: number;
+          unknown: number;
+        }>;
+      }>,
     ]);
 
     const byOutcome = { success: 0, failed: 0, abandoned: 0, unknown: 0 };

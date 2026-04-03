@@ -14,7 +14,7 @@ set -euo pipefail
 
 : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (source ~/.omnibase/.env)}"
 
-PGHOST="${PGHOST:-localhost}"
+PGHOST="${PGHOST:?PGHOST required}"
 PGPORT="${PGPORT:-5436}"
 PGUSER="${PGUSER:-postgres}"
 TMPFILE="$(mktemp /tmp/pattern-signatures.XXXXXX.csv)"

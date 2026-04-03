@@ -67,9 +67,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { POLLING_INTERVAL_MEDIUM } from '@/lib/constants/query-config';
@@ -242,7 +239,7 @@ function evaluatePromotionGates(
 // Colors
 // ============================================================================
 
-const CHART_COLORS = [
+const _CHART_COLORS = [
   '#3b82f6',
   '#22c55e',
   '#f59e0b',

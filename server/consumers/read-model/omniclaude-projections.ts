@@ -20,7 +20,7 @@
  * - Phase metrics -> phase_metrics_events
  */
 
-import { sql, eq } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import {
   agentRoutingDecisions,
   agentActions,
@@ -76,11 +76,6 @@ import {
   TOPIC_OMNICLAUDE_HOOK_HEALTH_ERROR,
 } from '@shared/topics';
 import { ExtractionMetricsAggregator } from '../../extraction-aggregator';
-import type {
-  ContextUtilizationEvent,
-  AgentMatchEvent,
-  LatencyBreakdownEvent,
-} from '@shared/extraction-types';
 import {
   isContextUtilizationEvent,
   isAgentMatchEvent,

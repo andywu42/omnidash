@@ -5,7 +5,7 @@
  * Data access: Direct DB (getIntelligenceDb)
  */
 import type { Router } from 'express';
-import { desc, eq, gte, and, sql } from 'drizzle-orm';
+import { desc, eq, gte, and } from 'drizzle-orm';
 import { getIntelligenceDb } from '../../storage';
 import { goldenChainSweepResults } from '@shared/intelligence-schema';
 
@@ -104,12 +104,7 @@ export function registerGoldenChainRoutes(router: Router): void {
         sweep: {
           sweepId,
           createdAt: chains[0]?.createdAt,
-          overallStatus:
-            passCount === totalCount
-              ? 'pass'
-              : passCount === 0
-                ? 'fail'
-                : 'partial',
+          overallStatus: passCount === totalCount ? 'pass' : passCount === 0 ? 'fail' : 'partial',
           passRate: totalCount > 0 ? passCount / totalCount : 0,
           passCount,
           totalCount,

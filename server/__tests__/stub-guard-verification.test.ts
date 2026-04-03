@@ -48,7 +48,7 @@ describe('stub-guard-verification', () => {
     }
 
     // chat-routes.ts POST /send returns 501 — tracked under OMN-6111
-    const chatViolations = violations.filter((v) => v.includes('chat-routes'));
+    const _chatViolations = violations.filter((v) => v.includes('chat-routes'));
     const otherViolations = violations.filter((v) => !v.includes('chat-routes'));
 
     expect(otherViolations).toEqual([]);

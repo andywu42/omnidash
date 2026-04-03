@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterAll, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
 // Stub fetch once at module level, before static import of module under test.
 // This stays active for the entire suite; afterAll cleans up.
@@ -13,6 +13,7 @@ process.env.REDPANDA_ADMIN_URL = 'http://test-redpanda:9644';
 import { fetchTopicNames, EXPECTED_TOPICS } from '../event-bus-health-poller';
 
 // Module-level cleanup: unstub globals after all describe blocks complete
+// eslint-disable-next-line vitest/require-top-level-describe
 afterAll(() => {
   vi.unstubAllGlobals();
   // Restore original env value

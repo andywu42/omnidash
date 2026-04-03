@@ -63,7 +63,7 @@ const SUPPORTED_WINDOWS: Record<string, string> = {
 function classifySeverity(
   skillName: string,
   success: boolean,
-  error: string | null
+  _error: string | null
 ): AlertSeverity {
   if (!success) return 'error';
   if (skillName === 'hook_health_alert' || skillName === 'hook_health_check') return 'warning';

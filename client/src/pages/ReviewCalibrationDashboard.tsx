@@ -241,7 +241,7 @@ function ConvergenceChart({ runs, isLoading }: { runs: CalibrationRun[]; isLoadi
 
 function NoiseRatioTrend({ runs, isLoading }: { runs: CalibrationRun[]; isLoading: boolean }) {
   const chartData = useMemo(() => {
-    const models = [...new Set(runs.map((r) => r.challenger_model))];
+    const _models = [...new Set(runs.map((r) => r.challenger_model))];
     const sorted = [...runs].sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );

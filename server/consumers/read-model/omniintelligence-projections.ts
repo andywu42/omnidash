@@ -1488,7 +1488,7 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
 
   private async projectEvalCompleted(
     data: Record<string, unknown>,
-    context: ProjectionContext
+    _context: ProjectionContext
   ): Promise<boolean> {
     // Acknowledge the event to advance the watermark.
     // Eval-completed events are informational signals from omniintelligence;

@@ -149,7 +149,7 @@ export default function SpeedCategory() {
       refetchInterval: 30_000,
     });
 
-  const { data: phaseMetricsByPhase, isLoading: phasesByPhaseLoading } =
+  const { data: phaseMetricsByPhase, isLoading: _phasesByPhaseLoading } =
     useQuery<PhaseMetricsByPhase>({
       queryKey: queryKeys.phaseMetrics.byPhase('7d'),
       queryFn: () => phaseMetricsSource.byPhase('7d'),

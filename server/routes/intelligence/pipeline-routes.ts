@@ -6,7 +6,7 @@
  * // TODO(OMN-6111): migrate to ProjectionService
  */
 import type { Router, Request, Response } from 'express';
-import { sql, desc, asc, eq, gte } from 'drizzle-orm';
+import { sql, desc, asc, eq } from 'drizzle-orm';
 import { getIntelligenceDb } from '../../storage';
 import {
   patternInjections,

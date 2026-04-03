@@ -47,7 +47,12 @@ describe('API → Client Zod Schema Parity', () => {
     });
 
     it('accepts artifact with omitted optional fields', () => {
-      const { stateChangedAt, updatedAt, metadata, ...minimal } = validArtifact;
+      const {
+        stateChangedAt: _stateChangedAt,
+        updatedAt: _updatedAt,
+        metadata: _metadata,
+        ...minimal
+      } = validArtifact;
       const result = patlearnArtifactSchema.safeParse(minimal);
       expect(result.success).toBe(true);
     });

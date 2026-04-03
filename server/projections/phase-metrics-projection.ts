@@ -7,8 +7,7 @@
  * Source table: phase_metrics_events (defined in shared/intelligence-schema.ts)
  */
 
-import { sql, gte } from 'drizzle-orm';
-import { phaseMetricsEvents } from '@shared/intelligence-schema';
+import { sql } from 'drizzle-orm';
 import { DbBackedProjectionView } from './db-backed-projection-view';
 import { tryGetIntelligenceDb } from '../storage';
 
@@ -113,13 +112,15 @@ export class PhaseMetricsProjection extends DbBackedProjectionView<PhaseMetricsP
           COUNT(*) FILTER (WHERE status = 'skipped')::int AS skipped_count
         FROM phase_metrics_events
         WHERE emitted_at >= ${cutoff}
-      `) as unknown as Promise<{ rows: Array<{
-        total: number;
-        avg_duration_ms: number;
-        success_count: number;
-        failure_count: number;
-        skipped_count: number;
-      }> }>,
+      `) as unknown as Promise<{
+        rows: Array<{
+          total: number;
+          avg_duration_ms: number;
+          success_count: number;
+          failure_count: number;
+          skipped_count: number;
+        }>;
+      }>,
 
       db.execute(sql`
         SELECT
@@ -132,13 +133,15 @@ export class PhaseMetricsProjection extends DbBackedProjectionView<PhaseMetricsP
         WHERE emitted_at >= ${cutoff}
         GROUP BY phase
         ORDER BY count DESC
-      `) as unknown as Promise<{ rows: Array<{
-        phase: string;
-        count: number;
-        avg_duration_ms: number;
-        success_count: number;
-        failure_count: number;
-      }> }>,
+      `) as unknown as Promise<{
+        rows: Array<{
+          phase: string;
+          count: number;
+          avg_duration_ms: number;
+          success_count: number;
+          failure_count: number;
+        }>;
+      }>,
     ]);
 
     const summaryRow = summaryRows.rows[0] ?? {

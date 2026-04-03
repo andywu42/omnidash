@@ -10,10 +10,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowRight, Workflow, GitBranch, DollarSign, HeartPulse } from 'lucide-react';
+import { ArrowRight, GitBranch, DollarSign, HeartPulse } from 'lucide-react';
 
 interface PipelineOverview {
   pipelineHealth: { total: number; stuck: number; active: number };

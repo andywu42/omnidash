@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Reset Consumer Group Script (OMN-6393)
  *

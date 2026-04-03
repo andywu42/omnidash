@@ -20,8 +20,8 @@ if (!process.env.KAFKAJS_NO_PARTITIONER_WARNING) {
 }
 
 import express, { type Request, Response, NextFunction } from 'express';
-import { initOidcClient, isAuthEnabled } from './auth/oidc-client';
-import { configureSession, getSessionMiddleware } from './auth/session-config';
+import { initOidcClient } from './auth/oidc-client';
+import { configureSession } from './auth/session-config';
 import { authRoutes, authMeRoute } from './auth/auth-routes';
 import { refreshTokenIfNeeded, requireAuth } from './auth/middleware';
 import healthProbeRoutes from './health-probe-routes';
@@ -36,7 +36,7 @@ import { runtimeIdentity } from './runtime-identity';
 import { printStartupBanner } from './startup-banner.js';
 import { getBrokerString } from './bus-config.js';
 import { initProjectionListeners, teardownProjectionListeners } from './projection-instance';
-import { wireProjectionSources, projectionService } from './projection-bootstrap';
+import { wireProjectionSources } from './projection-bootstrap';
 import { readModelConsumer } from './read-model-consumer';
 import { runStartupBackfillIfEmpty } from './startup-backfill';
 import { startCdqaGateWatcher } from './cdqa-gate-watcher';

@@ -15,7 +15,6 @@
 import { sql } from 'drizzle-orm';
 import { DbBackedProjectionView } from './db-backed-projection-view';
 import { tryGetIntelligenceDb } from '../storage';
-import { complianceEvaluations } from '@shared/intelligence-schema';
 import type { ComplianceEvaluationRow } from '@shared/intelligence-schema';
 
 type Db = NonNullable<ReturnType<typeof tryGetIntelligenceDb>>;

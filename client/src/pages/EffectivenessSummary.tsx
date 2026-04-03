@@ -155,7 +155,7 @@ export default function EffectivenessSummary() {
     avg_token_count: number | null;
   }
 
-  const { data: cohortData, isLoading: cohortLoading } = useQuery<{
+  const { data: cohortData, isLoading: _cohortLoading } = useQuery<{
     cohorts: CohortRow[];
     timeWindow: string;
   }>({

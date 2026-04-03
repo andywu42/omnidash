@@ -11,12 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  isLatencyBreakdownEvent,
-  isExtractionBaseEvent,
-  isContextUtilizationEvent,
-  isAgentMatchEvent,
-} from '@shared/extraction-types';
+import { isLatencyBreakdownEvent, isContextUtilizationEvent } from '@shared/extraction-types';
 
 // Re-export for testing (the function is not exported, so we test via the public guards)
 

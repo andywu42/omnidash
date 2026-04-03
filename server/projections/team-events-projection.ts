@@ -24,7 +24,6 @@ import { DbBackedProjectionView } from './db-backed-projection-view';
 import { tryGetIntelligenceDb } from '../storage';
 import {
   teamEventRowSchema,
-  teamEventsSummarySchema,
   teamEventsPayloadSchema,
   type TeamEventRow,
   type TeamEventsSummary,

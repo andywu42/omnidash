@@ -232,7 +232,7 @@ export default function SuccessCategory() {
       refetchInterval: 15_000,
     });
 
-  const { data: sessionOutcomeTrend, isLoading: sessionOutcomeTrendLoading } =
+  const { data: sessionOutcomeTrend, isLoading: _sessionOutcomeTrendLoading } =
     useQuery<SessionOutcomeTrend>({
       queryKey: queryKeys.sessionOutcomes.trend('7d'),
       queryFn: () => sessionOutcomeSource.trend('7d'),

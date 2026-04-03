@@ -10,7 +10,7 @@
  * allowed in route files (OMN-2325).
  */
 
-import { desc, eq } from 'drizzle-orm';
+import { desc } from 'drizzle-orm';
 import { DbBackedProjectionView } from './db-backed-projection-view';
 import { tryGetIntelligenceDb } from '../storage';
 import { llmHealthSnapshots } from '@shared/intelligence-schema';

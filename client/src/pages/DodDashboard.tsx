@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/table';
 import {
   CheckCircle2,
-  XCircle,
   ShieldAlert,
   BarChart3,
   Percent,

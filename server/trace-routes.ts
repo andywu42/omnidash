@@ -13,7 +13,7 @@
  */
 
 import { Router } from 'express';
-import { desc, eq, sql, inArray } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { tryGetIntelligenceDb } from './storage';
 import { correlationTraceSpans } from '@shared/intelligence-schema';
 

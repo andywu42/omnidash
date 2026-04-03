@@ -112,7 +112,7 @@ interface TraceSpansResponse {
 }
 
 /** Session traces from GET /api/traces/session/:sessionId */
-interface SessionTracesResponse {
+interface _SessionTracesResponse {
   sessionId: string;
   traceCount: number;
   traces: {
@@ -132,7 +132,7 @@ interface SessionTracesResponse {
 // ============================================================================
 
 /** Summary row returned by GET /api/intelligence/traces/recent */
-interface LegacyRecentTrace {
+interface _LegacyRecentTrace {
   correlationId: string;
   selectedAgent: string;
   confidenceScore: number;

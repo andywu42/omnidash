@@ -1,3 +1,4 @@
+/* eslint-disable vitest/require-hook, vitest/require-top-level-describe */
 /**
  * Failing test for agent_routing_decisions session_id coercion (OMN-4820)
  *
@@ -16,8 +17,6 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { agentRoutingDecisions } from '../../shared/intelligence-schema';
 import type { InsertAgentRoutingDecision } from '../../shared/intelligence-schema';
-import { sql } from 'drizzle-orm';
-
 // ---------------------------------------------------------------------------
 // Test DB setup — uses the omnidash_analytics test database.
 // If DB is unavailable, tests are skipped (not failed) to avoid blocking CI

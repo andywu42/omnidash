@@ -130,7 +130,7 @@ describe('Topic Parity Contract (OMN-6978)', () => {
 
     it('all read_model_topics should have a SUFFIX_*/TOPIC_* constant in topics.ts', () => {
       if (missing.length > 0) {
-        const details = missing.map((t) => `  - ${t} (no matching constant)`).join('\n');
+        const _details = missing.map((t) => `  - ${t} (no matching constant)`).join('\n');
         expect(missing).toEqual(
           // prettier-ignore
           [] /* Missing constants:\n${details} */

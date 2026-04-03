@@ -3,7 +3,7 @@
  * TDD: Written before implementation [OMN-6721].
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { createHmac } from 'crypto';
 import express from 'express';
 import request from 'supertest';

@@ -4,7 +4,7 @@
  * Mirrors the Python test suite in omnibase_infra to ensure cross-runtime parity.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   validateOnexTopicFormat,
   enforceTopicFormat,

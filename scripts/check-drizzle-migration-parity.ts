@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Drizzle-to-Migration Schema Parity Check
  *

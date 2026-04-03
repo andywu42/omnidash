@@ -20,7 +20,6 @@
 
 import { getIntelligenceDb } from '../server/storage';
 import { patternLearningArtifacts } from '../shared/intelligence-schema';
-import { sql } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
 // Config

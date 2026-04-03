@@ -216,7 +216,7 @@ export async function getProjectionHealth(
         stale: isStale,
         staleThresholdMinutes,
       };
-    } catch (err) {
+    } catch {
       // Table might be in a weird state — report zero
       tables[tableName] = {
         rowCount: 0,

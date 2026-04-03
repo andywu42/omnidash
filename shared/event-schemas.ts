@@ -17,7 +17,7 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 
 /** Loose UUID: accepts both lowercase and mixed-case hex UUIDs. */
-const looseUuid = z
+const _looseUuid = z
   .string()
   .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Must be a valid UUID');
 

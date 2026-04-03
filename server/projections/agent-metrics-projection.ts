@@ -18,11 +18,7 @@
  */
 
 import { sql } from 'drizzle-orm';
-import {
-  agentRoutingDecisions,
-  agentActions,
-  agentTransformationEvents,
-} from '@shared/intelligence-schema';
+import { agentActions, agentTransformationEvents } from '@shared/intelligence-schema';
 import { DbBackedProjectionView } from './db-backed-projection-view';
 import { tryGetIntelligenceDb } from '../storage';
 

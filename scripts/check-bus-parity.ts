@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * scripts/check-bus-parity.ts
  *
@@ -87,10 +88,8 @@ async function fetchOffsets(
 }
 
 async function main(): Promise<void> {
-  const localBrokers =
-    process.env.KAFKA_LOCAL_BOOTSTRAP_SERVERS ?? DEFAULT_LOCAL_BROKERS;
-  const cloudBrokers =
-    process.env.KAFKA_CLOUD_BOOTSTRAP_SERVERS ?? DEFAULT_CLOUD_BROKERS; // # cloud-bus-ok OMN-4777
+  const localBrokers = process.env.KAFKA_LOCAL_BOOTSTRAP_SERVERS ?? DEFAULT_LOCAL_BROKERS;
+  const cloudBrokers = process.env.KAFKA_CLOUD_BOOTSTRAP_SERVERS ?? DEFAULT_CLOUD_BROKERS; // # cloud-bus-ok OMN-4777
   const timeoutMs = parseInt(process.env.PARITY_TIMEOUT_MS ?? '5000', 10);
 
   const topicsRaw = process.env.PARITY_TOPICS;
@@ -112,26 +111,25 @@ async function main(): Promise<void> {
 
   let divergeCount = 0;
 
-  console.log(
-    `${'Topic'.padEnd(50)} ${'Local'.padStart(12)} ${'Cloud'.padStart(12)}  Status`
-  );
+  console.log(`${'Topic'.padEnd(50)} ${'Local'.padStart(12)} ${'Cloud'.padStart(12)}  Status`);
   console.log('─'.repeat(85));
 
   for (const topic of topics) {
     const local = localOffsets.get(topic) ?? 'UNREACHABLE';
     const cloud = cloudOffsets.get(topic) ?? 'UNREACHABLE'; // # cloud-bus-ok OMN-4777
 
-    const localStr =
-      typeof local === 'number' ? local.toLocaleString() : local;
-    const cloudStr =
-      typeof cloud === 'number' ? cloud.toLocaleString() : cloud; // # cloud-bus-ok OMN-4777
+    const localStr = typeof local === 'number' ? local.toLocaleString() : local;
+    const cloudStr = typeof cloud === 'number' ? cloud.toLocaleString() : cloud; // # cloud-bus-ok OMN-4777
 
     let status: string;
-    if (local === 'UNREACHABLE' || cloud === 'UNREACHABLE') { // # cloud-bus-ok OMN-4777
+    if (local === 'UNREACHABLE' || cloud === 'UNREACHABLE') {
+      // # cloud-bus-ok OMN-4777
       status = '⚠ UNREACHABLE';
-    } else if (local === 'NOT_FOUND' || cloud === 'NOT_FOUND') { // # cloud-bus-ok OMN-4777
+    } else if (local === 'NOT_FOUND' || cloud === 'NOT_FOUND') {
+      // # cloud-bus-ok OMN-4777
       status = '— NOT FOUND';
-    } else if (local === cloud) { // # cloud-bus-ok OMN-4777
+    } else if (local === cloud) {
+      // # cloud-bus-ok OMN-4777
       status = '= MATCH';
     } else {
       status = '≠ DIVERGE';

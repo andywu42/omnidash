@@ -9,7 +9,7 @@ const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_API_HOST ?? 'https://us.i.post
  */
 export function initPostHog(): void {
   if (!POSTHOG_API_KEY) {
-    console.debug('[posthog] Skipped — VITE_POSTHOG_API_KEY not set');
+    console.warn('[posthog] Skipped — VITE_POSTHOG_API_KEY not set');
     return;
   }
 

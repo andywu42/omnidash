@@ -20,7 +20,7 @@
  *   onex.evt.omniclaude.circuit-breaker-tripped.v1 → debugEscalationCounts (debug_escalation_counts)
  */
 
-import { pgTable, text, integer, boolean, timestamp, uuid, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
 import type { InferSelectModel } from 'drizzle-orm';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';

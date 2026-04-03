@@ -7,7 +7,7 @@
  * Route: /topic-topology
  */
 
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -132,10 +132,7 @@ function TopologyGraph({ data, filter }: GraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   const layoutNodes = useMemo(() => computeLayout(data.nodes), [data.nodes]);
-  const nodeMap = useMemo(
-    () => new Map(layoutNodes.map((n) => [n.id, n])),
-    [layoutNodes]
-  );
+  const nodeMap = useMemo(() => new Map(layoutNodes.map((n) => [n.id, n])), [layoutNodes]);
 
   const lowerFilter = filter.toLowerCase();
 
@@ -364,7 +361,7 @@ export default function TopicTopologyDashboard() {
         <Card className="flex-1">
           <CardContent className="pt-4 pb-3">
             <div className="text-2xl font-bold">
-              {isLoading ? <Skeleton className="h-8 w-12" /> : data?.totalTopics ?? 0}
+              {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.totalTopics ?? 0)}
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">Total topics</div>
           </CardContent>

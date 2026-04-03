@@ -154,7 +154,7 @@ const KNOWN_SPECIAL_PAGES = new Set([
 // Helpers for collecting violations with readable output
 // ---------------------------------------------------------------------------
 
-function collectViolations(items: string[]): string {
+function _collectViolations(items: string[]): string {
   return items.length > 0 ? `\n  - ${items.join('\n  - ')}` : '';
 }
 
