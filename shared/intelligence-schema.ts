@@ -2677,3 +2677,37 @@ export const goldenChainSweepResults = pgTable(
 
 export type GoldenChainSweepResultRow = typeof goldenChainSweepResults.$inferSelect;
 export type InsertGoldenChainSweepResult = typeof goldenChainSweepResults.$inferInsert;
+
+// ============================================================================
+// Infrastructure Routing Decisions Table (OMN-7447)
+// Tracks AdapterModelRouter provider selection decisions from omnibase-infra.
+// Source topic: onex.evt.omnibase-infra.routing-decided.v1
+// Replay policy: UPSERT on correlation_id.
+// ============================================================================
+
+export const infraRoutingDecisions = pgTable(
+  'infra_routing_decisions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    correlationId: text('correlation_id').unique().notNull(),
+    sessionId: text('session_id'),
+    selectedProvider: text('selected_provider').notNull(),
+    selectedModel: text('selected_model').notNull().default(''),
+    reason: text('reason').notNull().default(''),
+    selectionMode: text('selection_mode').notNull().default('round_robin'),
+    isFallback: boolean('is_fallback').notNull().default(false),
+    candidatesEvaluated: integer('candidates_evaluated').notNull().default(1),
+    taskType: text('task_type'),
+    latencyMs: numeric('latency_ms'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    projectedAt: timestamp('projected_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_infra_routing_created_at').on(table.createdAt),
+    index('idx_infra_routing_provider').on(table.selectedProvider),
+    index('idx_infra_routing_model').on(table.selectedModel),
+  ]
+);
+
+export type InfraRoutingDecisionRow = typeof infraRoutingDecisions.$inferSelect;
+export type InsertInfraRoutingDecision = typeof infraRoutingDecisions.$inferInsert;

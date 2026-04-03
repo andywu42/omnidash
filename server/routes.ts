@@ -23,6 +23,7 @@ import enrichmentRoutes from './enrichment-routes';
 import topicCatalogRoutes from './topic-catalog-routes';
 import healthDataSourcesRoutes from './health-data-sources-routes';
 import llmRoutingRoutes from './llm-routing-routes';
+import { infraRoutingRoutes } from './infra-routing-routes';
 import decisionRecordsRoutes from './decision-records-routes';
 import delegationRoutes from './delegation-routes';
 import statusRoutes, { linearSnapshotRouter } from './status-routes';
@@ -196,6 +197,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mount LLM routing effectiveness routes (OMN-2279)
   app.use('/api/llm-routing', llmRoutingRoutes);
+
+  // Mount infra-level routing decision routes (OMN-7447)
+  app.use('/api/infra-routing', infraRoutingRoutes);
 
   // Mount decision records routes for Why This Happened panel (OMN-2469)
   app.use('/api/decisions', decisionRecordsRoutes);

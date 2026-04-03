@@ -21,6 +21,7 @@ import {
   savingsEstimates,
   runtimeErrorEvents,
   runtimeErrorTriageState,
+  infraRoutingDecisions,
 } from '@shared/intelligence-schema';
 import type {
   InsertBaselinesSnapshot,
@@ -32,6 +33,7 @@ import type {
   InsertSavingsEstimate,
   InsertRuntimeErrorEvent,
   InsertRuntimeErrorTriageState,
+  InsertInfraRoutingDecision,
 } from '@shared/intelligence-schema';
 import { baselinesProjection } from '../../projection-bootstrap';
 import { emitBaselinesUpdate } from '../../baselines-events';
@@ -43,6 +45,7 @@ import {
   SUFFIX_OMNIBASE_INFRA_SAVINGS_ESTIMATED,
   TOPIC_OMNIBASE_INFRA_RUNTIME_ERROR,
   TOPIC_OMNIBASE_INFRA_ERROR_TRIAGED,
+  TOPIC_OMNIBASE_INFRA_ROUTING_DECIDED,
 } from '@shared/topics';
 import { wiringHealthProjection } from '../../projections/wiring-health-projection';
 import type { TopicWiringRecord } from '../../projections/wiring-health-projection';
@@ -74,6 +77,7 @@ const SAVINGS_ESTIMATED_TOPIC = SUFFIX_OMNIBASE_INFRA_SAVINGS_ESTIMATED;
 
 const RUNTIME_ERROR_TOPIC = TOPIC_OMNIBASE_INFRA_RUNTIME_ERROR;
 const ERROR_TRIAGED_TOPIC = TOPIC_OMNIBASE_INFRA_ERROR_TRIAGED;
+const ROUTING_DECIDED_TOPIC = TOPIC_OMNIBASE_INFRA_ROUTING_DECIDED;
 
 const OMNIBASE_INFRA_TOPICS = new Set([
   SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED,
@@ -83,6 +87,7 @@ const OMNIBASE_INFRA_TOPICS = new Set([
   SUFFIX_OMNIBASE_INFRA_SAVINGS_ESTIMATED,
   TOPIC_OMNIBASE_INFRA_RUNTIME_ERROR,
   TOPIC_OMNIBASE_INFRA_ERROR_TRIAGED,
+  TOPIC_OMNIBASE_INFRA_ROUTING_DECIDED,
 ]);
 
 export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
@@ -138,6 +143,9 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
     }
     if (topic === ERROR_TRIAGED_TOPIC) {
       return this.projectErrorTriaged(data, context);
+    }
+    if (topic === ROUTING_DECIDED_TOPIC) {
+      return this.projectInfraRoutingDecided(data, context);
     }
     return false;
   }
@@ -837,6 +845,90 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
         console.warn(
           '[ReadModelConsumer] runtime_error_triage_state table not yet created -- ' +
             'run migrations to enable triage state projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+
+    return true;
+  }
+
+  // --------------------------------------------------------------------------
+  // Infrastructure routing decision projection (OMN-7447)
+  // --------------------------------------------------------------------------
+
+  private async projectInfraRoutingDecided(
+    data: Record<string, unknown>,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const correlationId = String(data.correlation_id ?? data.correlationId ?? '').trim();
+    const selectedProvider = String(data.selected_provider ?? data.selectedProvider ?? '').trim();
+
+    if (!correlationId || !selectedProvider) {
+      console.warn(
+        '[ReadModelConsumer] routing-decided event missing correlation_id or selected_provider'
+      );
+      return true;
+    }
+
+    const row: InsertInfraRoutingDecision = {
+      correlationId,
+      sessionId:
+        data.session_id != null
+          ? String(data.session_id)
+          : data.sessionId != null
+            ? String(data.sessionId)
+            : null,
+      selectedProvider,
+      selectedModel: String(data.selected_model ?? data.selectedModel ?? ''),
+      reason: String(data.reason ?? ''),
+      selectionMode: String(data.selection_mode ?? data.selectionMode ?? 'round_robin'),
+      isFallback: Boolean(data.is_fallback ?? data.isFallback ?? false),
+      candidatesEvaluated: Number(data.candidates_evaluated ?? data.candidatesEvaluated ?? 1),
+      taskType:
+        data.task_type != null
+          ? String(data.task_type)
+          : data.taskType != null
+            ? String(data.taskType)
+            : null,
+      latencyMs:
+        data.latency_ms != null
+          ? String(data.latency_ms)
+          : data.latencyMs != null
+            ? String(data.latencyMs)
+            : null,
+      createdAt: safeParseDate(data.timestamp ?? data.created_at ?? data.createdAt) ?? new Date(),
+    };
+
+    try {
+      await db
+        .insert(infraRoutingDecisions)
+        .values(row)
+        .onConflictDoUpdate({
+          target: infraRoutingDecisions.correlationId,
+          set: {
+            selectedProvider: row.selectedProvider,
+            selectedModel: row.selectedModel,
+            reason: row.reason,
+            selectionMode: row.selectionMode,
+            isFallback: row.isFallback,
+            candidatesEvaluated: row.candidatesEvaluated,
+            latencyMs: row.latencyMs,
+            projectedAt: new Date(),
+          },
+        });
+      console.log(
+        `[ReadModelConsumer] Projected infra routing-decided (provider=${selectedProvider}, fallback=${row.isFallback})`
+      );
+    } catch (err) {
+      if (isTableMissingError(err, 'infra_routing_decisions')) {
+        console.warn(
+          '[ReadModelConsumer] infra_routing_decisions table not yet created -- ' +
+            'run migrations to enable infra routing projection'
         );
         return true;
       }

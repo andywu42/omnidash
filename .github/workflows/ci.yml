@@ -214,8 +214,8 @@ jobs:
           echo "Public tables found: $TABLE_COUNT"
           # Expect at least 10 tables (migrations create many) but not wildly more than expected.
           # Range accommodates future growth. Adjust upper bound as migrations accumulate.
-          if [ "$TABLE_COUNT" -lt 10 ] || [ "$TABLE_COUNT" -gt 80 ]; then
-            echo "::error::Unexpected table count: $TABLE_COUNT (expected 10-80)"
+          if [ "$TABLE_COUNT" -lt 10 ] || [ "$TABLE_COUNT" -gt 90 ]; then
+            echo "::error::Unexpected table count: $TABLE_COUNT (expected 10-90)"
             exit 1
           fi
           echo "OK: table count $TABLE_COUNT is within expected range"

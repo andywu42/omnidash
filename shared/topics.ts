@@ -486,6 +486,11 @@ export const SUFFIX_OMNIBASE_INFRA_CIRCUIT_BREAKER = TOPIC_OMNIBASE_INFRA_CIRCUI
 export const SUFFIX_OMNIBASE_INFRA_SAVINGS_ESTIMATED =
   'onex.evt.omnibase-infra.savings-estimated.v1';
 
+/** Infrastructure-level model routing decisions from AdapterModelRouter (OMN-7443).
+ * Emitted by omnibase-infra after each provider selection decision.
+ * Consumed by ReadModelConsumer to project into infra_routing_decisions table. */
+export const TOPIC_OMNIBASE_INFRA_ROUTING_DECIDED = 'onex.evt.omnibase-infra.routing-decided.v1';
+
 /** Runtime container error events from monitor_logs.py (OMN-5649).
  * Consumed by ReadModelConsumer to project into runtime_error_events table. */
 export const TOPIC_OMNIBASE_INFRA_RUNTIME_ERROR = 'onex.evt.omnibase-infra.runtime-error.v1';

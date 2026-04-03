@@ -105,6 +105,8 @@ read_model_topics:
     handler: "projectCircuitBreakerEvent"
   - topic: "onex.evt.omnibase-infra.savings-estimated.v1"
     handler: "projectSavingsEstimated"
+  - topic: "onex.evt.omnibase-infra.routing-decided.v1"
+    handler: "projectInfraRoutingDecided"
   - topic: "onex.evt.omnibase-infra.runtime-error.v1"
     handler: "projectRuntimeErrorEvent"
   - topic: "onex.evt.omnibase-infra.error-triaged.v1"

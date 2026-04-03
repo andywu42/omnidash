@@ -52,6 +52,8 @@ import { HostileReviewerProjection } from './projections/hostile-reviewer-projec
 import { ReviewCalibrationProjection } from './projections/review-calibration-projection';
 // Agent metrics projection (OMN-7132) — replaces EventConsumer in-memory metrics
 import { AgentMetricsProjection } from './projections/agent-metrics-projection';
+// Infra routing decision projection (OMN-7447)
+import { InfraRoutingProjection } from './projections/infra-routing-projection';
 // Node registry DB-backed projection (OMN-7127)
 import { NodeRegistryDbProjection } from './projections/node-registry-db-projection';
 // Intent DB-backed projection (OMN-7129)
@@ -180,6 +182,8 @@ export const nodeRegistryDbProjection = new NodeRegistryDbProjection();
 export const intentDbProjection = new IntentDbProjection();
 /** Agent metrics projection (OMN-7132). Replaces EventConsumer in-memory agent metrics. */
 export const agentMetricsProjection = new AgentMetricsProjection();
+/** Infra routing decision projection (OMN-7447). Queries infra_routing_decisions table. */
+export const infraRoutingProjection = new InfraRoutingProjection();
 
 if (!projectionService.getView(extractionMetricsProjection.viewId)) {
   projectionService.registerView(extractionMetricsProjection);
@@ -265,6 +269,9 @@ if (!projectionService.getView(intentDbProjection.viewId)) {
 }
 if (!projectionService.getView(agentMetricsProjection.viewId)) {
   projectionService.registerView(agentMetricsProjection);
+}
+if (!projectionService.getView(infraRoutingProjection.viewId)) {
+  projectionService.registerView(infraRoutingProjection);
 }
 
 // ============================================================================
