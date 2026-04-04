@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# CI guard: detect hardcoded numeric fallback patterns in production code.
+# Catches ternary expressions like `? 0.87 : 0.82` that should use
+# registry-driven values instead of magic numbers.
+#
+# Suppress a specific line by adding `// fallback-ok` comment.
+# [SOW-Phase2] [OMN-7436]
+
+name: No Hardcoded Fallbacks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-fallbacks:
+    name: Scan for hardcoded numeric fallbacks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for hardcoded fallback patterns
+        run: |
+          set -euo pipefail
+
+          echo "Scanning production code for hardcoded numeric fallbacks..."
+
+          # Ternary with hardcoded decimal fallbacks: ? 0.xx : 0.xx
+          # Excludes lines with '// fallback-ok' suppression marker
+          VIOLATIONS=$(
+            grep -rn \
+              --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
+              -E '\?\s*0\.\d+\s*:\s*0\.\d+' \
+              --exclude-dir=test --exclude-dir=tests --exclude-dir=node_modules \
+              --exclude-dir=.next --exclude-dir=demo --exclude-dir=fixtures \
+              --exclude='*.test.*' --exclude='*.spec.*' --exclude='*.stories.*' \
+              server/ shared/ src/ client/ config/ 2>/dev/null \
+            | grep -v 'fallback-ok' \
+            || true
+          )
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo ""
+            echo "ERROR: Hardcoded numeric fallbacks detected in production code."
+            echo "These should use registry-driven or contract-defined values."
+            echo ""
+            echo "Violations:"
+            echo "$VIOLATIONS"
+            echo ""
+            echo "To suppress a specific line, add a '// fallback-ok' comment."
+            exit 1
+          fi
+
+          echo "No hardcoded fallback violations found."
