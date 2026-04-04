@@ -396,10 +396,10 @@ Add to `.env` for intelligence integration (see `.env.example` for template):
 ```bash
 # Omnidash Read-Model Database (omnidash's own database)
 # See .env file for actual credentials - NEVER commit passwords to git!
-OMNIDASH_ANALYTICS_DB_URL="postgresql://postgres:<password>@localhost:5436/omnidash_analytics"
+OMNIDASH_ANALYTICS_DB_URL="postgresql://postgres:<password>@192.168.86.201:5436/omnidash_analytics"
 
 # Kafka Event Streaming (source of events projected into omnidash_analytics)
-KAFKA_BROKERS=localhost:29092
+KAFKA_BROKERS=192.168.86.201:19092
 KAFKA_CLIENT_ID=omnidash-dashboard
 KAFKA_CONSUMER_GROUP=omnidash-consumers-v2
 
