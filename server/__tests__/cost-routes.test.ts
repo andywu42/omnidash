@@ -751,6 +751,68 @@ describe('Cost Routes', () => {
       expect(res.body).toEqual([]);
     });
 
+    it('should return derived alerts from cap-hit rows with dedup by (pipeline_id, budget_type)', async () => {
+      mockBudgetEnsureFresh.mockResolvedValue({
+        recent: [
+          {
+            correlation_id: 'corr-1',
+            pipeline_id: 'pipeline-a',
+            budget_type: 'cost',
+            cap_value: 1000,
+            current_value: 1200,
+            cap_hit: true,
+            repo: 'repo-x',
+            created_at: '2026-04-01T10:00:00Z',
+          },
+          // Duplicate (pipeline_id, budget_type) — older, should be deduped out
+          {
+            correlation_id: 'corr-0',
+            pipeline_id: 'pipeline-a',
+            budget_type: 'cost',
+            cap_value: 900,
+            current_value: 950,
+            cap_hit: true,
+            repo: 'repo-x',
+            created_at: '2026-03-31T10:00:00Z',
+          },
+          // Different budget_type — should appear as a separate alert
+          {
+            correlation_id: 'corr-2',
+            pipeline_id: 'pipeline-a',
+            budget_type: 'tokens',
+            cap_value: 500000,
+            current_value: 600000,
+            cap_hit: true,
+            repo: 'repo-x',
+            created_at: '2026-04-01T12:00:00Z',
+          },
+        ],
+        summary: { total_cap_hits: 3 },
+      });
+
+      const res = await request(app).get('/api/costs/alerts').expect(200);
+
+      // Should have 2 alerts (deduped by pipeline_id + budget_type)
+      expect(res.body).toHaveLength(2);
+
+      // First: the latest cost cap hit for pipeline-a
+      const costAlert = res.body.find((a: Record<string, unknown>) => a.id === 'corr-1');
+      expect(costAlert).toBeDefined();
+      expect(costAlert.name).toBe('pipeline-a cost cap');
+      expect(costAlert.threshold_usd).toBe(1000);
+      expect(costAlert.current_spend_usd).toBe(1200);
+      expect(costAlert.utilization_pct).toBe(120);
+      expect(costAlert.is_triggered).toBe(true);
+
+      // Second: the token cap hit for pipeline-a
+      const tokenAlert = res.body.find((a: Record<string, unknown>) => a.id === 'corr-2');
+      expect(tokenAlert).toBeDefined();
+      expect(tokenAlert.name).toBe('pipeline-a tokens cap');
+      expect(tokenAlert.threshold_usd).toBe(500000);
+      expect(tokenAlert.current_spend_usd).toBe(600000);
+      expect(tokenAlert.is_triggered).toBe(true);
+    });
+
     it('should return 500 when pipeline budget projection is unavailable', async () => {
       mockBudgetEnsureFresh.mockRejectedValue(new Error('DB error'));
 
