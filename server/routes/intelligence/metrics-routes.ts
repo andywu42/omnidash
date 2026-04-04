@@ -255,7 +255,13 @@ export function registerMetricsRoutes(router: Router): void {
             COUNT(*) FILTER (WHERE ${agentActions.actionType} IN ('success', 'tool_call'))::numeric /
             NULLIF(COUNT(*), 0)
           `,
-          avgConfidence: sql<number>`0.85::numeric`,
+          avgConfidence: sql<number>`
+            AVG(CASE
+              WHEN ${agentActions.actionType} IN ('success', 'tool_call') THEN 1.0
+              WHEN ${agentActions.actionType} = 'error' THEN 0.0
+              ELSE 0.5
+            END)::numeric
+          `,
         })
         .from(agentActions)
         .where(sql`${agentActions.createdAt} > NOW() - INTERVAL ${safeInterval(interval)}`)
@@ -276,7 +282,7 @@ export function registerMetricsRoutes(router: Router): void {
         }
 
         const successRate = parseFloat(p.successRate?.toString() || '0');
-        const avgConfidence = parseFloat(p.avgConfidence?.toString() || '0.85');
+        const avgConfidence = parseFloat(p.avgConfidence?.toString() || '0');
         const productivityScore = Math.round(successRate * avgConfidence * 100);
 
         return {

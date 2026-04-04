@@ -229,35 +229,8 @@ export function registerPatternRoutes(router: Router): void {
       } catch (tableError: any) {
         const errorCode = tableError?.code || tableError?.errno || '';
         if (errorCode === '42P01' || tableError?.message?.includes('does not exist')) {
-          console.log('⚠ pattern_lineage_nodes table does not exist - returning mock data');
-          const mockPatterns = [
-            {
-              name: 'OAuth Authentication Flow',
-              file_path: '/src/auth/oauth_handler.py',
-              createdAt: new Date().toISOString(),
-            },
-            {
-              name: 'Database Connection Pool',
-              file_path: '/src/db/pool.py',
-              createdAt: new Date(Date.now() - 3600000).toISOString(),
-            },
-            {
-              name: 'Error Handling Middleware',
-              file_path: '/src/middleware/errors.py',
-              createdAt: new Date(Date.now() - 7200000).toISOString(),
-            },
-            {
-              name: 'API Rate Limiter',
-              file_path: '/src/utils/rate_limiter.py',
-              createdAt: new Date(Date.now() - 10800000).toISOString(),
-            },
-            {
-              name: 'Caching Strategy',
-              file_path: '/src/cache/strategy.py',
-              createdAt: new Date(Date.now() - 14400000).toISOString(),
-            },
-          ];
-          return res.json(mockPatterns.slice(0, limit));
+          console.log('⚠ pattern_lineage_nodes table does not exist - returning empty');
+          return res.json([]);
         }
         throw tableError;
       }
@@ -272,65 +245,19 @@ export function registerPatternRoutes(router: Router): void {
         .orderBy(desc(patternLineageNodes.createdAt))
         .limit(limit);
 
-      if (recentPatterns.length > 0) {
-        return res.json(
-          recentPatterns.map((p) => ({
-            name: p.name || 'Unnamed Pattern',
-            file_path: p.file_path || 'Unknown',
-            createdAt: p.createdAt,
-          }))
-        );
-      }
-
-      // Fallback mock data for demo
-      const mockPatterns = [
-        {
-          name: 'OAuth Authentication Flow',
-          file_path: '/src/auth/oauth_handler.py',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          name: 'Database Connection Pool',
-          file_path: '/src/db/pool.py',
-          createdAt: new Date(Date.now() - 3600000).toISOString(),
-        },
-        {
-          name: 'Error Handling Middleware',
-          file_path: '/src/middleware/errors.py',
-          createdAt: new Date(Date.now() - 7200000).toISOString(),
-        },
-        {
-          name: 'API Rate Limiter',
-          file_path: '/src/utils/rate_limiter.py',
-          createdAt: new Date(Date.now() - 10800000).toISOString(),
-        },
-        {
-          name: 'Caching Strategy',
-          file_path: '/src/cache/strategy.py',
-          createdAt: new Date(Date.now() - 14400000).toISOString(),
-        },
-      ];
-
-      res.json(mockPatterns.slice(0, limit));
+      res.json(
+        recentPatterns.map((p) => ({
+          name: p.name || 'Unnamed Pattern',
+          file_path: p.file_path || 'Unknown',
+          createdAt: p.createdAt,
+        }))
+      );
     } catch (error) {
       console.error('Error fetching pattern discovery:', error);
-      res.json([
-        {
-          name: 'OAuth Authentication Flow',
-          file_path: '/src/auth/oauth_handler.py',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          name: 'Database Connection Pool',
-          file_path: '/src/db/pool.py',
-          createdAt: new Date(Date.now() - 3600000).toISOString(),
-        },
-        {
-          name: 'Error Handling Middleware',
-          file_path: '/src/middleware/errors.py',
-          createdAt: new Date(Date.now() - 7200000).toISOString(),
-        },
-      ]);
+      res.status(500).json({
+        error: 'Failed to fetch pattern discovery',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   });
 

@@ -121,72 +121,13 @@ export function registerAgentRoutes(router: Router): void {
         return res.json(transformed);
       } catch (dbError) {
         console.log(
-          '[API] Database query failed, using mock data:',
+          '[API] Database query failed, returning empty:',
           dbError instanceof Error ? dbError.message : 'Unknown error'
         );
       }
 
-      // Final fallback: return mock data for demonstration
-      console.log('[API] Returning mock action data for demonstration');
-
-      const mockActions = [
-        {
-          id: 'mock-action-1',
-          correlationId: 'mock-corr-1',
-          agentName: 'agent-api',
-          actionType: 'tool_call',
-          actionName: 'Read',
-          actionDetails: { file: '/api/routes.ts', lines: 150 },
-          debugMode: false,
-          durationMs: 45,
-          createdAt: new Date(Date.now() - 300000).toISOString(),
-        },
-        {
-          id: 'mock-action-2',
-          correlationId: 'mock-corr-2',
-          agentName: 'agent-frontend',
-          actionType: 'tool_call',
-          actionName: 'Edit',
-          actionDetails: { file: '/components/Dashboard.tsx', changes: 5 },
-          debugMode: false,
-          durationMs: 120,
-          createdAt: new Date(Date.now() - 600000).toISOString(),
-        },
-        {
-          id: 'mock-action-3',
-          correlationId: 'mock-corr-3',
-          agentName: 'agent-database',
-          actionType: 'decision',
-          actionName: 'Schema Migration',
-          actionDetails: { tables: ['users', 'sessions'], strategy: 'incremental' },
-          debugMode: false,
-          durationMs: 230,
-          createdAt: new Date(Date.now() - 900000).toISOString(),
-        },
-        {
-          id: 'mock-action-4',
-          correlationId: 'mock-corr-4',
-          agentName: 'agent-test-intelligence',
-          actionType: 'tool_call',
-          actionName: 'Bash',
-          actionDetails: { command: 'npm test', exitCode: 0 },
-          debugMode: true,
-          durationMs: 3500,
-          createdAt: new Date(Date.now() - 1200000).toISOString(),
-        },
-        {
-          id: 'mock-action-5',
-          correlationId: 'mock-corr-5',
-          agentName: 'agent-code-review',
-          actionType: 'tool_call',
-          actionName: 'Grep',
-          actionDetails: { pattern: 'TODO', matches: 12 },
-          debugMode: false,
-          durationMs: 78,
-          createdAt: new Date(Date.now() - 1500000).toISOString(),
-        },
-      ];
-      return res.json(mockActions.slice(0, limit));
+      // No data available from projection or database
+      return res.json([]);
     } catch (error) {
       console.error('Error in /actions/recent endpoint:', error);
       res.status(500).json({

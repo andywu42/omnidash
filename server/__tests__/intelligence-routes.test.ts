@@ -513,7 +513,10 @@ describe('Intelligence Routes', () => {
 
   describe('GET /api/intelligence/patterns/discovery', () => {
     it('should return pattern discovery results', async () => {
-      // This endpoint is a stub that returns mock data
+      // Table-existence check succeeds, then select chain returns empty
+      vi.mocked(mockDb.execute).mockResolvedValueOnce([{ '?column?': 1 }] as any);
+      vi.mocked(mockDb.limit).mockResolvedValueOnce([] as any);
+
       const response = await request(app)
         .get('/api/intelligence/patterns/discovery?limit=10')
         .expect(200);
@@ -1304,17 +1307,17 @@ describe('Intelligence Routes', () => {
   });
 
   describe('GET /api/intelligence/execution/:correlationId', () => {
-    it('should return mock execution trace when correlation ID matches mock data', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    it('should return 404 when no execution found for the correlation ID', async () => {
+      // Mock data was stripped — non-existent correlation IDs now return 404.
+      // The execution route queries routing decisions (.limit) then actions (.orderBy).
+      vi.mocked(mockDb.limit).mockResolvedValueOnce([] as any);
+      vi.mocked(mockDb.orderBy).mockResolvedValueOnce([] as any);
 
       const response = await request(app)
         .get('/api/intelligence/execution/mock-corr-1')
-        .expect(200);
+        .expect(404);
 
-      expect(response.body).toHaveProperty('correlationId', 'mock-corr-1');
-      expect(Array.isArray(response.body.actions)).toBe(true);
-
-      consoleSpy.mockRestore();
+      expect(response.body).toHaveProperty('error', 'Execution not found');
     });
 
     it('should assemble execution trace from database results', async () => {

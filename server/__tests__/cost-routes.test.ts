@@ -734,20 +734,22 @@ describe('Cost Routes', () => {
   // =========================================================================
 
   describe('GET /api/costs/alerts', () => {
-    it('should return empty array when budget alerts are not yet implemented', async () => {
-      // TODO: update when OMN-2240 ships
-      const res = await request(app).get('/api/costs/alerts').expect(200);
+    it('should return 501 when budget alerts are not yet implemented', async () => {
+      // Budget alerts not yet implemented (tracked in OMN-2240).
+      // Returns 501 to signal the feature is not available.
+      const res = await request(app).get('/api/costs/alerts').expect(501);
 
-      expect(res.body).toEqual([]);
+      expect(res.body).toHaveProperty('alerts', []);
+      expect(res.body).toHaveProperty('message');
     });
 
-    it('should return 200 regardless of DB state', async () => {
-      // alerts endpoint does not use projection at all
+    it('should return 501 regardless of DB state', async () => {
+      // alerts endpoint returns 501 unconditionally — no DB access
       mockEnsureFresh.mockRejectedValue(new Error('DB error'));
 
-      const res = await request(app).get('/api/costs/alerts').expect(200);
+      const res = await request(app).get('/api/costs/alerts').expect(501);
 
-      expect(res.body).toEqual([]);
+      expect(res.body).toHaveProperty('alerts', []);
     });
   });
 

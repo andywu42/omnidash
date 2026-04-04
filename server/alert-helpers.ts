@@ -61,14 +61,10 @@ export async function getAllAlertMetrics(): Promise<AlertMetricsCache> {
     return metricsCache;
   } catch (error) {
     console.error('Error fetching alert metrics:', error);
-    // Return safe defaults on error
-    return {
-      errorRate: 0,
-      injectionSuccessRate: 1.0,
-      avgResponseTime: 0,
-      successRate: 1.0,
-      timestamp: Date.now(),
-    };
+    // Propagate null to signal data unavailability — callers must handle
+    throw new Error(
+      `Alert metrics unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 

@@ -191,6 +191,11 @@ class RegistryEventEmitterClass extends EventEmitter {
    * @param interval - Interval in milliseconds between events (default: 5000)
    */
   startMockEvents(interval = 5000): void {
+    if (process.env.DEMO_MODE !== 'true') {
+      debugLog('Mock events skipped — DEMO_MODE is not enabled');
+      return;
+    }
+
     if (this.isRunning) {
       debugLog('Mock events already running');
       return;

@@ -320,14 +320,12 @@ router.get('/token-usage', async (req, res) => {
 // ============================================================================
 
 router.get('/alerts', (_req, res) => {
-  try {
-    // Budget alerts table not yet implemented (tracked in OMN-2240).
-    // Returns empty array so clients fall back to their graceful-degradation path.
-    return res.json([]);
-  } catch (error) {
-    console.error('[costs] Error fetching alerts:', error);
-    return res.status(500).json({ error: 'Failed to fetch budget alerts' });
-  }
+  // Budget alerts not yet implemented (tracked in OMN-2240).
+  // Returns 501 with empty data to signal the feature is not available.
+  return res.status(501).json({
+    alerts: [],
+    message: 'Budget alerts not yet implemented (OMN-2240)',
+  });
 });
 
 export default router;
