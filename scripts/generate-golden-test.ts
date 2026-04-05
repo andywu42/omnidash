@@ -11,7 +11,7 @@
  *     --handler projectNewEvent
  */
 
-import { writeFileSync, openSync, closeSync, constants } from 'fs';
+import { writeSync, openSync, closeSync, constants } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parseArgs } from 'util';
@@ -39,11 +39,11 @@ const slug = values.topic
 
 const outPath = resolve(__dirname, `../server/__tests__/golden-chain/${slug}.golden.test.ts`);
 
-// Atomic check-and-create: open with O_CREAT|O_EXCL to avoid TOCTOU race
+// Atomic check-and-create: open with O_CREAT|O_EXCL to avoid TOCTOU race.
+// Keep the fd open and write through it so no second open can race.
 let fd: number;
 try {
   fd = openSync(outPath, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL);
-  closeSync(fd);
 } catch (err: unknown) {
   if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
     console.error(`File already exists: ${outPath}`);
@@ -153,6 +153,10 @@ describe(\`Golden Chain: \${TOPIC} -> \${TABLE}\`, () => {
 });
 `;
 
-writeFileSync(outPath, template);
+try {
+  writeSync(fd, template);
+} finally {
+  closeSync(fd);
+}
 // eslint-disable-next-line no-console
 console.log(`Generated: ${outPath}`);
