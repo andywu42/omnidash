@@ -120,10 +120,7 @@ export default function SpeedCategory() {
     isError: extractionError,
   } = useQuery({
     queryKey: queryKeys.extraction.summary(),
-    queryFn: async () => {
-      const result = await extractionSource.summary();
-      return result.data;
-    },
+    queryFn: () => extractionSource.summary(),
     refetchInterval: 30_000,
   });
 
