@@ -1,8 +1,7 @@
 /**
  * CostSource Tests (OMN-2242)
  *
- * Tests for the cost trend data source with API-first + mock-fallback.
- * Follows the same pattern as baselines-source.test.ts.
+ * Tests for the cost trend data source — API-only, no mock fallbacks.
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
@@ -143,7 +142,6 @@ describe('CostSource', () => {
   beforeEach(async () => {
     resetFetchMock();
     vi.clearAllMocks();
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.resetModules();
     const mod = await import('../cost-source');
     costSource = mod.costSource;
@@ -158,7 +156,7 @@ describe('CostSource', () => {
   // ===========================
 
   describe('summary()', () => {
-    it('returns API data when total_tokens > 0', async () => {
+    it('returns API data when response is ok', async () => {
       const mockData = createValidSummary();
       setupFetchMock(new Map([['/api/costs/summary', createMockResponse(mockData)]]));
 
@@ -168,48 +166,23 @@ describe('CostSource', () => {
       expect(result.model_count).toBe(5);
     });
 
-    it('returns empty API data as-is by default (no mockOnEmpty)', async () => {
+    it('returns empty API data as-is', async () => {
       const emptyData = createValidSummary({ total_tokens: 0 });
       setupFetchMock(new Map([['/api/costs/summary', createMockResponse(emptyData)]]));
 
       const result = await costSource.summary();
 
       expect(result.total_tokens).toBe(0);
-      expect(costSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock when summary is empty and mockOnEmpty is true', async () => {
-      const emptyData = createValidSummary({ total_tokens: 0, session_count: 0 });
-      setupFetchMock(new Map([['/api/costs/summary', createMockResponse(emptyData)]]));
-
-      const result = await costSource.summary('7d', { mockOnEmpty: true });
-
-      expect(result.total_tokens).toBeGreaterThan(0);
-    });
-
-    it('falls back to mock on HTTP error', async () => {
+    it('throws on HTTP error', async () => {
       setupFetchMock(
         new Map([
           ['/api/costs/summary', createMockResponse(null, { status: 500, statusText: 'Error' })],
         ])
       );
 
-      const result = await costSource.summary('7d', { fallbackToMock: true });
-
-      expect(result.total_tokens).toBeGreaterThan(0);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('API unavailable for summary')
-      );
-    });
-
-    it('throws on HTTP error when fallback disabled', async () => {
-      setupFetchMock(
-        new Map([
-          ['/api/costs/summary', createMockResponse(null, { status: 500, statusText: 'Error' })],
-        ])
-      );
-
-      await expect(costSource.summary('7d', { fallbackToMock: false })).rejects.toThrow();
+      await expect(costSource.summary()).rejects.toThrow('HTTP 500');
     });
   });
 
@@ -228,32 +201,18 @@ describe('CostSource', () => {
       expect(result[0].total_cost_usd).toBe(12.5);
     });
 
-    it('returns empty array as-is by default (no mockOnEmpty)', async () => {
+    it('returns empty array as-is', async () => {
       setupFetchMock(new Map([['/api/costs/trend', createMockResponse([])]]));
 
       const result = await costSource.trend();
 
       expect(result).toHaveLength(0);
-      expect(costSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock when array is empty and mockOnEmpty is true', async () => {
-      setupFetchMock(new Map([['/api/costs/trend', createMockResponse([])]]));
-
-      const result = await costSource.trend('7d', { mockOnEmpty: true });
-
-      expect(result.length).toBeGreaterThan(0);
-    });
-
-    it('falls back to mock on network error', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/costs/trend', new Error('Connection refused')]]));
 
-      const result = await costSource.trend('7d', { fallbackToMock: true });
-
-      expect(result.length).toBeGreaterThan(0);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('API unavailable for trend')
-      );
+      await expect(costSource.trend()).rejects.toThrow();
     });
   });
 
@@ -272,32 +231,18 @@ describe('CostSource', () => {
       expect(result[0].model_name).toBe('claude-3-opus');
     });
 
-    it('returns empty array as-is by default (no mockOnEmpty)', async () => {
+    it('returns empty array as-is', async () => {
       setupFetchMock(new Map([['/api/costs/by-model', createMockResponse([])]]));
 
       const result = await costSource.byModel();
 
       expect(result).toHaveLength(0);
-      expect(costSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock when array is empty and mockOnEmpty is true', async () => {
-      setupFetchMock(new Map([['/api/costs/by-model', createMockResponse([])]]));
-
-      const result = await costSource.byModel({ mockOnEmpty: true });
-
-      expect(result.length).toBeGreaterThan(0);
-    });
-
-    it('falls back to mock on network error', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/costs/by-model', new Error('Network error')]]));
 
-      const result = await costSource.byModel({ fallbackToMock: true });
-
-      expect(result.length).toBeGreaterThan(0);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('API unavailable for by-model')
-      );
+      await expect(costSource.byModel()).rejects.toThrow();
     });
   });
 
@@ -316,23 +261,10 @@ describe('CostSource', () => {
       expect(result[0].repo_name).toBe('repo-orchestrator');
     });
 
-    it('falls back to mock when array is empty and mockOnEmpty is true', async () => {
-      setupFetchMock(new Map([['/api/costs/by-repo', createMockResponse([])]]));
-
-      const result = await costSource.byRepo({ mockOnEmpty: true });
-
-      expect(result.length).toBeGreaterThan(0);
-    });
-
-    it('falls back to mock on network error', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/costs/by-repo', new Error('Connection refused')]]));
 
-      const result = await costSource.byRepo({ fallbackToMock: true });
-
-      expect(result.length).toBeGreaterThan(0);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('API unavailable for by-repo')
-      );
+      await expect(costSource.byRepo()).rejects.toThrow();
     });
   });
 
@@ -351,23 +283,10 @@ describe('CostSource', () => {
       expect(result[0].pattern_name).toBe('Error Retry with Backoff');
     });
 
-    it('falls back to mock when array is empty and mockOnEmpty is true', async () => {
-      setupFetchMock(new Map([['/api/costs/by-pattern', createMockResponse([])]]));
-
-      const result = await costSource.byPattern({ mockOnEmpty: true });
-
-      expect(result.length).toBeGreaterThan(0);
-    });
-
-    it('falls back to mock on network error', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/costs/by-pattern', new Error('Network error')]]));
 
-      const result = await costSource.byPattern({ fallbackToMock: true });
-
-      expect(result.length).toBeGreaterThan(0);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('API unavailable for by-pattern')
-      );
+      await expect(costSource.byPattern()).rejects.toThrow();
     });
   });
 
@@ -386,32 +305,18 @@ describe('CostSource', () => {
       expect(result[0].prompt_tokens).toBe(24_000);
     });
 
-    it('returns empty array as-is by default (no mockOnEmpty)', async () => {
+    it('returns empty array as-is', async () => {
       setupFetchMock(new Map([['/api/costs/token-usage', createMockResponse([])]]));
 
       const result = await costSource.tokenUsage();
 
       expect(result).toHaveLength(0);
-      expect(costSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock when array is empty and mockOnEmpty is true', async () => {
-      setupFetchMock(new Map([['/api/costs/token-usage', createMockResponse([])]]));
-
-      const result = await costSource.tokenUsage('7d', { mockOnEmpty: true });
-
-      expect(result.length).toBeGreaterThan(0);
-    });
-
-    it('falls back to mock on network error', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/costs/token-usage', new Error('Connection refused')]]));
 
-      const result = await costSource.tokenUsage('7d', { fallbackToMock: true });
-
-      expect(result.length).toBeGreaterThan(0);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('API unavailable for token-usage')
-      );
+      await expect(costSource.tokenUsage()).rejects.toThrow();
     });
   });
 
@@ -431,92 +336,22 @@ describe('CostSource', () => {
       expect(result[1].is_triggered).toBe(true);
     });
 
-    it('returns empty array as-is by default (no mockOnEmpty)', async () => {
+    it('returns empty array as-is', async () => {
       setupFetchMock(new Map([['/api/costs/alerts', createMockResponse([])]]));
 
       const result = await costSource.alerts();
 
       expect(result).toHaveLength(0);
-      expect(costSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock when array is empty and mockOnEmpty is true', async () => {
-      setupFetchMock(new Map([['/api/costs/alerts', createMockResponse([])]]));
-
-      const result = await costSource.alerts({ mockOnEmpty: true });
-
-      expect(result.length).toBeGreaterThan(0);
-    });
-
-    it('falls back to mock on network error', async () => {
-      setupFetchMock(new Map([['/api/costs/alerts', new Error('Network error')]]));
-
-      const result = await costSource.alerts({ fallbackToMock: true });
-
-      expect(result.length).toBeGreaterThan(0);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('API unavailable for alerts')
-      );
-    });
-
-    it('throws on HTTP error when fallback disabled', async () => {
+    it('throws on HTTP error', async () => {
       setupFetchMock(
         new Map([
           ['/api/costs/alerts', createMockResponse(null, { status: 500, statusText: 'Error' })],
         ])
       );
 
-      await expect(costSource.alerts({ fallbackToMock: false })).rejects.toThrow();
-    });
-  });
-
-  // ===========================
-  // isUsingMockData tracking
-  // ===========================
-
-  describe('isUsingMockData', () => {
-    it('reports false when all endpoints return real data', async () => {
-      const summary = createValidSummary();
-      const trend = createValidTrend();
-      setupFetchMock(
-        new Map([
-          ['/api/costs/summary', createMockResponse(summary)],
-          ['/api/costs/trend', createMockResponse(trend)],
-        ])
-      );
-
-      await costSource.summary();
-      await costSource.trend();
-
-      expect(costSource.isUsingMockData).toBe(false);
-    });
-
-    it('reports true when any endpoint falls back to mock', async () => {
-      const summary = createValidSummary();
-      setupFetchMock(
-        new Map([
-          ['/api/costs/summary', createMockResponse(summary)],
-          ['/api/costs/trend', new Error('Network error')],
-        ])
-      );
-
-      await costSource.summary();
-      await costSource.trend('7d', { fallbackToMock: true });
-
-      expect(costSource.isUsingMockData).toBe(true);
-    });
-
-    it('clears mock flag when endpoint recovers', async () => {
-      // First call: API fails
-      setupFetchMock(new Map([['/api/costs/trend', new Error('Network error')]]));
-      await costSource.trend('7d', { fallbackToMock: true });
-      expect(costSource.isUsingMockData).toBe(true);
-
-      // Second call: API recovers
-      const trend = createValidTrend();
-      setupFetchMock(new Map([['/api/costs/trend', createMockResponse(trend)]]));
-      await costSource.trend();
-      expect(costSource.isUsingMockData).toBe(false);
+      await expect(costSource.alerts()).rejects.toThrow('HTTP 500');
     });
   });
 });

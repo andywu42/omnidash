@@ -1,0 +1,39 @@
+# .github/workflows/golden-chain-coverage.yml
+# Golden Chain Coverage Gate (OMN-7495)
+#
+# Runs golden projection tests in unit mode and verifies Tier 1 topic coverage.
+# Triggers on changes to projection code, golden tests, topic manifest, or schema.
+name: Golden Chain Coverage Gate
+
+on:
+  pull_request:
+    paths:
+      - 'server/read-model-consumer.ts'
+      - 'server/consumers/read-model/**'
+      - 'migrations/**/*.sql'
+      - 'server/__tests__/golden-chain/**'
+      - 'topics.yaml'
+      - 'shared/intelligence-schema.ts'
+  push:
+    branches: [main]
+
+jobs:
+  golden-chain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Run golden projection tests (unit mode)
+        run: npx vitest run server/__tests__/golden-chain/ --reporter=verbose
+        env:
+          GOLDEN_MODE: unit
+
+      - name: Verify projection coverage gate
+        run: npx vitest run server/__tests__/golden-chain/coverage-gate.test.ts --reporter=verbose

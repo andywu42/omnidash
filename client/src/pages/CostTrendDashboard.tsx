@@ -19,7 +19,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { useDemoMode } from '@/contexts/DemoModeContext';
 import { costSource } from '@/lib/data-sources/cost-source';
 import { queryKeys } from '@/lib/query-keys';
 import { DemoBanner } from '@/components/DemoBanner';
@@ -714,7 +713,6 @@ function BudgetAlertCards({ data }: { data: BudgetAlert[] | undefined }) {
  */
 export default function CostTrendDashboard() {
   const queryClient = useQueryClient();
-  const { isDemoMode } = useDemoMode();
 
   // ---------------------------------------------------------------------------
   // Local state
@@ -727,7 +725,7 @@ export default function CostTrendDashboard() {
   // Data Fetching
   // ---------------------------------------------------------------------------
 
-  const fetchOpts = { includeEstimated, demoMode: isDemoMode };
+  const fetchOpts = { includeEstimated };
 
   const {
     data: summary,
@@ -795,7 +793,7 @@ export default function CostTrendDashboard() {
     isError: alertsError,
   } = useQuery<BudgetAlert[]>({
     queryKey: queryKeys.costs.alerts(),
-    queryFn: () => costSource.alerts(fetchOpts),
+    queryFn: () => costSource.alerts(),
     refetchInterval: 30_000,
   });
 
@@ -865,11 +863,6 @@ export default function CostTrendDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-4 flex-wrap">
-          {costSource.isUsingMockData && (
-            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-              Demo Data
-            </Badge>
-          )}
           <EstimatedToggle
             checked={includeEstimated}
             onCheckedChange={setIncludeEstimated}
