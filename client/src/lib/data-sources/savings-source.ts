@@ -94,29 +94,6 @@ export interface SavingsAllResponse {
   agentComparisons: AgentComparison[];
   timeSeriesData: TimeSeriesData[];
   providerSavings: ProviderSavings[];
-  isMock: boolean;
-}
-
-// ---------------------------------------------------------------------------
-// Mock data generators (fallback when API unavailable)
-// ---------------------------------------------------------------------------
-
-function getMockMetrics(): SavingsMetrics {
-  return {
-    totalSavings: 0,
-    monthlySavings: 0,
-    weeklySavings: 0,
-    dailySavings: 0,
-    intelligenceRuns: 0,
-    baselineRuns: 0,
-    avgTokensPerRun: 0,
-    avgComputePerRun: 0,
-    costPerToken: 0,
-    costPerCompute: 0,
-    efficiencyGain: 0,
-    timeSaved: 0,
-    dataAvailable: false,
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -125,78 +102,35 @@ function getMockMetrics(): SavingsMetrics {
 
 class SavingsSource {
   private baseUrl = buildApiUrl('/api/savings');
-  private _usingMock = false;
-
-  get isUsingMockData(): boolean {
-    return this._usingMock;
-  }
 
   async fetchMetrics(timeRange: string): Promise<SavingsMetrics> {
-    try {
-      const response = await fetch(`${this.baseUrl}/metrics?timeRange=${timeRange}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      this._usingMock = false;
-      return data;
-    } catch {
-      console.warn('[SavingsSource] API unavailable for metrics, returning empty');
-      this._usingMock = true;
-      return getMockMetrics();
-    }
+    const response = await fetch(`${this.baseUrl}/metrics?timeRange=${timeRange}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
   }
 
   async fetchAgentComparisons(timeRange: string): Promise<AgentComparison[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/agents?timeRange=${timeRange}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        this._usingMock = false;
-        return data;
-      }
-      this._usingMock = true;
-      return [];
-    } catch {
-      console.warn('[SavingsSource] API unavailable for agent comparisons');
-      this._usingMock = true;
-      return [];
-    }
+    const response = await fetch(`${this.baseUrl}/agents?timeRange=${timeRange}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data)) throw new Error('Malformed response: expected array');
+    return data;
   }
 
   async fetchTimeSeries(timeRange: string): Promise<TimeSeriesData[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/timeseries?timeRange=${timeRange}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        this._usingMock = false;
-        return data;
-      }
-      this._usingMock = true;
-      return [];
-    } catch {
-      console.warn('[SavingsSource] API unavailable for time series');
-      this._usingMock = true;
-      return [];
-    }
+    const response = await fetch(`${this.baseUrl}/timeseries?timeRange=${timeRange}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data)) throw new Error('Malformed response: expected array');
+    return data;
   }
 
   async fetchProviderSavings(timeRange: string): Promise<ProviderSavings[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/providers?timeRange=${timeRange}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        this._usingMock = false;
-        return data;
-      }
-      this._usingMock = true;
-      return [];
-    } catch {
-      console.warn('[SavingsSource] API unavailable for provider savings');
-      this._usingMock = true;
-      return [];
-    }
+    const response = await fetch(`${this.baseUrl}/providers?timeRange=${timeRange}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data)) throw new Error('Malformed response: expected array');
+    return data;
   }
 
   async fetchAll(timeRange: string): Promise<SavingsAllResponse> {
@@ -212,7 +146,6 @@ class SavingsSource {
       agentComparisons: agents,
       timeSeriesData: timeseries,
       providerSavings: providers,
-      isMock: this._usingMock,
     };
   }
 }

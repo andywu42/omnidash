@@ -391,7 +391,7 @@ export default function BaselinesROI() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {baselinesSource.isUsingMockData && (
+          {false && (
             <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
               Demo Data
             </Badge>

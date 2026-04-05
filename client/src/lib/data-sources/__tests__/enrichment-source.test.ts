@@ -49,48 +49,10 @@ describe('EnrichmentSource', () => {
   });
 
   // ===========================
-  // isUsingMockData initial state
   // ===========================
 
-  describe('isUsingMockData', () => {
-    it('returns false initially before any fetch', () => {
-      expect(enrichmentSource.isUsingMockData).toBe(false);
-    });
-
-    it('returns true when summary() falls back to mock on network error', async () => {
-      setupFetchMock(new Map([['/api/enrichment/summary', new Error('Connection refused')]]));
-
-      await enrichmentSource.summary('7d', { fallbackToMock: true });
-
-      expect(enrichmentSource.isUsingMockData).toBe(true);
-    });
-
-    it('returns false when summary() returns real data', async () => {
-      const mockData = createValidSummary();
-      setupFetchMock(new Map([['/api/enrichment/summary', createMockResponse(mockData)]]));
-
-      await enrichmentSource.summary('7d');
-
-      expect(enrichmentSource.isUsingMockData).toBe(false);
-    });
-  });
-
   // ===========================
-  // clearMockState()
   // ===========================
-
-  describe('clearMockState()', () => {
-    it('clears mock endpoint tracking so isUsingMockData resets to false', async () => {
-      // Force mock state by failing the fetch
-      setupFetchMock(new Map([['/api/enrichment/summary', new Error('Network error')]]));
-      await enrichmentSource.summary('7d', { fallbackToMock: true });
-      expect(enrichmentSource.isUsingMockData).toBe(true);
-
-      // Clear should reset the flag
-      enrichmentSource.clearMockState();
-      expect(enrichmentSource.isUsingMockData).toBe(false);
-    });
-  });
 
   // ===========================
   // summary() tests
@@ -105,53 +67,6 @@ describe('EnrichmentSource', () => {
 
       expect(result.total_enrichments).toBe(4_820);
       expect(result.hit_rate).toBe(0.73);
-      expect(enrichmentSource.isUsingMockData).toBe(false);
-    });
-
-    it('falls back to mock on HTTP error and marks endpoint as mock', async () => {
-      setupFetchMock(
-        new Map([
-          [
-            '/api/enrichment/summary',
-            createMockResponse(null, { status: 500, statusText: 'Internal Server Error' }),
-          ],
-        ])
-      );
-
-      const result = await enrichmentSource.summary('7d', { fallbackToMock: true });
-
-      // Mock data always has non-zero enrichments
-      expect(result.total_enrichments).toBeGreaterThan(0);
-      expect(enrichmentSource.isUsingMockData).toBe(true);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('[EnrichmentSource] fetch failed for summary'),
-        expect.anything()
-      );
-    });
-
-    it('falls back to mock when total_enrichments is 0 and mockOnEmpty is true', async () => {
-      const emptyData = createValidSummary({ total_enrichments: 0 });
-      setupFetchMock(new Map([['/api/enrichment/summary', createMockResponse(emptyData)]]));
-
-      const result = await enrichmentSource.summary('7d', { mockOnEmpty: true });
-
-      expect(result.total_enrichments).toBeGreaterThan(0);
-      expect(enrichmentSource.isUsingMockData).toBe(true);
-      // Structural assertions: verify the returned object has the expected EnrichmentSummary shape
-      expect(result).toHaveProperty('hit_rate');
-      expect(result).toHaveProperty('error_rate');
-      expect(result).toHaveProperty('total_enrichments');
-      expect(result).toHaveProperty('net_tokens_saved');
-    });
-
-    it('returns live empty result when total_enrichments is 0 and mockOnEmpty is false (default)', async () => {
-      const emptyData = createValidSummary({ total_enrichments: 0 });
-      setupFetchMock(new Map([['/api/enrichment/summary', createMockResponse(emptyData)]]));
-
-      const result = await enrichmentSource.summary('7d');
-
-      expect(result.total_enrichments).toBe(0);
-      expect(enrichmentSource.isUsingMockData).toBe(false);
     });
   });
 });

@@ -138,26 +138,16 @@ describe('BaselinesSource', () => {
       expect(result.avg_cost_savings).toBe(0.24);
     });
 
-    it('returns empty API data as-is by default (no mockOnEmpty)', async () => {
+    it('returns empty API data as-is when total_comparisons is 0', async () => {
       const emptyData = createValidSummary({ total_comparisons: 0 });
       setupFetchMock(new Map([['/api/baselines/summary', createMockResponse(emptyData)]]));
 
       const result = await baselinesSource.summary();
 
       expect(result.total_comparisons).toBe(0);
-      expect(baselinesSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock when total_comparisons is 0 and mockOnEmpty is true', async () => {
-      const emptyData = createValidSummary({ total_comparisons: 0 });
-      setupFetchMock(new Map([['/api/baselines/summary', createMockResponse(emptyData)]]));
-
-      const result = await baselinesSource.summary({ mockOnEmpty: true });
-
-      expect(result.total_comparisons).toBeGreaterThan(0);
-    });
-
-    it('falls back to mock on HTTP error', async () => {
+    it('throws on HTTP error', async () => {
       setupFetchMock(
         new Map([
           [
@@ -167,25 +157,7 @@ describe('BaselinesSource', () => {
         ])
       );
 
-      const result = await baselinesSource.summary({ fallbackToMock: true });
-
-      expect(result.total_comparisons).toBeGreaterThan(0);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('API unavailable for summary')
-      );
-    });
-
-    it('throws on HTTP error when fallback disabled', async () => {
-      setupFetchMock(
-        new Map([
-          [
-            '/api/baselines/summary',
-            createMockResponse(null, { status: 500, statusText: 'Error' }),
-          ],
-        ])
-      );
-
-      await expect(baselinesSource.summary({ fallbackToMock: false })).rejects.toThrow();
+      await expect(baselinesSource.summary()).rejects.toThrow();
     });
   });
 
@@ -204,32 +176,18 @@ describe('BaselinesSource', () => {
       expect(result[0].pattern_name).toBe('Error Retry with Backoff');
     });
 
-    it('returns empty array as-is by default (no mockOnEmpty)', async () => {
+    it('returns empty array when API returns empty', async () => {
       setupFetchMock(new Map([['/api/baselines/comparisons', createMockResponse([])]]));
 
       const result = await baselinesSource.comparisons();
 
       expect(result).toHaveLength(0);
-      expect(baselinesSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock when array is empty and mockOnEmpty is true', async () => {
-      setupFetchMock(new Map([['/api/baselines/comparisons', createMockResponse([])]]));
-
-      const result = await baselinesSource.comparisons({ mockOnEmpty: true });
-
-      expect(result.length).toBeGreaterThan(0);
-    });
-
-    it('falls back to mock on network error', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/baselines/comparisons', new Error('Connection refused')]]));
 
-      const result = await baselinesSource.comparisons({ fallbackToMock: true });
-
-      expect(result.length).toBeGreaterThan(0);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('API unavailable for comparisons')
-      );
+      await expect(baselinesSource.comparisons()).rejects.toThrow();
     });
   });
 
@@ -248,29 +206,12 @@ describe('BaselinesSource', () => {
       expect(result[0].avg_cost_savings).toBe(0.2);
     });
 
-    it('returns empty array as-is by default (no mockOnEmpty)', async () => {
+    it('returns empty array when API returns empty', async () => {
       setupFetchMock(new Map([['/api/baselines/trend', createMockResponse([])]]));
 
       const result = await baselinesSource.trend();
 
       expect(result).toHaveLength(0);
-      expect(baselinesSource.isUsingMockData).toBe(false);
-    });
-
-    it('falls back to mock when array is empty and mockOnEmpty is true', async () => {
-      setupFetchMock(new Map([['/api/baselines/trend', createMockResponse([])]]));
-
-      const result = await baselinesSource.trend(undefined, { mockOnEmpty: true });
-
-      expect(result.length).toBeGreaterThan(0);
-    });
-
-    it('falls back to mock when response is not an array and mockOnEmpty is true', async () => {
-      setupFetchMock(new Map([['/api/baselines/trend', createMockResponse({ notArray: true })]]));
-
-      const result = await baselinesSource.trend(undefined, { mockOnEmpty: true });
-
-      expect(result.length).toBeGreaterThan(0);
     });
   });
 
@@ -289,82 +230,18 @@ describe('BaselinesSource', () => {
       expect(result[0].action).toBe('promote');
     });
 
-    it('returns empty array as-is by default (no mockOnEmpty)', async () => {
+    it('returns empty array when API returns empty', async () => {
       setupFetchMock(new Map([['/api/baselines/breakdown', createMockResponse([])]]));
 
       const result = await baselinesSource.breakdown();
 
       expect(result).toHaveLength(0);
-      expect(baselinesSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock when array is empty and mockOnEmpty is true', async () => {
-      setupFetchMock(new Map([['/api/baselines/breakdown', createMockResponse([])]]));
-
-      const result = await baselinesSource.breakdown({ mockOnEmpty: true });
-
-      expect(result.length).toBeGreaterThan(0);
-    });
-
-    it('falls back to mock on network error', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/baselines/breakdown', new Error('Network error')]]));
 
-      const result = await baselinesSource.breakdown({ fallbackToMock: true });
-
-      expect(result.length).toBeGreaterThan(0);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('API unavailable for breakdown')
-      );
-    });
-  });
-
-  // ===========================
-  // isUsingMockData tracking
-  // ===========================
-
-  describe('isUsingMockData', () => {
-    it('reports false when all endpoints return real data', async () => {
-      const summary = createValidSummary();
-      const comparisons = createValidComparisons();
-      setupFetchMock(
-        new Map([
-          ['/api/baselines/summary', createMockResponse(summary)],
-          ['/api/baselines/comparisons', createMockResponse(comparisons)],
-        ])
-      );
-
-      await baselinesSource.summary();
-      await baselinesSource.comparisons();
-
-      expect(baselinesSource.isUsingMockData).toBe(false);
-    });
-
-    it('reports true when any endpoint falls back to mock', async () => {
-      const summary = createValidSummary();
-      setupFetchMock(
-        new Map([
-          ['/api/baselines/summary', createMockResponse(summary)],
-          ['/api/baselines/comparisons', new Error('Network error')],
-        ])
-      );
-
-      await baselinesSource.summary();
-      await baselinesSource.comparisons({ fallbackToMock: true });
-
-      expect(baselinesSource.isUsingMockData).toBe(true);
-    });
-
-    it('clears mock flag when endpoint recovers', async () => {
-      // First call: API fails
-      setupFetchMock(new Map([['/api/baselines/comparisons', new Error('Network error')]]));
-      await baselinesSource.comparisons({ fallbackToMock: true });
-      expect(baselinesSource.isUsingMockData).toBe(true);
-
-      // Second call: API recovers
-      const comparisons = createValidComparisons();
-      setupFetchMock(new Map([['/api/baselines/comparisons', createMockResponse(comparisons)]]));
-      await baselinesSource.comparisons();
-      expect(baselinesSource.isUsingMockData).toBe(false);
+      await expect(baselinesSource.breakdown()).rejects.toThrow();
     });
   });
 });

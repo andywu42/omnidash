@@ -12,7 +12,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { useDemoMode } from '@/contexts/DemoModeContext';
 import { useFeatureStaleness } from '@/hooks/useStaleness';
 import { StalenessIndicator } from '@/components/StalenessIndicator';
 import { effectivenessSource } from '@/lib/data-sources/effectiveness-source';
@@ -72,7 +71,6 @@ import {
  * for real-time responsiveness.
  */
 export default function EffectivenessSummary() {
-  const { isDemoMode } = useDemoMode();
   const effectivenessLastUpdated = useFeatureStaleness('effectiveness');
 
   // ---------------------------------------------------------------------------
@@ -118,7 +116,7 @@ export default function EffectivenessSummary() {
     refetch: refetchSummary,
   } = useQuery<SummaryType>({
     queryKey: queryKeys.effectiveness.summary(),
-    queryFn: () => effectivenessSource.summary({ demoMode: isDemoMode }),
+    queryFn: () => effectivenessSource.summary(),
     refetchInterval: 15_000,
   });
 
@@ -129,7 +127,7 @@ export default function EffectivenessSummary() {
     refetch: refetchThrottle,
   } = useQuery<ThrottleStatus>({
     queryKey: queryKeys.effectiveness.throttle(),
-    queryFn: () => effectivenessSource.throttleStatus({ demoMode: isDemoMode }),
+    queryFn: () => effectivenessSource.throttleStatus(),
     refetchInterval: 15_000,
   });
 
@@ -139,7 +137,7 @@ export default function EffectivenessSummary() {
     isError: trendError,
   } = useQuery<EffectivenessTrendPoint[]>({
     queryKey: [...queryKeys.effectiveness.trend(), trendDays],
-    queryFn: () => effectivenessSource.trend(trendDays, { demoMode: isDemoMode }),
+    queryFn: () => effectivenessSource.trend(trendDays),
     refetchInterval: 15_000,
   });
 
@@ -264,7 +262,7 @@ export default function EffectivenessSummary() {
         </div>
         <div className="flex items-center gap-3">
           <StalenessIndicator lastUpdated={effectivenessLastUpdated} label="Effectiveness" />
-          {effectivenessSource.isUsingMockData && (
+          {false && (
             <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
               Demo Data
             </Badge>

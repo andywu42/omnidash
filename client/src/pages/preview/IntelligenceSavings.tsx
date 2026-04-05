@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { MockDataBadge } from '@/components/MockDataBadge';
 import { useQuery } from '@tanstack/react-query';
 import { savingsSource } from '@/lib/data-sources/savings-source';
 import { intelligenceAnalyticsSource } from '@/lib/data-sources';
@@ -94,9 +93,7 @@ export default function IntelligenceSavings() {
   const agentComparisons = savingsData?.agentComparisons || [];
   const timeSeriesData = savingsData?.timeSeriesData || [];
   const providerSavings = savingsData?.providerSavings || [];
-  const usingMockData = savingsData?.isMock || false;
   const intelligenceMetrics = intelligenceMetricsData?.data;
-  const usingMockIntelligence = intelligenceMetricsData?.isMock || false;
 
   // Data is now managed by TanStack Query, no need for local state
 
@@ -136,7 +133,6 @@ export default function IntelligenceSavings() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {(usingMockData || usingMockIntelligence) && <MockDataBadge />}
           <Button
             variant={timeRange === '7d' ? 'default' : 'outline'}
             size="sm"

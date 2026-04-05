@@ -15,7 +15,6 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { insightsSource } from '@/lib/data-sources/insights-source';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { useDemoMode } from '@/contexts/DemoModeContext';
 import { DemoBanner } from '@/components/DemoBanner';
 import { MetricCard } from '@/components/MetricCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -254,8 +253,6 @@ function formatTimeAgo(isoDate: string): string {
 // ============================================================================
 
 export default function LearnedInsights() {
-  const { isDemoMode } = useDemoMode();
-
   // ---------------------------------------------------------------------------
   // UI state
   // ---------------------------------------------------------------------------
@@ -274,7 +271,7 @@ export default function LearnedInsights() {
     isFetching: summaryFetching,
   } = useQuery<InsightsSummary>({
     queryKey: queryKeys.insights.summary(),
-    queryFn: () => insightsSource.summary({ demoMode: isDemoMode }),
+    queryFn: () => insightsSource.summary(),
     refetchInterval: 30_000,
   });
 
@@ -284,7 +281,7 @@ export default function LearnedInsights() {
     isError: trendError,
   } = useQuery<InsightsTrendPoint[]>({
     queryKey: queryKeys.insights.trend(),
-    queryFn: () => insightsSource.trend({ demoMode: isDemoMode }),
+    queryFn: () => insightsSource.trend(),
     refetchInterval: 30_000,
   });
 
@@ -373,7 +370,7 @@ export default function LearnedInsights() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {insightsSource.isUsingMockData && (
+          {false && (
             <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
               Demo Data
             </Badge>

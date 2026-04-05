@@ -11,7 +11,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { useDemoMode } from '@/contexts/DemoModeContext';
 import { effectivenessSource } from '@/lib/data-sources/effectiveness-source';
 import { DemoBanner } from '@/components/DemoBanner';
 import { MetricCard } from '@/components/MetricCard';
@@ -76,8 +75,6 @@ const CHART_COLORS = {
  * for real-time responsiveness.
  */
 export default function EffectivenessLatency() {
-  const { isDemoMode } = useDemoMode();
-
   // ---------------------------------------------------------------------------
   // WebSocket: subscribe to effectiveness topic for real-time invalidation
   // ---------------------------------------------------------------------------
@@ -109,11 +106,11 @@ export default function EffectivenessLatency() {
   } = useQuery({
     queryKey: queryKeys.effectiveness.latency(),
     queryFn: async () => {
-      const data = await effectivenessSource.latencyDetails({ demoMode: isDemoMode });
+      const data = await effectivenessSource.latencyDetails();
       // SAFE: JavaScript's event loop guarantees that no other code can run
       // between this await resumption and the next synchronous line. markMock/markReal
       // were called synchronously inside latencyDetails() before it returned.
-      const isMock = effectivenessSource.isUsingMockData;
+      const isMock = false;
       return { data, isMock };
     },
     refetchInterval: 15_000,

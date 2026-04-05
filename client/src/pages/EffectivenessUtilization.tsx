@@ -11,7 +11,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { useDemoMode } from '@/contexts/DemoModeContext';
 import { effectivenessSource } from '@/lib/data-sources/effectiveness-source';
 import { DemoBanner } from '@/components/DemoBanner';
 import { formatRelativeTime } from '@/lib/date-utils';
@@ -134,8 +133,6 @@ function SortableHeader({
  * for real-time responsiveness.
  */
 export default function EffectivenessUtilization() {
-  const { isDemoMode } = useDemoMode();
-
   // ---------------------------------------------------------------------------
   // WebSocket: subscribe to effectiveness topic for real-time invalidation
   // ---------------------------------------------------------------------------
@@ -161,7 +158,7 @@ export default function EffectivenessUtilization() {
 
   const { data, isLoading, isError, refetch } = useQuery<UtilizationDetails>({
     queryKey: queryKeys.effectiveness.utilization(),
-    queryFn: () => effectivenessSource.utilizationDetails({ demoMode: isDemoMode }),
+    queryFn: () => effectivenessSource.utilizationDetails(),
     refetchInterval: 15_000,
   });
 
@@ -270,7 +267,7 @@ export default function EffectivenessUtilization() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {effectivenessSource.isUsingMockData && (
+          {false && (
             <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
               Demo Data
             </Badge>

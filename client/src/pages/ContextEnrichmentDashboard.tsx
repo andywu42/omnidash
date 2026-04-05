@@ -409,9 +409,7 @@ export default function ContextEnrichmentDashboard() {
   // Clear stale mock-endpoint state whenever the time window changes so that
   // the previous window's mock/real determination does not carry over into the
   // new window's parallel fetches (fixes singleton race condition).
-  useEffect(() => {
-    enrichmentSource.clearMockState();
-  }, [timeWindow]);
+  useEffect(() => {}, [timeWindow]);
 
   // ── Queries ──────────────────────────────────────────────────────────────
 
@@ -422,7 +420,7 @@ export default function ContextEnrichmentDashboard() {
     refetch: refetchSummary,
   } = useQuery({
     queryKey: queryKeys.enrichment.summary(timeWindow),
-    queryFn: () => enrichmentSource.summary(timeWindow, { demoMode: isDemoMode }),
+    queryFn: () => enrichmentSource.summary(timeWindow),
     refetchInterval: getPollingInterval(POLLING_INTERVAL_MEDIUM),
     staleTime: 30_000,
   });
@@ -434,7 +432,7 @@ export default function ContextEnrichmentDashboard() {
     refetch: refetchChannel,
   } = useQuery({
     queryKey: queryKeys.enrichment.byChannel(timeWindow),
-    queryFn: () => enrichmentSource.byChannel(timeWindow, { demoMode: isDemoMode }),
+    queryFn: () => enrichmentSource.byChannel(timeWindow),
     refetchInterval: getPollingInterval(POLLING_INTERVAL_SLOW),
     staleTime: 60_000,
   });
@@ -446,7 +444,7 @@ export default function ContextEnrichmentDashboard() {
     refetch: refetchLatency,
   } = useQuery({
     queryKey: queryKeys.enrichment.latencyDistribution(timeWindow),
-    queryFn: () => enrichmentSource.latencyDistribution(timeWindow, { demoMode: isDemoMode }),
+    queryFn: () => enrichmentSource.latencyDistribution(timeWindow),
     refetchInterval: getPollingInterval(POLLING_INTERVAL_SLOW),
     staleTime: 60_000,
   });
@@ -458,7 +456,7 @@ export default function ContextEnrichmentDashboard() {
     refetch: refetchToken,
   } = useQuery({
     queryKey: queryKeys.enrichment.tokenSavings(timeWindow),
-    queryFn: () => enrichmentSource.tokenSavings(timeWindow, { demoMode: isDemoMode }),
+    queryFn: () => enrichmentSource.tokenSavings(timeWindow),
     refetchInterval: getPollingInterval(POLLING_INTERVAL_SLOW),
     staleTime: 60_000,
   });
@@ -470,7 +468,7 @@ export default function ContextEnrichmentDashboard() {
     refetch: refetchSim,
   } = useQuery({
     queryKey: queryKeys.enrichment.similarityQuality(timeWindow),
-    queryFn: () => enrichmentSource.similarityQuality(timeWindow, { demoMode: isDemoMode }),
+    queryFn: () => enrichmentSource.similarityQuality(timeWindow),
     refetchInterval: getPollingInterval(POLLING_INTERVAL_SLOW),
     staleTime: 60_000,
   });
@@ -482,7 +480,7 @@ export default function ContextEnrichmentDashboard() {
     refetch: refetchAlerts,
   } = useQuery({
     queryKey: queryKeys.enrichment.inflationAlerts(timeWindow),
-    queryFn: () => enrichmentSource.inflationAlerts(timeWindow, { demoMode: isDemoMode }),
+    queryFn: () => enrichmentSource.inflationAlerts(timeWindow),
     refetchInterval: getPollingInterval(POLLING_INTERVAL_MEDIUM),
     staleTime: 30_000,
   });
@@ -523,7 +521,7 @@ export default function ContextEnrichmentDashboard() {
 
   useEffect(() => {
     if (allSettled) {
-      setIsUsingMockData(enrichmentSource.isUsingMockData);
+      setIsUsingMockData(false);
     }
   }, [allSettled, timeWindow]);
 

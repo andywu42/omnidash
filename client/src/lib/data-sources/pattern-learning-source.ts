@@ -1,11 +1,9 @@
 /**
  * Pattern Learning Data Source
  *
- * Fetches PATLEARN artifacts from API endpoints with graceful fallback
- * to mock data when the database is unavailable.
+ * Fetches PATLEARN artifacts from API endpoints.
  *
  * Part of OMN-1699: Pattern Dashboard with Evidence-Based Score Debugging
- * Updated for OMN-1798: Graceful degradation support
  */
 
 import {
@@ -17,7 +15,6 @@ import {
   type LifecycleState,
   type SimilarPatternEntry,
 } from '../schemas/api-response-schemas';
-import { getMockPatterns, getMockSummary } from '../mock-data/patlearn-mock';
 
 // ===========================
 // Types
@@ -34,22 +31,6 @@ export interface PatlearnListParams {
 export interface PatlearnDetailResponse {
   artifact: PatlearnArtifact;
   similarPatterns: SimilarPatternEntry[];
-}
-
-/**
- * Options for data source methods
- */
-export interface PatlearnFetchOptions {
-  /**
-   * If true, fallback to mock data on error instead of throwing.
-   * Default: false (errors are thrown; set to true for demo/graceful degradation)
-   */
-  fallbackToMock?: boolean;
-  /**
-   * When true, skip the API call entirely and return canned demo data.
-   * Used when global demo mode is active (OMN-2298).
-   */
-  demoMode?: boolean;
 }
 
 // ===========================
@@ -85,7 +66,7 @@ function safeParseArray<T>(
   }
 
   return data
-    .map((item, index) => {
+    .map((item: unknown, index: number) => {
       const result = schema.safeParse(item);
       if (!result.success) {
         console.warn(`[${context}] Item ${index} failed validation`);
@@ -93,7 +74,7 @@ function safeParseArray<T>(
       }
       return result.data;
     })
-    .filter((item): item is T => item !== null);
+    .filter((item: T | null | undefined): item is T => item !== null);
 }
 
 function safeParseOne<T>(
@@ -117,37 +98,10 @@ function safeParseOne<T>(
 class PatternLearningSource {
   private baseUrl = '/api/intelligence/patterns/patlearn';
 
-  /** Track if we're currently using mock data (for UI indicator) */
-  private _isUsingMockData = false;
-
-  /** Check if last fetch used mock data */
-  get isUsingMockData(): boolean {
-    return this._isUsingMockData;
-  }
-
   /**
    * List patterns with filtering
-   * Falls back to mock data if database is unavailable (graceful degradation)
    */
-  async list(
-    params: PatlearnListParams = {},
-    options: PatlearnFetchOptions = {}
-  ): Promise<PatlearnArtifact[]> {
-    const { fallbackToMock = false, demoMode = false } = options;
-    if (demoMode) {
-      this._isUsingMockData = true;
-      let mockPatterns = getMockPatterns();
-      if (params.state) {
-        const states = Array.isArray(params.state) ? params.state : [params.state];
-        mockPatterns = mockPatterns.filter((p) =>
-          states.includes(p.lifecycleState as LifecycleState)
-        );
-      }
-      const offset = params.offset ?? 0;
-      const limit = params.limit ?? 50;
-      return mockPatterns.slice(offset, offset + limit);
-    }
-
+  async list(params: PatlearnListParams = {}): Promise<PatlearnArtifact[]> {
     try {
       const query = new URLSearchParams();
 
@@ -168,40 +122,8 @@ class PatternLearningSource {
       }
 
       const data = await response.json();
-      const patterns = safeParseArray(patlearnArtifactSchema, data, 'patlearn-list');
-
-      // Successfully fetched from API
-      this._isUsingMockData = false;
-      return patterns;
+      return safeParseArray(patlearnArtifactSchema, data, 'patlearn-list');
     } catch (error) {
-      // Graceful degradation: fallback to mock data
-      if (fallbackToMock) {
-        console.warn(
-          '[PatternLearningSource] Database unavailable, using demo data:',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        this._isUsingMockData = true;
-
-        // Apply filtering to mock data
-        let mockPatterns = getMockPatterns();
-
-        // Filter by state if specified
-        if (params.state) {
-          const states = Array.isArray(params.state) ? params.state : [params.state];
-          mockPatterns = mockPatterns.filter((p) =>
-            states.includes(p.lifecycleState as LifecycleState)
-          );
-        }
-
-        // Apply pagination
-        const offset = params.offset ?? 0;
-        const limit = params.limit ?? 50;
-        mockPatterns = mockPatterns.slice(offset, offset + limit);
-
-        return mockPatterns;
-      }
-
-      // Re-throw if fallback disabled
       if (error instanceof PatlearnFetchError) {
         throw error;
       }
@@ -211,18 +133,8 @@ class PatternLearningSource {
 
   /**
    * Get summary metrics
-   * Falls back to mock data if database is unavailable (graceful degradation)
    */
-  async summary(
-    window: '24h' | '7d' | '30d' = '24h',
-    options: PatlearnFetchOptions = {}
-  ): Promise<PatlearnSummary | null> {
-    const { fallbackToMock = false, demoMode = false } = options;
-    if (demoMode) {
-      this._isUsingMockData = true;
-      return getMockSummary(window);
-    }
-
+  async summary(window: '24h' | '7d' | '30d' = '24h'): Promise<PatlearnSummary | null> {
     try {
       const response = await fetch(`${this.baseUrl}/summary?window=${window}`);
 
@@ -231,23 +143,8 @@ class PatternLearningSource {
       }
 
       const data = await response.json();
-      const summary = safeParseOne(patlearnSummarySchema, data, 'patlearn-summary');
-
-      // Successfully fetched from API
-      this._isUsingMockData = false;
-      return summary;
+      return safeParseOne(patlearnSummarySchema, data, 'patlearn-summary');
     } catch (error) {
-      // Graceful degradation: fallback to mock data
-      if (fallbackToMock) {
-        console.warn(
-          '[PatternLearningSource] Database unavailable for summary, using demo data:',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        this._isUsingMockData = true;
-        return getMockSummary(window);
-      }
-
-      // Re-throw if fallback disabled
       if (error instanceof PatlearnFetchError) {
         throw error;
       }
@@ -301,9 +198,6 @@ class PatternLearningSource {
   // Derived Views (Convenience Methods)
   // ===========================
 
-  /**
-   * Get candidates (candidate + provisional states)
-   */
   async candidates(limit = 50): Promise<PatlearnArtifact[]> {
     return this.list({
       state: ['candidate', 'provisional'],
@@ -313,9 +207,6 @@ class PatternLearningSource {
     });
   }
 
-  /**
-   * Get validated patterns (learned)
-   */
   async validated(limit = 50): Promise<PatlearnArtifact[]> {
     return this.list({
       state: 'validated',
@@ -325,9 +216,6 @@ class PatternLearningSource {
     });
   }
 
-  /**
-   * Get deprecated patterns
-   */
   async deprecated(limit = 50): Promise<PatlearnArtifact[]> {
     return this.list({
       state: 'deprecated',
@@ -337,9 +225,6 @@ class PatternLearningSource {
     });
   }
 
-  /**
-   * Get all patterns sorted by score
-   */
   async topPatterns(limit = 20): Promise<PatlearnArtifact[]> {
     return this.list({
       limit,

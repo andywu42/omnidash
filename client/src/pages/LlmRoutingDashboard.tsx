@@ -755,9 +755,7 @@ export default function LlmRoutingDashboard() {
   // clean slate.  Runs before any queries fire (queries are declared below),
   // preventing stale mock flags from a previous mount bleeding into the first
   // render cycle of this mount.
-  useEffect(() => {
-    llmRoutingSource.clearMockState();
-  }, []);
+  useEffect(() => {}, []);
 
   // Invalidate all LLM routing queries on WebSocket LLM_ROUTING_INVALIDATE event
   useWebSocket({
@@ -784,7 +782,7 @@ export default function LlmRoutingDashboard() {
     refetch: refetchSummary,
   } = useQuery({
     queryKey: queryKeys.llmRouting.summary(timeWindow),
-    queryFn: () => llmRoutingSource.summary(timeWindow, {}),
+    queryFn: () => llmRoutingSource.summary(timeWindow),
     refetchInterval: getPollingInterval(POLLING_INTERVAL_MEDIUM),
     staleTime: 30_000,
   });
@@ -796,7 +794,7 @@ export default function LlmRoutingDashboard() {
     refetch: refetchLatency,
   } = useQuery({
     queryKey: queryKeys.llmRouting.latency(timeWindow),
-    queryFn: () => llmRoutingSource.latency(timeWindow, {}),
+    queryFn: () => llmRoutingSource.latency(timeWindow),
     refetchInterval: getPollingInterval(POLLING_INTERVAL_SLOW),
     staleTime: 60_000,
   });
@@ -808,7 +806,7 @@ export default function LlmRoutingDashboard() {
     refetch: refetchVersion,
   } = useQuery({
     queryKey: queryKeys.llmRouting.byVersion(timeWindow),
-    queryFn: () => llmRoutingSource.byVersion(timeWindow, {}),
+    queryFn: () => llmRoutingSource.byVersion(timeWindow),
     refetchInterval: getPollingInterval(POLLING_INTERVAL_SLOW),
     staleTime: 60_000,
   });
@@ -820,7 +818,7 @@ export default function LlmRoutingDashboard() {
     refetch: refetchDisagreements,
   } = useQuery({
     queryKey: queryKeys.llmRouting.disagreements(timeWindow),
-    queryFn: () => llmRoutingSource.disagreements(timeWindow, {}),
+    queryFn: () => llmRoutingSource.disagreements(timeWindow),
     refetchInterval: getPollingInterval(POLLING_INTERVAL_MEDIUM),
     staleTime: 30_000,
   });
@@ -832,7 +830,7 @@ export default function LlmRoutingDashboard() {
     refetch: refetchTrend,
   } = useQuery({
     queryKey: queryKeys.llmRouting.trend(timeWindow),
-    queryFn: () => llmRoutingSource.trend(timeWindow, {}),
+    queryFn: () => llmRoutingSource.trend(timeWindow),
     refetchInterval: getPollingInterval(POLLING_INTERVAL_SLOW),
     staleTime: 60_000,
   });
@@ -886,7 +884,7 @@ export default function LlmRoutingDashboard() {
     void refetchByOmninodeMode();
   };
 
-  // llmRoutingSource.isUsingMockData reads a mutable Set on the singleton.
+  // false reads a mutable Set on the singleton.
   // Mock state is only set on network/HTTP errors — empty responses no longer
   // trigger mock fallback (mock-on-empty was removed in OMN-2330).
   const [isUsingMockData, setIsUsingMockData] = useState(false);
@@ -907,11 +905,10 @@ export default function LlmRoutingDashboard() {
   //   a mock fallback; it will not appear for empty-but-successful responses.
   useEffect(() => {
     if (allSettled) {
-      setIsUsingMockData(llmRoutingSource.isUsingMockData);
+      setIsUsingMockData(false);
     } else {
       // Queries are in-flight (first load or a window switch that caused a
       // cache miss). Clear and hide the banner until settled.
-      llmRoutingSource.clearMockState();
       setIsUsingMockData(false);
     }
   }, [allSettled, timeWindow]);

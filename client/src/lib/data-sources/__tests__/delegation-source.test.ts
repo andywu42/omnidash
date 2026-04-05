@@ -1,14 +1,7 @@
 /**
  * DelegationSource Tests (OMN-2284)
  *
- * Tests for the delegation metrics data source with API-first +
- * mock-fallback behavior. Follows the same pattern as llm-routing-source.test.ts.
- *
- * Coverage:
- *  - API-first + mock-fallback on network/HTTP errors
- *  - Empty-response mock promotion (mockOnEmpty flag)
- *  - Singleton mock-state tracking (isUsingMockData / clearMockState)
- *  - Primary vs non-primary endpoint classification
+ * Tests for the delegation metrics data source with API-first behavior.
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
@@ -55,7 +48,6 @@ describe('DelegationSource', () => {
     resetFetchMock();
     vi.clearAllMocks();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    // Reset module cache to get a fresh singleton each test.
     vi.resetModules();
     const mod = await import('../delegation-source');
     delegationSource = mod.delegationSource;
@@ -65,99 +57,8 @@ describe('DelegationSource', () => {
     vi.restoreAllMocks();
   });
 
-  // ===========================
-  // isUsingMockData initial state
-  // ===========================
-
-  describe('isUsingMockData', () => {
-    it('returns false initially before any fetch', () => {
-      expect(delegationSource.isUsingMockData).toBe(false);
-    });
-
-    it('returns true when summary() falls back to mock on network error', async () => {
-      setupFetchMock(new Map([['/api/delegation/summary', new Error('Connection refused')]]));
-
-      await delegationSource.summary('7d', { fallbackToMock: true });
-
-      expect(delegationSource.isUsingMockData).toBe(true);
-    });
-
-    it('returns false when summary() returns real data', async () => {
-      const mockData = createValidSummary();
-      setupFetchMock(new Map([['/api/delegation/summary', createMockResponse(mockData)]]));
-
-      await delegationSource.summary('7d');
-
-      expect(delegationSource.isUsingMockData).toBe(false);
-    });
-
-    it('returns true when byTaskType() falls back to mock on HTTP 500', async () => {
-      setupFetchMock(
-        new Map([
-          [
-            '/api/delegation/by-task-type',
-            createMockResponse(null, { status: 500, statusText: 'Internal Server Error' }),
-          ],
-        ])
-      );
-
-      await delegationSource.byTaskType('7d', { fallbackToMock: true });
-
-      expect(delegationSource.isUsingMockData).toBe(true);
-    });
-
-    it('returns true when qualityGates() falls back to mock on network error', async () => {
-      setupFetchMock(new Map([['/api/delegation/quality-gates', new Error('Network timeout')]]));
-
-      await delegationSource.qualityGates('7d', { fallbackToMock: true });
-
-      expect(delegationSource.isUsingMockData).toBe(true);
-    });
-
-    it('returns false when only trend() uses mock (not a primary endpoint)', async () => {
-      // summary, byTaskType, and qualityGates all succeed with real data
-      const summaryData = createValidSummary();
-      setupFetchMock(
-        new Map([
-          ['/api/delegation/summary', createMockResponse(summaryData)],
-          ['/api/delegation/by-task-type', createMockResponse([])],
-          ['/api/delegation/quality-gates', createMockResponse([])],
-          ['/api/delegation/trend', new Error('Network error')],
-        ])
-      );
-
-      await delegationSource.summary('7d');
-      await delegationSource.byTaskType('7d');
-      await delegationSource.qualityGates('7d');
-      await delegationSource.trend('7d', { fallbackToMock: true });
-
-      // trend is not a primary signal, so the flag stays false.
-      expect(delegationSource.isUsingMockData).toBe(false);
-    });
-  });
-
-  // ===========================
-  // clearMockState()
-  // ===========================
-
-  describe('clearMockState()', () => {
-    it('clears mock endpoint tracking so isUsingMockData resets to false', async () => {
-      // Force mock state via a network failure.
-      setupFetchMock(new Map([['/api/delegation/summary', new Error('Network error')]]));
-      await delegationSource.summary('7d', { fallbackToMock: true });
-      expect(delegationSource.isUsingMockData).toBe(true);
-
-      delegationSource.clearMockState();
-      expect(delegationSource.isUsingMockData).toBe(false);
-    });
-  });
-
-  // ===========================
-  // summary() tests
-  // ===========================
-
   describe('summary()', () => {
-    it('returns real API data when total_delegations > 0', async () => {
+    it('returns real API data on success', async () => {
       const mockData = createValidSummary();
       setupFetchMock(new Map([['/api/delegation/summary', createMockResponse(mockData)]]));
 
@@ -165,10 +66,9 @@ describe('DelegationSource', () => {
 
       expect(result.total_delegations).toBe(2_940);
       expect(result.quality_gate_pass_rate).toBe(0.83);
-      expect(delegationSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock on HTTP error and marks endpoint as mock', async () => {
+    it('throws on HTTP error', async () => {
       setupFetchMock(
         new Map([
           [
@@ -178,62 +78,15 @@ describe('DelegationSource', () => {
         ])
       );
 
-      const result = await delegationSource.summary('7d', { fallbackToMock: true });
-
-      // Mock summary always has non-zero delegations.
-      expect(result.total_delegations).toBeGreaterThan(0);
-      expect(delegationSource.isUsingMockData).toBe(true);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('[DelegationSource] fetch failed for summary'),
-        expect.anything()
-      );
+      await expect(delegationSource.summary('7d')).rejects.toThrow();
     });
 
-    it('falls back to mock when total_delegations is 0 and mockOnEmpty is true', async () => {
-      const emptyData = createValidSummary({ total_delegations: 0 });
-      setupFetchMock(new Map([['/api/delegation/summary', createMockResponse(emptyData)]]));
-
-      const result = await delegationSource.summary('7d', { mockOnEmpty: true });
-
-      expect(result.total_delegations).toBeGreaterThan(0);
-      expect(delegationSource.isUsingMockData).toBe(true);
-      // Shape assertions
-      expect(result).toHaveProperty('quality_gate_pass_rate');
-      expect(result).toHaveProperty('total_cost_savings_usd');
-      expect(result).toHaveProperty('shadow_divergence_rate');
-      expect(result).toHaveProperty('counts');
-      expect(result).toHaveProperty('quality_gate_trend');
-    });
-
-    it('returns live empty result when total_delegations is 0 and mockOnEmpty is false (default)', async () => {
-      const emptyData = createValidSummary({ total_delegations: 0 });
-      setupFetchMock(new Map([['/api/delegation/summary', createMockResponse(emptyData)]]));
-
-      const result = await delegationSource.summary('7d');
-
-      expect(result.total_delegations).toBe(0);
-      expect(delegationSource.isUsingMockData).toBe(false);
-    });
-
-    it('throws when fallbackToMock is false and fetch fails', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/delegation/summary', new Error('Network error')]]));
 
-      await expect(delegationSource.summary('7d', { fallbackToMock: false })).rejects.toThrow(
-        'Failed to fetch delegation summary'
-      );
-    });
-
-    it('returns mock data immediately when demoMode is true', async () => {
-      const result = await delegationSource.summary('7d', { demoMode: true });
-
-      expect(result.total_delegations).toBeGreaterThan(0);
-      expect(delegationSource.isUsingMockData).toBe(true);
+      await expect(delegationSource.summary('7d')).rejects.toThrow();
     });
   });
-
-  // ===========================
-  // byTaskType() tests
-  // ===========================
 
   describe('byTaskType()', () => {
     it('returns real API data on success', async () => {
@@ -255,40 +108,14 @@ describe('DelegationSource', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].task_type).toBe('code-review');
-      expect(delegationSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock on network error', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/delegation/by-task-type', new Error('Connection refused')]]));
 
-      const result = await delegationSource.byTaskType('7d', { fallbackToMock: true });
-
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
-      expect(delegationSource.isUsingMockData).toBe(true);
-    });
-
-    it('falls back to mock when result is empty and mockOnEmpty is true', async () => {
-      setupFetchMock(new Map([['/api/delegation/by-task-type', createMockResponse([])]]));
-
-      const result = await delegationSource.byTaskType('7d', { mockOnEmpty: true });
-
-      expect(result.length).toBeGreaterThan(0);
-      expect(delegationSource.isUsingMockData).toBe(true);
-    });
-
-    it('throws when fallbackToMock is false and fetch fails', async () => {
-      setupFetchMock(new Map([['/api/delegation/by-task-type', new Error('Network error')]]));
-
-      await expect(delegationSource.byTaskType('7d', { fallbackToMock: false })).rejects.toThrow(
-        'Failed to fetch delegation by task type'
-      );
+      await expect(delegationSource.byTaskType('7d')).rejects.toThrow();
     });
   });
-
-  // ===========================
-  // costSavings() tests
-  // ===========================
 
   describe('costSavings()', () => {
     it('returns real API data on success', async () => {
@@ -309,37 +136,17 @@ describe('DelegationSource', () => {
       expect(result[0].date).toBe('2026-02-17');
     });
 
-    it('falls back to mock on network error', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/delegation/cost-savings', new Error('Network error')]]));
 
-      const result = await delegationSource.costSavings('7d', { fallbackToMock: true });
-
-      expect(Array.isArray(result)).toBe(true);
-    });
-
-    it('throws when fallbackToMock is false and fetch fails', async () => {
-      setupFetchMock(new Map([['/api/delegation/cost-savings', new Error('Network error')]]));
-
-      await expect(delegationSource.costSavings('7d', { fallbackToMock: false })).rejects.toThrow(
-        'Failed to fetch delegation cost savings'
-      );
+      await expect(delegationSource.costSavings('7d')).rejects.toThrow();
     });
   });
-
-  // ===========================
-  // qualityGates() tests
-  // ===========================
 
   describe('qualityGates()', () => {
     it('returns real API data on success', async () => {
       const data = [
-        {
-          date: '2026-02-17',
-          pass_rate: 0.83,
-          total_checked: 420,
-          passed: 349,
-          failed: 71,
-        },
+        { date: '2026-02-17', pass_rate: 0.83, total_checked: 420, passed: 349, failed: 71 },
       ];
       setupFetchMock(new Map([['/api/delegation/quality-gates', createMockResponse(data)]]));
 
@@ -347,10 +154,9 @@ describe('DelegationSource', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].pass_rate).toBe(0.83);
-      expect(delegationSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock on HTTP 502', async () => {
+    it('throws on HTTP error', async () => {
       setupFetchMock(
         new Map([
           [
@@ -360,25 +166,9 @@ describe('DelegationSource', () => {
         ])
       );
 
-      const result = await delegationSource.qualityGates('7d', { fallbackToMock: true });
-
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
-      expect(delegationSource.isUsingMockData).toBe(true);
-    });
-
-    it('throws when fallbackToMock is false and fetch fails', async () => {
-      setupFetchMock(new Map([['/api/delegation/quality-gates', new Error('Network error')]]));
-
-      await expect(delegationSource.qualityGates('7d', { fallbackToMock: false })).rejects.toThrow(
-        'Failed to fetch delegation quality gates'
-      );
+      await expect(delegationSource.qualityGates('7d')).rejects.toThrow();
     });
   });
-
-  // ===========================
-  // shadowDivergence() tests
-  // ===========================
 
   describe('shadowDivergence()', () => {
     it('returns real API data on success', async () => {
@@ -400,32 +190,14 @@ describe('DelegationSource', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].primary_agent).toBe('python-fastapi-expert');
-      // shadow-divergence is not a primary signal.
-      expect(delegationSource.isUsingMockData).toBe(false);
     });
 
-    it('falls back to mock on network error', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/delegation/shadow-divergence', new Error('Network error')]]));
 
-      const result = await delegationSource.shadowDivergence('7d', { fallbackToMock: true });
-
-      expect(Array.isArray(result)).toBe(true);
-      // shadow-divergence is not a primary signal.
-      expect(delegationSource.isUsingMockData).toBe(false);
-    });
-
-    it('throws when fallbackToMock is false and fetch fails', async () => {
-      setupFetchMock(new Map([['/api/delegation/shadow-divergence', new Error('Network error')]]));
-
-      await expect(
-        delegationSource.shadowDivergence('7d', { fallbackToMock: false })
-      ).rejects.toThrow('Failed to fetch delegation shadow divergence');
+      await expect(delegationSource.shadowDivergence('7d')).rejects.toThrow();
     });
   });
-
-  // ===========================
-  // trend() tests
-  // ===========================
 
   describe('trend()', () => {
     it('returns real API data on success', async () => {
@@ -446,20 +218,10 @@ describe('DelegationSource', () => {
       expect(result[0].date).toBe('2026-02-17');
     });
 
-    it('falls back to mock on network error', async () => {
+    it('throws on network error', async () => {
       setupFetchMock(new Map([['/api/delegation/trend', new Error('Network error')]]));
 
-      const result = await delegationSource.trend('7d', { fallbackToMock: true });
-
-      expect(Array.isArray(result)).toBe(true);
-    });
-
-    it('throws when fallbackToMock is false and fetch fails', async () => {
-      setupFetchMock(new Map([['/api/delegation/trend', new Error('Network error')]]));
-
-      await expect(delegationSource.trend('7d', { fallbackToMock: false })).rejects.toThrow(
-        'Failed to fetch delegation trend'
-      );
+      await expect(delegationSource.trend('7d')).rejects.toThrow();
     });
   });
 });

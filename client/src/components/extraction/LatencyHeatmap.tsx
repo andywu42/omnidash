@@ -9,7 +9,6 @@
 
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useDemoMode } from '@/contexts/DemoModeContext';
 import { extractionSource } from '@/lib/data-sources/extraction-source';
 import { queryKeys } from '@/lib/query-keys';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -48,22 +47,20 @@ interface LatencyHeatmapProps {
 }
 
 export function LatencyHeatmap({ timeWindow = '24h', onMockStateChange }: LatencyHeatmapProps) {
-  const { isDemoMode } = useDemoMode();
-
   const {
     data: result,
     isLoading,
     error,
   } = useQuery({
-    queryKey: [...queryKeys.extraction.latency(timeWindow), isDemoMode],
-    queryFn: () => extractionSource.latencyHeatmap(timeWindow, { demoMode: isDemoMode }),
+    queryKey: [...queryKeys.extraction.latency(timeWindow)],
+    queryFn: () => extractionSource.latencyHeatmap(timeWindow),
     refetchInterval: 30_000,
   });
 
-  const data = result?.data;
+  const data = result;
 
   // Propagate isMock to parent after render to avoid setState-during-render.
-  const isMock = result?.isMock ?? false;
+  const isMock = false;
   useEffect(() => {
     onMockStateChange?.(isMock);
   }, [isMock, onMockStateChange]);
