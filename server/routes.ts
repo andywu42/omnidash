@@ -124,6 +124,8 @@ import securityPostureRoutes from './security-posture-routes';
 import { alertHistoryRoutes } from './alert-history-routes';
 // Integration Catalog dashboard routes (feature-hookup Phase 3)
 import integrationCatalogRoutes from './integration-catalog-routes';
+// System Activity dashboard routes
+import { systemActivityRoutes } from './system-activity-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -344,6 +346,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Integration Catalog dashboard routes (feature-hookup Phase 3)
   app.use('/api/integrations', integrationCatalogRoutes);
+
+  // System Activity dashboard routes
+  app.use('/api/system-activity', systemActivityRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.

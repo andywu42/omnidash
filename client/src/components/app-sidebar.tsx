@@ -346,6 +346,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
     label: 'System',
     items: [
       {
+        title: 'System Activity',
+        url: '/system-activity',
+        icon: Activity,
+        description: 'Build loop, pipeline runs, agent sessions, and delegation activity',
+      },
+      {
         title: 'Node Registry',
         url: '/registry',
         icon: Globe,

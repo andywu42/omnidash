@@ -99,6 +99,7 @@ const ROUTE_TO_API: Record<string, string | null> = {
   '/status': '/api/status',
   '/skills': '/api/skills',
   '/wiring-status': '/api/wiring-status',
+  '/system-activity': '/api/system-activity',
   // Category landing pages and showcase are frontend-only — no API route needed
   '/category/speed': null,
   '/category/success': null,

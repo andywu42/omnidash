@@ -135,6 +135,8 @@ import SecurityPostureDashboard from '@/pages/SecurityPostureDashboard';
 import AlertHistoryDashboard from '@/pages/AlertHistoryDashboard';
 // Integration Catalog dashboard (feature-hookup Phase 3)
 import IntegrationCatalogDashboard from '@/pages/IntegrationCatalogDashboard';
+// System Activity dashboard
+import SystemActivityDashboard from '@/pages/SystemActivityDashboard';
 
 // Phase 2: Category landing pages (OMN-2181)
 import SpeedCategory from '@/pages/SpeedCategory';
@@ -338,6 +340,9 @@ function Router() {
 
       {/* Alert History dashboard */}
       <Route path="/alert-history" component={AlertHistoryDashboard} />
+
+      {/* System Activity dashboard */}
+      <Route path="/system-activity" component={SystemActivityDashboard} />
 
       {/* Preview routes */}
       <Route path="/preview/analytics" component={EnhancedAnalytics} />
