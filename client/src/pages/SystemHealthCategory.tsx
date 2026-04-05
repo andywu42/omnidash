@@ -211,7 +211,7 @@ export default function SystemHealthCategory() {
     data: nodeSnapshot,
     isLoading: nodeLoading,
     isConnected,
-  } = useProjectionStream<NodeRegistryPayload>('node-registry');
+  } = useProjectionStream<NodeRegistryPayload>('node-registry-db');
 
   const nodeData = nodeSnapshot?.payload ?? null;
 

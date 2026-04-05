@@ -197,7 +197,7 @@ describe('Health Probe Contract Compliance (OMN-5820)', () => {
           validation: validationView,
           patterns: patternsView,
           intent: intentView,
-          'node-registry': nodeRegistryView,
+          'node-registry-db': nodeRegistryView,
           baselines: baselinesView,
           'cost-metrics': costView,
         };

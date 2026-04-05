@@ -325,7 +325,7 @@ function probeIntents(): DataSourceInfo {
  */
 function probeNodeRegistry(): DataSourceInfo {
   try {
-    const view = projectionService.getView<NodeRegistryPayload>('node-registry');
+    const view = projectionService.getView<NodeRegistryPayload>('node-registry-db');
     if (!view) {
       return { status: 'mock', reason: 'no_projection_registered' };
     }

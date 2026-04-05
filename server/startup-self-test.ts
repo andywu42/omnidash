@@ -104,12 +104,27 @@ const HINTS: Record<string, string> = {
 function probeEventBus(): SelfTestEntry {
   try {
     const view = projectionService.getView<EventBusPayload>('event-bus');
-    if (!view) return { source: 'eventBus', status: 'EMPTY', detail: 'no projection registered', hint: HINTS.eventBus };
+    if (!view)
+      return {
+        source: 'eventBus',
+        status: 'EMPTY',
+        detail: 'no projection registered',
+        hint: HINTS.eventBus,
+      };
     const snapshot = view.getSnapshot();
     if (!snapshot?.payload || snapshot.payload.totalEventsIngested === 0) {
-      return { source: 'eventBus', status: 'EMPTY', detail: 'no events ingested', hint: HINTS.eventBus };
+      return {
+        source: 'eventBus',
+        status: 'EMPTY',
+        detail: 'no events ingested',
+        hint: HINTS.eventBus,
+      };
     }
-    return { source: 'eventBus', status: 'LIVE', detail: `${snapshot.payload.totalEventsIngested} events` };
+    return {
+      source: 'eventBus',
+      status: 'LIVE',
+      detail: `${snapshot.payload.totalEventsIngested} events`,
+    };
   } catch (err) {
     return { source: 'eventBus', status: 'ERROR', detail: String(err) };
   }
@@ -120,13 +135,28 @@ function probeEffectiveness(): SelfTestEntry {
     const view = projectionService.getView<EffectivenessMetricsPayload>('effectiveness-metrics') as
       | EffectivenessMetricsProjection
       | undefined;
-    if (!view) return { source: 'effectiveness', status: 'EMPTY', detail: 'no projection registered', hint: HINTS.effectiveness };
+    if (!view)
+      return {
+        source: 'effectiveness',
+        status: 'EMPTY',
+        detail: 'no projection registered',
+        hint: HINTS.effectiveness,
+      };
     const snapshot = view.getSnapshot();
     const summary = snapshot?.payload?.summary;
     if (!summary || summary.total_sessions === 0) {
-      return { source: 'effectiveness', status: 'EMPTY', detail: 'no sessions', hint: HINTS.effectiveness };
+      return {
+        source: 'effectiveness',
+        status: 'EMPTY',
+        detail: 'no sessions',
+        hint: HINTS.effectiveness,
+      };
     }
-    return { source: 'effectiveness', status: 'LIVE', detail: `${summary.total_sessions} sessions` };
+    return {
+      source: 'effectiveness',
+      status: 'LIVE',
+      detail: `${summary.total_sessions} sessions`,
+    };
   } catch (err) {
     return { source: 'effectiveness', status: 'ERROR', detail: String(err) };
   }
@@ -137,7 +167,13 @@ function probeExtraction(): SelfTestEntry {
     const view = projectionService.getView<ExtractionMetricsPayload>('extraction-metrics') as
       | ExtractionMetricsProjection
       | undefined;
-    if (!view) return { source: 'extraction', status: 'EMPTY', detail: 'no projection registered', hint: HINTS.extraction };
+    if (!view)
+      return {
+        source: 'extraction',
+        status: 'EMPTY',
+        detail: 'no projection registered',
+        hint: HINTS.extraction,
+      };
     const snapshot = view.getSnapshot();
     const summary = snapshot?.payload?.summary;
     if (!summary || summary.last_event_at == null) {
@@ -154,12 +190,27 @@ function probeBaselines(): SelfTestEntry {
     const view = projectionService.getView<BaselinesPayload>('baselines') as
       | BaselinesProjection
       | undefined;
-    if (!view) return { source: 'baselines', status: 'EMPTY', detail: 'no projection registered', hint: HINTS.baselines };
+    if (!view)
+      return {
+        source: 'baselines',
+        status: 'EMPTY',
+        detail: 'no projection registered',
+        hint: HINTS.baselines,
+      };
     const snapshot = view.getSnapshot();
     if (!snapshot?.payload || snapshot.payload.summary.total_comparisons === 0) {
-      return { source: 'baselines', status: 'EMPTY', detail: 'upstream never emitted', hint: HINTS.baselines };
+      return {
+        source: 'baselines',
+        status: 'EMPTY',
+        detail: 'upstream never emitted',
+        hint: HINTS.baselines,
+      };
     }
-    return { source: 'baselines', status: 'LIVE', detail: `${snapshot.payload.summary.total_comparisons} comparisons` };
+    return {
+      source: 'baselines',
+      status: 'LIVE',
+      detail: `${snapshot.payload.summary.total_comparisons} comparisons`,
+    };
   } catch (err) {
     return { source: 'baselines', status: 'ERROR', detail: String(err) };
   }
@@ -170,7 +221,13 @@ function probeCostTrends(): SelfTestEntry {
     const view = projectionService.getView<CostMetricsPayload>('cost-metrics') as
       | CostMetricsProjection
       | undefined;
-    if (!view) return { source: 'costTrends', status: 'EMPTY', detail: 'no projection registered', hint: HINTS.costTrends };
+    if (!view)
+      return {
+        source: 'costTrends',
+        status: 'EMPTY',
+        detail: 'no projection registered',
+        hint: HINTS.costTrends,
+      };
     const snapshot = view.getSnapshot();
     const summary = snapshot?.payload?.summary;
     if (summary && (summary.session_count > 0 || summary.total_tokens > 0)) {
@@ -184,7 +241,12 @@ function probeCostTrends(): SelfTestEntry {
         return { source: 'costTrends', status: 'LIVE', detail: 'via llm-routing proxy' };
       }
     }
-    return { source: 'costTrends', status: 'EMPTY', detail: 'upstream never emitted', hint: HINTS.costTrends };
+    return {
+      source: 'costTrends',
+      status: 'EMPTY',
+      detail: 'upstream never emitted',
+      hint: HINTS.costTrends,
+    };
   } catch (err) {
     return { source: 'costTrends', status: 'ERROR', detail: String(err) };
   }
@@ -193,12 +255,27 @@ function probeCostTrends(): SelfTestEntry {
 function probeIntents(): SelfTestEntry {
   try {
     const view = projectionService.getView<IntentProjectionPayload>('intent');
-    if (!view) return { source: 'intents', status: 'EMPTY', detail: 'no projection registered', hint: HINTS.intents };
+    if (!view)
+      return {
+        source: 'intents',
+        status: 'EMPTY',
+        detail: 'no projection registered',
+        hint: HINTS.intents,
+      };
     const snapshot = view.getSnapshot();
     if (!snapshot?.payload || snapshot.payload.totalIntents === 0) {
-      return { source: 'intents', status: 'EMPTY', detail: 'no intents classified', hint: HINTS.intents };
+      return {
+        source: 'intents',
+        status: 'EMPTY',
+        detail: 'no intents classified',
+        hint: HINTS.intents,
+      };
     }
-    return { source: 'intents', status: 'LIVE', detail: `${snapshot.payload.totalIntents} intents` };
+    return {
+      source: 'intents',
+      status: 'LIVE',
+      detail: `${snapshot.payload.totalIntents} intents`,
+    };
   } catch (err) {
     return { source: 'intents', status: 'ERROR', detail: String(err) };
   }
@@ -206,13 +283,28 @@ function probeIntents(): SelfTestEntry {
 
 function probeNodeRegistry(): SelfTestEntry {
   try {
-    const view = projectionService.getView<NodeRegistryPayload>('node-registry');
-    if (!view) return { source: 'nodeRegistry', status: 'EMPTY', detail: 'no projection registered', hint: HINTS.nodeRegistry };
+    const view = projectionService.getView<NodeRegistryPayload>('node-registry-db');
+    if (!view)
+      return {
+        source: 'nodeRegistry',
+        status: 'EMPTY',
+        detail: 'no projection registered',
+        hint: HINTS.nodeRegistry,
+      };
     const snapshot = view.getSnapshot();
     if (!snapshot?.payload || snapshot.payload.stats.totalNodes === 0) {
-      return { source: 'nodeRegistry', status: 'EMPTY', detail: 'no nodes registered', hint: HINTS.nodeRegistry };
+      return {
+        source: 'nodeRegistry',
+        status: 'EMPTY',
+        detail: 'no nodes registered',
+        hint: HINTS.nodeRegistry,
+      };
     }
-    return { source: 'nodeRegistry', status: 'LIVE', detail: `${snapshot.payload.stats.totalNodes} nodes` };
+    return {
+      source: 'nodeRegistry',
+      status: 'LIVE',
+      detail: `${snapshot.payload.stats.totalNodes} nodes`,
+    };
   } catch (err) {
     return { source: 'nodeRegistry', status: 'ERROR', detail: String(err) };
   }
@@ -221,7 +313,11 @@ function probeNodeRegistry(): SelfTestEntry {
 function probeCorrelationTrace(): SelfTestEntry {
   // Delegates to eventBus probe — correlationTrace is derived from the same projection
   const result = probeEventBus();
-  return { ...result, source: 'correlationTrace', hint: result.hint ? HINTS.correlationTrace : undefined };
+  return {
+    ...result,
+    source: 'correlationTrace',
+    hint: result.hint ? HINTS.correlationTrace : undefined,
+  };
 }
 
 function probeValidation(): SelfTestEntry {
@@ -229,10 +325,21 @@ function probeValidation(): SelfTestEntry {
     const view = projectionService.getView<ValidationProjectionPayload>('validation') as
       | ValidationProjection
       | undefined;
-    if (!view) return { source: 'validation', status: 'EMPTY', detail: 'no projection registered', hint: HINTS.validation };
+    if (!view)
+      return {
+        source: 'validation',
+        status: 'EMPTY',
+        detail: 'no projection registered',
+        hint: HINTS.validation,
+      };
     const snapshot = view.getSnapshot();
     if (!snapshot?.payload || snapshot.payload.totalRuns === 0) {
-      return { source: 'validation', status: 'EMPTY', detail: 'upstream never emitted', hint: HINTS.validation };
+      return {
+        source: 'validation',
+        status: 'EMPTY',
+        detail: 'upstream never emitted',
+        hint: HINTS.validation,
+      };
     }
     return { source: 'validation', status: 'LIVE', detail: `${snapshot.payload.totalRuns} runs` };
   } catch (err) {
@@ -243,11 +350,22 @@ function probeValidation(): SelfTestEntry {
 async function probeInsights(): Promise<SelfTestEntry> {
   try {
     const db = tryGetIntelligenceDb();
-    if (!db) return { source: 'insights', status: 'EMPTY', detail: 'no DB connection', hint: HINTS.insights };
+    if (!db)
+      return {
+        source: 'insights',
+        status: 'EMPTY',
+        detail: 'no DB connection',
+        hint: HINTS.insights,
+      };
     const result = await db.select({ total: count() }).from(patternLearningArtifacts);
     const total = result[0]?.total ?? 0;
     if (total === 0) {
-      return { source: 'insights', status: 'EMPTY', detail: 'upstream never emitted', hint: HINTS.insights };
+      return {
+        source: 'insights',
+        status: 'EMPTY',
+        detail: 'upstream never emitted',
+        hint: HINTS.insights,
+      };
     }
     return { source: 'insights', status: 'LIVE', detail: `${total} artifacts` };
   } catch (err) {
@@ -260,12 +378,27 @@ function probePatterns(): SelfTestEntry {
     const view = projectionService.getView<PatternsProjectionPayload>('patterns') as
       | PatternsProjection
       | undefined;
-    if (!view) return { source: 'patterns', status: 'EMPTY', detail: 'no projection registered', hint: HINTS.patterns };
+    if (!view)
+      return {
+        source: 'patterns',
+        status: 'EMPTY',
+        detail: 'no projection registered',
+        hint: HINTS.patterns,
+      };
     const snapshot = view.getSnapshot();
     if (!snapshot?.payload || snapshot.payload.totalPatterns === 0) {
-      return { source: 'patterns', status: 'EMPTY', detail: 'upstream never emitted', hint: HINTS.patterns };
+      return {
+        source: 'patterns',
+        status: 'EMPTY',
+        detail: 'upstream never emitted',
+        hint: HINTS.patterns,
+      };
     }
-    return { source: 'patterns', status: 'LIVE', detail: `${snapshot.payload.totalPatterns} patterns` };
+    return {
+      source: 'patterns',
+      status: 'LIVE',
+      detail: `${snapshot.payload.totalPatterns} patterns`,
+    };
   } catch (err) {
     return { source: 'patterns', status: 'ERROR', detail: String(err) };
   }
@@ -274,7 +407,13 @@ function probePatterns(): SelfTestEntry {
 async function probeExecutionGraph(): Promise<SelfTestEntry> {
   try {
     const dataSource = getEventBusDataSource();
-    if (!dataSource) return { source: 'executionGraph', status: 'EMPTY', detail: 'no data source', hint: HINTS.executionGraph };
+    if (!dataSource)
+      return {
+        source: 'executionGraph',
+        status: 'EMPTY',
+        detail: 'no data source',
+        hint: HINTS.executionGraph,
+      };
     const rawEvents = await dataSource.queryEvents({
       event_types: [
         TOPIC_OMNICLAUDE_AGENT_ACTIONS,
@@ -292,7 +431,12 @@ async function probeExecutionGraph(): Promise<SelfTestEntry> {
       order_direction: 'desc',
     });
     if (!rawEvents || rawEvents.length === 0) {
-      return { source: 'executionGraph', status: 'EMPTY', detail: 'no execution data', hint: HINTS.executionGraph };
+      return {
+        source: 'executionGraph',
+        status: 'EMPTY',
+        detail: 'no execution data',
+        hint: HINTS.executionGraph,
+      };
     }
     return { source: 'executionGraph', status: 'LIVE', detail: 'execution events found' };
   } catch (err) {
@@ -304,7 +448,12 @@ async function probeEnforcement(): Promise<SelfTestEntry> {
   try {
     const cnt = await enforcementProjection.probeRecentCount();
     if (cnt === null) {
-      return { source: 'enforcement', status: 'EMPTY', detail: 'no DB connection', hint: HINTS.enforcement };
+      return {
+        source: 'enforcement',
+        status: 'EMPTY',
+        detail: 'no DB connection',
+        hint: HINTS.enforcement,
+      };
     }
     return { source: 'enforcement', status: 'LIVE', detail: `${cnt} recent events` };
   } catch (err) {
@@ -330,7 +479,12 @@ function probeTopicParity(): SelfTestEntry {
     if (missing.length === 0) {
       return { source: 'topicParity', status: 'LIVE', detail: 'all topics aligned' };
     }
-    return { source: 'topicParity', status: 'EMPTY', detail: `${missing.length} topics missing`, hint: HINTS.topicParity };
+    return {
+      source: 'topicParity',
+      status: 'EMPTY',
+      detail: `${missing.length} topics missing`,
+      hint: HINTS.topicParity,
+    };
   } catch (err) {
     return { source: 'topicParity', status: 'ERROR', detail: String(err) };
   }
