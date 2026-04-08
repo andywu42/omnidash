@@ -49,8 +49,18 @@ import type {
 } from './projections/patterns-projection';
 import type { LlmRoutingPayload } from './projections/llm-routing-projection';
 import { tryGetIntelligenceDb } from './storage';
-import { patternLearningArtifacts } from '@shared/intelligence-schema';
-import { count } from 'drizzle-orm';
+import {
+  patternLearningArtifacts,
+  injectionEffectiveness,
+  agentManifestInjections,
+  baselinesComparisons,
+  llmCostAggregates,
+  llmRoutingDecisions,
+  intentSignals,
+  nodeServiceRegistry,
+  validationRuns,
+} from '@shared/intelligence-schema';
+import { sql } from 'drizzle-orm';
 import { getEventBusDataSource } from './event-bus-data-source';
 import {
   TOPIC_OMNICLAUDE_AGENT_ACTIONS,
@@ -146,14 +156,31 @@ const LOCAL_IDLE_EXPECTED: Set<string> = new Set([
 // ============================================================================
 
 /**
- * Probe the event-bus projection.
- * Live if the projection has received at least one event.
+ * Probe the event-bus data source.
+ * DB-first: queries event_bus_events row count. Falls back to in-memory
+ * projection snapshot if DB is unavailable (cold-start resilience).
  */
-function probeEventBus(): DataSourceInfo {
+async function probeEventBus(): Promise<DataSourceInfo> {
   try {
+    const db = tryGetIntelligenceDb();
+    if (db) {
+      try {
+        const result = await db.execute(
+          sql`SELECT EXISTS(SELECT 1 FROM event_bus_events) AS exists`
+        );
+        const exists = (result.rows[0] as { exists: boolean } | undefined)?.exists ?? false;
+        if (exists) {
+          return { status: 'live' };
+        }
+        // DB reachable but empty — fall through to in-memory fallback
+      } catch {
+        // DB query failed — fall through to in-memory fallback
+      }
+    }
+    // In-memory fallback
     const view = projectionService.getView<EventBusPayload>('event-bus');
     if (!view) {
-      return { status: 'mock', reason: 'no_projection_registered' };
+      return { status: 'mock', reason: 'no_events_ingested' };
     }
     const snapshot = view.getSnapshot();
     if (!snapshot) {
@@ -163,26 +190,36 @@ function probeEventBus(): DataSourceInfo {
     if (!payload || payload.totalEventsIngested === 0) {
       return { status: 'mock', reason: 'no_events_ingested' };
     }
-    // Use snapshotTimeMs (the time the snapshot was taken) as a proxy for lastEvent
-    const lastEvent =
-      snapshot.snapshotTimeMs != null ? new Date(snapshot.snapshotTimeMs).toISOString() : undefined;
-    return { status: 'live', lastEvent };
+    return { status: 'live' };
   } catch {
     return { status: 'error', reason: 'probe_threw' };
   }
 }
 
 /**
- * Probe the effectiveness projection.
- * Live if the summary shows at least one session.
+ * Probe the effectiveness data source.
+ * DB-first: queries injection_effectiveness row count. Falls back to in-memory
+ * projection snapshot if DB is unavailable (cold-start resilience).
  */
-function probeEffectiveness(): DataSourceInfo {
+async function probeEffectiveness(): Promise<DataSourceInfo> {
   try {
+    const db = tryGetIntelligenceDb();
+    if (db) {
+      try {
+        const rows = await db.select().from(injectionEffectiveness).limit(1);
+        if (rows.length > 0) {
+          return { status: 'live' };
+        }
+      } catch {
+        // DB query failed — fall through to in-memory fallback
+      }
+    }
+    // In-memory fallback
     const view = projectionService.getView<EffectivenessMetricsPayload>('effectiveness-metrics') as
       | EffectivenessMetricsProjection
       | undefined;
     if (!view) {
-      return { status: 'mock', reason: 'no_projection_registered' };
+      return { status: 'mock', reason: 'empty_tables' };
     }
     const snapshot = view.getSnapshot();
     if (!snapshot) {
@@ -199,16 +236,29 @@ function probeEffectiveness(): DataSourceInfo {
 }
 
 /**
- * Probe the extraction-metrics projection.
- * Live if summary.last_event_at is not null (at least one row ever written).
+ * Probe the extraction data source.
+ * DB-first: queries agent_manifest_injections row count. Falls back to
+ * in-memory projection snapshot if DB is unavailable (cold-start resilience).
  */
-function probeExtraction(): DataSourceInfo {
+async function probeExtraction(): Promise<DataSourceInfo> {
   try {
+    const db = tryGetIntelligenceDb();
+    if (db) {
+      try {
+        const rows = await db.select().from(agentManifestInjections).limit(1);
+        if (rows.length > 0) {
+          return { status: 'live' };
+        }
+      } catch {
+        // DB query failed — fall through to in-memory fallback
+      }
+    }
+    // In-memory fallback
     const view = projectionService.getView<ExtractionMetricsPayload>('extraction-metrics') as
       | ExtractionMetricsProjection
       | undefined;
     if (!view) {
-      return { status: 'mock', reason: 'no_projection_registered' };
+      return { status: 'mock', reason: 'empty_tables' };
     }
     const snapshot = view.getSnapshot();
     if (!snapshot) {
@@ -225,19 +275,31 @@ function probeExtraction(): DataSourceInfo {
 }
 
 /**
- * Probe the baselines projection.
- * Live if at least one comparison row exists (total_comparisons > 0).
- * Returns 'offline' (not 'mock') when the projection exists but has no data,
- * because the upstream producer (omnibase-infra baselines-computed event) has
- * never emitted — the tables are structurally present but unpopulated.
+ * Probe the baselines data source.
+ * DB-first: queries baselines_comparisons row count. Falls back to in-memory
+ * projection snapshot if DB is unavailable (cold-start resilience).
+ * Returns 'offline' when no data exists — upstream producer has never emitted.
  */
-function probeBaselines(): DataSourceInfo {
+async function probeBaselines(): Promise<DataSourceInfo> {
   try {
+    const db = tryGetIntelligenceDb();
+    if (db) {
+      try {
+        const rows = await db.select().from(baselinesComparisons).limit(1);
+        if (rows.length > 0) {
+          return { status: 'live' };
+        }
+        return { status: 'offline', reason: 'upstream_service_offline' };
+      } catch {
+        // DB query failed — fall through to in-memory fallback
+      }
+    }
+    // In-memory fallback
     const view = projectionService.getView<BaselinesPayload>('baselines') as
       | BaselinesProjection
       | undefined;
     if (!view) {
-      return { status: 'mock', reason: 'no_projection_registered' };
+      return { status: 'offline', reason: 'upstream_service_offline' };
     }
     const snapshot = view.getSnapshot();
     if (!snapshot) {
@@ -254,32 +316,41 @@ function probeBaselines(): DataSourceInfo {
 }
 
 /**
- * Probe the cost-metrics projection.
- * Live if session_count > 0 or total_tokens > 0 in llm_cost_aggregates.
- * Falls back to checking llm_routing_decisions.cost_usd when llm_cost_aggregates
- * is empty — the LLM routing table has real latency and cost data from routing
- * decisions and can serve as a proxy cost signal until the dedicated cost
- * producer (LLM usage events) is wired up.
- * Returns 'offline' when neither table has any data.
+ * Probe the cost-metrics data source.
+ * DB-first: queries llm_cost_aggregates; falls back to llm_routing_decisions
+ * as a proxy cost signal. Falls back to in-memory projections if DB is
+ * unavailable (cold-start resilience). Returns 'offline' when neither has data.
  */
-function probeCost(): DataSourceInfo {
+async function probeCost(): Promise<DataSourceInfo> {
   try {
+    const db = tryGetIntelligenceDb();
+    if (db) {
+      try {
+        const costRows = await db.select().from(llmCostAggregates).limit(1);
+        if (costRows.length > 0) {
+          return { status: 'live' };
+        }
+        // llm_cost_aggregates empty — check llm_routing_decisions as proxy
+        const routingRows = await db.select().from(llmRoutingDecisions).limit(1);
+        if (routingRows.length > 0) {
+          return { status: 'live' };
+        }
+        return { status: 'offline', reason: 'upstream_service_offline' };
+      } catch {
+        // DB query failed — fall through to in-memory fallback
+      }
+    }
+    // In-memory fallback
     const view = projectionService.getView<CostMetricsPayload>('cost-metrics') as
       | CostMetricsProjection
       | undefined;
-    if (!view) {
-      return { status: 'mock', reason: 'no_projection_registered' };
+    if (view) {
+      const snapshot = view.getSnapshot();
+      const summary = snapshot?.payload?.summary;
+      if (summary && (summary.session_count > 0 || summary.total_tokens > 0)) {
+        return { status: 'live' };
+      }
     }
-    const snapshot = view.getSnapshot();
-    if (!snapshot) {
-      return { status: 'mock', reason: 'empty_projection' };
-    }
-    const summary = snapshot.payload?.summary;
-    if (summary && (summary.session_count > 0 || summary.total_tokens > 0)) {
-      return { status: 'live' };
-    }
-    // llm_cost_aggregates is empty. Check the llm-routing projection as a
-    // proxy: it contains real latency/cost_usd data from routing decisions.
     const llmView = projectionService.getView<LlmRoutingPayload>('llm-routing');
     if (llmView) {
       const llmSnapshot = llmView.getSnapshot();
@@ -294,14 +365,28 @@ function probeCost(): DataSourceInfo {
 }
 
 /**
- * Probe the intent projection.
- * Live if the projection has at least one classified intent.
+ * Probe the intents data source.
+ * DB-first: queries intent_signals row count. Falls back to in-memory
+ * projection snapshot if DB is unavailable (cold-start resilience).
  */
-function probeIntents(): DataSourceInfo {
+async function probeIntents(): Promise<DataSourceInfo> {
   try {
+    const db = tryGetIntelligenceDb();
+    if (db) {
+      try {
+        const rows = await db.select().from(intentSignals).limit(1);
+        if (rows.length > 0) {
+          return { status: 'live' };
+        }
+        // DB reachable but empty — fall through to in-memory fallback
+      } catch {
+        // DB query failed — fall through to in-memory fallback
+      }
+    }
+    // In-memory fallback
     const view = projectionService.getView<IntentProjectionPayload>('intent-db');
     if (!view) {
-      return { status: 'mock', reason: 'no_projection_registered' };
+      return { status: 'mock', reason: 'no_intents_classified' };
     }
     const snapshot = view.getSnapshot();
     if (!snapshot) {
@@ -320,14 +405,28 @@ function probeIntents(): DataSourceInfo {
 }
 
 /**
- * Probe the node registry projection.
- * Live if at least one node is registered.
+ * Probe the node registry data source.
+ * DB-first: queries node_service_registry row count. Falls back to in-memory
+ * projection snapshot if DB is unavailable (cold-start resilience).
  */
-function probeNodeRegistry(): DataSourceInfo {
+async function probeNodeRegistry(): Promise<DataSourceInfo> {
   try {
+    const db = tryGetIntelligenceDb();
+    if (db) {
+      try {
+        const rows = await db.select().from(nodeServiceRegistry).limit(1);
+        if (rows.length > 0) {
+          return { status: 'live' };
+        }
+        // DB reachable but empty — fall through to in-memory fallback
+      } catch {
+        // DB query failed — fall through to in-memory fallback
+      }
+    }
+    // In-memory fallback
     const view = projectionService.getView<NodeRegistryPayload>('node-registry-db');
     if (!view) {
-      return { status: 'mock', reason: 'no_projection_registered' };
+      return { status: 'mock', reason: 'no_nodes_registered' };
     }
     const snapshot = view.getSnapshot();
     if (!snapshot) {
@@ -344,19 +443,31 @@ function probeNodeRegistry(): DataSourceInfo {
 }
 
 /**
- * Probe the validation projection.
- * Live if at least one validation run exists (totalRuns > 0).
- * Returns 'offline' (not 'mock') when the projection is registered but has no
- * data, because the upstream producer (cross-repo validation runner) has never
- * emitted events — the tables are structurally present but unpopulated.
+ * Probe the validation data source.
+ * DB-first: queries validation_runs row count. Falls back to in-memory
+ * projection snapshot if DB is unavailable (cold-start resilience).
+ * Returns 'offline' when no data — upstream producer has never emitted.
  */
-function probeValidation(): DataSourceInfo {
+async function probeValidation(): Promise<DataSourceInfo> {
   try {
+    const db = tryGetIntelligenceDb();
+    if (db) {
+      try {
+        const rows = await db.select().from(validationRuns).limit(1);
+        if (rows.length > 0) {
+          return { status: 'live' };
+        }
+        return { status: 'offline', reason: 'upstream_service_offline' };
+      } catch {
+        // DB query failed — fall through to in-memory fallback
+      }
+    }
+    // In-memory fallback
     const view = projectionService.getView<ValidationProjectionPayload>('validation') as
       | ValidationProjection
       | undefined;
     if (!view) {
-      return { status: 'mock', reason: 'no_projection_registered' };
+      return { status: 'offline', reason: 'upstream_service_offline' };
     }
     const snapshot = view.getSnapshot();
     if (!snapshot) {
@@ -384,9 +495,8 @@ async function probeInsights(): Promise<DataSourceInfo> {
     if (!db) {
       return { status: 'mock', reason: 'no_db_connection' };
     }
-    const result = await db.select({ total: count() }).from(patternLearningArtifacts);
-    const total = result[0]?.total ?? 0;
-    if (total === 0) {
+    const rows = await db.select().from(patternLearningArtifacts).limit(1);
+    if (rows.length === 0) {
       return { status: 'offline', reason: 'upstream_never_emitted' };
     }
     return { status: 'live' };
@@ -396,16 +506,30 @@ async function probeInsights(): Promise<DataSourceInfo> {
 }
 
 /**
- * Probe the patterns projection.
- * Live if at least one pattern artifact exists (totalPatterns > 0).
+ * Probe the patterns data source.
+ * DB-first: queries pattern_learning_artifacts (same table as insights).
+ * Falls back to in-memory projection snapshot if DB is unavailable.
  */
-function probePatterns(): DataSourceInfo {
+async function probePatterns(): Promise<DataSourceInfo> {
   try {
+    const db = tryGetIntelligenceDb();
+    if (db) {
+      try {
+        const rows = await db.select().from(patternLearningArtifacts).limit(1);
+        if (rows.length > 0) {
+          return { status: 'live' };
+        }
+        return { status: 'offline', reason: 'upstream_never_emitted' };
+      } catch {
+        // DB query failed — fall through to in-memory fallback
+      }
+    }
+    // In-memory fallback
     const view = projectionService.getView<PatternsProjectionPayload>('patterns') as
       | PatternsProjection
       | undefined;
     if (!view) {
-      return { status: 'mock', reason: 'no_projection_registered' };
+      return { status: 'offline', reason: 'upstream_never_emitted' };
     }
     const snapshot = view.getSnapshot();
     if (!snapshot) {
@@ -652,29 +776,45 @@ router.get('/data-sources', async (_req, res) => {
     // store the promise so concurrent requests can attach to it.
     pendingProbe = (async (): Promise<DataSourcesHealthResponse> => {
       try {
-        // Run all probes. Projection-based probes are synchronous; async probes
-        // (insights, executionGraph, enforcement) are awaited via Promise.all.
-        // All are called directly without HTTP self-calls.
-        const [insights, executionGraph, enforcement] = await Promise.all([
+        // Run all probes concurrently. All probes are now async (DB-first with
+        // in-memory fallback) to ensure cold-start resilience after server restart.
+        const [
+          eventBus,
+          effectiveness,
+          extraction,
+          baselines,
+          costTrends,
+          intents,
+          nodeRegistry,
+          validation,
+          insights,
+          patterns,
+          executionGraph,
+          enforcement,
+        ] = await Promise.all([
+          probeEventBus(),
+          probeEffectiveness(),
+          probeExtraction(),
+          probeBaselines(),
+          probeCost(),
+          probeIntents(),
+          probeNodeRegistry(),
+          probeValidation(),
           probeInsights(),
+          probePatterns(),
           probeExecutionGraph(),
           probeEnforcement(),
         ]);
-        const validation = probeValidation();
-        const patterns = probePatterns();
-
-        // Probe the event bus once and reuse the result for correlationTrace, which
-        // derives its live/mock status from the same event-bus projection.
-        const eventBus = probeEventBus();
 
         const dataSources: Record<string, DataSourceInfo> = {
           eventBus,
-          effectiveness: probeEffectiveness(),
-          extraction: probeExtraction(),
-          baselines: probeBaselines(),
-          costTrends: probeCost(),
-          intents: probeIntents(),
-          nodeRegistry: probeNodeRegistry(),
+          effectiveness,
+          extraction,
+          baselines,
+          costTrends,
+          intents,
+          nodeRegistry,
+          // correlationTrace derives its live/mock status from the event-bus result.
           correlationTrace: { ...eventBus },
           validation,
           insights,

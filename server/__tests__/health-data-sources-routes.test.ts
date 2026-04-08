@@ -112,15 +112,19 @@ function makeView(payload: unknown) {
 }
 
 /**
- * Build a mock Drizzle db object that returns `rows` from any `.select()` chain.
- * The chain is: db.select(...).from(...) => Promise<rows>
+ * Build a mock Drizzle db object that supports the query chains used by health probes:
+ *   db.select().from(table).limit(1)   → resolves to rows
+ *   db.execute(sql`...`)               → resolves to { rows: [{ exists: false }] }
  */
 function makeMockDb(rows: unknown[]) {
   const chain = {
-    from: vi.fn().mockResolvedValue(rows),
+    from: vi.fn().mockReturnValue({
+      limit: vi.fn().mockResolvedValue(rows),
+    }),
   };
   return {
     select: vi.fn().mockReturnValue(chain),
+    execute: vi.fn().mockResolvedValue({ rows: [{ exists: false }] }),
   };
 }
 
@@ -130,9 +134,8 @@ function makeMockDb(rows: unknown[]) {
 
 /** Set up all DB-backed probes to return empty/no-data (offline status). */
 function setupEmptyDb() {
-  // probeInsights() queries pattern_learning_artifacts via tryGetIntelligenceDb.
-  // Returning count: 0 → status: offline (upstream_never_emitted).
-  vi.mocked(tryGetIntelligenceDb).mockReturnValue(makeMockDb([{ count: 0 }]) as any);
+  // All probes use SELECT 1 ... LIMIT 1 or EXISTS. Empty rows array → no data found.
+  vi.mocked(tryGetIntelligenceDb).mockReturnValue(makeMockDb([]) as any);
   vi.mocked(getEventBusDataSource).mockReturnValue(null);
 }
 
@@ -252,7 +255,8 @@ describe('GET /api/health/data-sources', () => {
       if (viewId === 'patterns') return patternsView as any;
       return null;
     });
-    vi.mocked(tryGetIntelligenceDb).mockReturnValue(makeMockDb([{ count: 0 }]) as any);
+    // DB unavailable → probes fall back to in-memory projection
+    vi.mocked(tryGetIntelligenceDb).mockReturnValue(null);
     vi.mocked(getEventBusDataSource).mockReturnValue(null);
 
     const app = makeApp();
@@ -264,12 +268,14 @@ describe('GET /api/health/data-sources', () => {
   });
 
   it('reports status: error for insights when DB probe throws', async () => {
-    // probeInsights() uses tryGetIntelligenceDb + db.select().from() — throw from the DB
+    // probeInsights() uses tryGetIntelligenceDb + db.select().from().limit() — throw from limit()
     // to exercise the catch branch that returns { status: 'error', reason: 'probe_threw' }.
     vi.mocked(projectionService.getView).mockReturnValue(null);
     vi.mocked(tryGetIntelligenceDb).mockReturnValue({
       select: vi.fn().mockReturnValue({
-        from: vi.fn().mockRejectedValue(new Error('DB connection failed')),
+        from: vi.fn().mockReturnValue({
+          limit: vi.fn().mockRejectedValue(new Error('DB connection failed')),
+        }),
       }),
     } as any);
     vi.mocked(getEventBusDataSource).mockReturnValue(null);
@@ -295,7 +301,8 @@ describe('GET /api/health/data-sources', () => {
       if (viewId === 'patterns') return patternsView as any;
       return null;
     });
-    vi.mocked(tryGetIntelligenceDb).mockReturnValue(makeMockDb([{ count: 0 }]) as any);
+    // DB unavailable → probeValidation falls back to in-memory projection, which throws
+    vi.mocked(tryGetIntelligenceDb).mockReturnValue(null);
     vi.mocked(getEventBusDataSource).mockReturnValue(null);
 
     const app = makeApp();
@@ -319,7 +326,8 @@ describe('GET /api/health/data-sources', () => {
       if (viewId === 'patterns') return throwingView as any;
       return null;
     });
-    vi.mocked(tryGetIntelligenceDb).mockReturnValue(makeMockDb([{ count: 0 }]) as any);
+    // DB unavailable → probePatterns falls back to in-memory projection, which throws
+    vi.mocked(tryGetIntelligenceDb).mockReturnValue(null);
     vi.mocked(getEventBusDataSource).mockReturnValue(null);
 
     const app = makeApp();
@@ -337,7 +345,7 @@ describe('GET /api/health/data-sources', () => {
       if (viewId === 'patterns') return patternsView as any;
       return null;
     });
-    vi.mocked(tryGetIntelligenceDb).mockReturnValue(makeMockDb([{ count: 0 }]) as any);
+    vi.mocked(tryGetIntelligenceDb).mockReturnValue(makeMockDb([]) as any);
     vi.mocked(getEventBusDataSource).mockReturnValue(null);
 
     const app = makeApp();
@@ -364,7 +372,8 @@ describe('GET /api/health/data-sources', () => {
       return noView as any;
     });
 
-    vi.mocked(tryGetIntelligenceDb).mockReturnValue(makeMockDb([{ count: 0 }]) as any);
+    // DB unavailable → all DB-first probes fall back to in-memory projection
+    vi.mocked(tryGetIntelligenceDb).mockReturnValue(null);
     vi.mocked(getEventBusDataSource).mockReturnValue(null);
 
     const app = makeApp();
@@ -481,7 +490,7 @@ describe('GET /api/health/data-sources', () => {
 
   it('reports status: error for executionGraph when probe throws', async () => {
     vi.mocked(projectionService.getView).mockReturnValue(null);
-    vi.mocked(tryGetIntelligenceDb).mockReturnValue(makeMockDb([{ count: 0 }]) as any);
+    vi.mocked(tryGetIntelligenceDb).mockReturnValue(makeMockDb([]) as any);
     // Return a non-null data source whose queryEvents() rejects — exercises the
     // catch branch in probeExecutionGraph that returns { status: 'error', reason: 'probe_threw' }.
     vi.mocked(getEventBusDataSource).mockReturnValue({
