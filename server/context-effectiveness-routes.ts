@@ -40,7 +40,7 @@ router.get('/summary', async (req, res) => {
   if (window === null) {
     return res
       .status(400)
-      .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+      .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
   }
   try {
     const payload = await contextEffectivenessProjection.ensureFresh();
@@ -60,7 +60,7 @@ router.get('/by-method', async (req, res) => {
   if (window === null) {
     return res
       .status(400)
-      .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+      .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
   }
   try {
     const payload = await contextEffectivenessProjection.ensureFresh();
@@ -80,7 +80,7 @@ router.get('/trend', async (req, res) => {
   if (window === null) {
     return res
       .status(400)
-      .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+      .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
   }
   try {
     const payload = await contextEffectivenessProjection.ensureFresh();
@@ -100,7 +100,7 @@ router.get('/outcomes', async (req, res) => {
   if (window === null) {
     return res
       .status(400)
-      .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+      .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
   }
   try {
     const payload = await contextEffectivenessProjection.ensureFresh();
@@ -121,7 +121,7 @@ router.get('/low-utilization', async (req, res) => {
   if (window === null) {
     return res
       .status(400)
-      .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+      .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
   }
   try {
     const payload = await contextEffectivenessProjection.ensureFresh();

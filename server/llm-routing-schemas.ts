@@ -10,7 +10,7 @@
 import { z } from 'zod';
 
 /** Zod schema for LlmRoutingTimeWindow. */
-export const LlmRoutingTimeWindowSchema = z.enum(['24h', '7d', '30d']);
+export const LlmRoutingTimeWindowSchema = z.enum(['24h', '7d', '30d', 'all']);
 
 /** Zod schema for LlmRoutingSummary. */
 export const LlmRoutingSummarySchema = z.object({

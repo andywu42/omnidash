@@ -18,7 +18,7 @@ export type UsageSource = 'API' | 'ESTIMATED' | 'MISSING';
 // ============================================================================
 
 /** Supported time windows for trend queries. */
-export type CostTimeWindow = '24h' | '7d' | '30d';
+export type CostTimeWindow = '24h' | '7d' | '30d' | 'all';
 
 // ============================================================================
 // Cost Per Session (Line Chart)

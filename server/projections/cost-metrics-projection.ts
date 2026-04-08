@@ -78,13 +78,16 @@ function windowCutoff(window: CostTimeWindow): Date {
   const now = Date.now();
   if (window === '24h') return new Date(now - 24 * 60 * 60 * 1000);
   if (window === '30d') return new Date(now - 30 * 24 * 60 * 60 * 1000);
+  if (window === 'all') return new Date(0); // epoch — captures all data
   // default: 7d
   return new Date(now - 7 * 24 * 60 * 60 * 1000);
 }
 
-/** Return 'hour' or 'day' truncation unit based on window. */
-function truncUnit(window: CostTimeWindow): 'hour' | 'day' {
-  return window === '24h' ? 'hour' : 'day';
+/** Return 'hour', 'day', or 'week' truncation unit based on window. */
+function truncUnit(window: CostTimeWindow): 'hour' | 'day' | 'week' {
+  if (window === '24h') return 'hour';
+  if (window === 'all') return 'week';
+  return 'day';
 }
 
 // ============================================================================
@@ -207,7 +210,9 @@ export class CostMetricsProjection extends DbBackedProjectionView<CostMetricsPay
         ? 24 * 60 * 60 * 1000
         : window === '30d'
           ? 30 * 24 * 60 * 60 * 1000
-          : 7 * 24 * 60 * 60 * 1000;
+          : window === 'all'
+            ? Date.now() // entire history — prior period comparison not meaningful
+            : 7 * 24 * 60 * 60 * 1000;
     const priorCutoff = new Date(cutoff.getTime() - windowMs);
 
     // Two queries per period:

@@ -41,13 +41,13 @@ const router = Router();
 // Validation
 // ============================================================================
 
-const TimeWindowSchema = z.enum(['24h', '7d', '30d']);
+const TimeWindowSchema = z.enum(['24h', '7d', '30d', 'all']);
 
 function validateWindow(req: Request, res: Response): ObjectiveTimeWindow | null {
   const raw = typeof req.query.window === 'string' ? req.query.window : '7d';
   const result = TimeWindowSchema.safeParse(raw);
   if (!result.success) {
-    res.status(400).json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+    res.status(400).json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     return null;
   }
   return result.data as ObjectiveTimeWindow;
@@ -61,6 +61,8 @@ function windowToInterval(window: ObjectiveTimeWindow): string {
       return "interval '7 days'";
     case '30d':
       return "interval '30 days'";
+    case 'all':
+      return "interval '10000 days'";
   }
 }
 

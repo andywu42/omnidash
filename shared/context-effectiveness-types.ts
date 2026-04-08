@@ -12,7 +12,7 @@
  * - Session outcome breakdown
  */
 
-export type ContextEffectivenessTimeWindow = '24h' | '7d' | '30d';
+export type ContextEffectivenessTimeWindow = '24h' | '7d' | '30d' | 'all';
 
 /**
  * Summary metrics for the hero cards.

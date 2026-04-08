@@ -215,4 +215,4 @@ export interface AntiGamingAlertFeedResponse {
 // Time Window
 // ============================================================================
 
-export type ObjectiveTimeWindow = '24h' | '7d' | '30d';
+export type ObjectiveTimeWindow = '24h' | '7d' | '30d' | 'all';

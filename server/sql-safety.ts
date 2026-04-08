@@ -34,6 +34,7 @@ const SAFE_INTERVALS: ReadonlySet<string> = new Set([
   '24 hours',
   '7 days',
   '30 days',
+  '10000 days',
 ]);
 
 /**
@@ -46,7 +47,7 @@ const SAFE_TRUNC_UNITS: ReadonlySet<string> = new Set(['minute', 'hour', 'day', 
  * Accepted time window parameters from query strings.
  * Exported for route-layer guards that validate before calling projections.
  */
-export const ACCEPTED_WINDOWS: ReadonlySet<string> = new Set(['24h', '7d', '30d']);
+export const ACCEPTED_WINDOWS: ReadonlySet<string> = new Set(['24h', '7d', '30d', 'all']);
 
 // ============================================================================
 // Safe SQL fragment builders
@@ -118,10 +119,12 @@ export function timeWindowToInterval(timeWindow: string): string {
       return '7 days';
     case '30d':
       return '30 days';
+    case 'all':
+      return '10000 days';
     default:
       throw new Error(
         `timeWindowToInterval: unrecognised window "${timeWindow}". ` +
-          `Accepted values: '24h', '7d', '30d'.`
+          `Accepted values: '24h', '7d', '30d', 'all'.`
       );
   }
 }
@@ -131,7 +134,9 @@ export function timeWindowToInterval(timeWindow: string): string {
  * 24h uses 'hour' granularity; 7d and 30d use 'day'.
  */
 export function truncUnitForWindow(window: string): string {
-  return window === '24h' ? 'hour' : 'day';
+  if (window === '24h') return 'hour';
+  if (window === 'all') return 'week';
+  return 'day';
 }
 
 /**

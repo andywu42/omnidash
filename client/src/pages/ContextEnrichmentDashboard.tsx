@@ -60,6 +60,7 @@ import {
   POLLING_INTERVAL_SLOW,
   getPollingInterval,
 } from '@/lib/constants/query-config';
+import { TOOLTIP_STYLE } from '@/lib/constants/chart-theme';
 import type { EnrichmentTimeWindow, InflationAlert } from '@shared/enrichment-types';
 
 // ============================================================================
@@ -70,6 +71,7 @@ const TIME_WINDOWS: { value: EnrichmentTimeWindow; label: string }[] = [
   { value: '24h', label: '24h' },
   { value: '7d', label: '7d' },
   { value: '30d', label: '30d' },
+  { value: 'all', label: 'All' },
 ];
 
 /** Bar colours for channel chart (cycled by index). */
@@ -743,7 +745,7 @@ export default function ContextEnrichmentDashboard() {
                       name === 'hit_rate' ? fmtPct(v) : fmtMs(Number(v)),
                       name === 'hit_rate' ? 'Hit Rate' : 'Avg Latency',
                     ]}
-                    contentStyle={{ fontSize: '12px' }}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                   <Bar dataKey="hit_rate" radius={[0, 4, 4, 0]}>
                     {(byChannel ?? []).map((_, idx) => (
@@ -794,7 +796,7 @@ export default function ContextEnrichmentDashboard() {
                       `${v}ms`,
                       name === 'p50_ms' ? 'P50' : name === 'p95_ms' ? 'P95' : 'P99',
                     ]}
-                    contentStyle={{ fontSize: '12px' }}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                   <Legend formatter={(v) => v.replace('_ms', '').toUpperCase()} />
                   <Bar
@@ -869,7 +871,7 @@ export default function ContextEnrichmentDashboard() {
                         : 'Avg After',
                   ]}
                   labelFormatter={(l) => String(l).slice(0, 16)}
-                  contentStyle={{ fontSize: '12px' }}
+                  contentStyle={TOOLTIP_STYLE}
                 />
                 <Legend
                   formatter={(v) =>
@@ -956,7 +958,7 @@ export default function ContextEnrichmentDashboard() {
                     name === 'avg_similarity_score' ? 'Similarity Score' : 'Quality Score',
                   ]}
                   labelFormatter={(l) => String(l).slice(0, 16)}
-                  contentStyle={{ fontSize: '12px' }}
+                  contentStyle={TOOLTIP_STYLE}
                 />
                 <Legend
                   formatter={(v) =>

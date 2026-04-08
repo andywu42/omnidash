@@ -84,6 +84,7 @@ import {
   POLLING_INTERVAL_SLOW,
   getPollingInterval,
 } from '@/lib/constants/query-config';
+import { TOOLTIP_STYLE, TOOLTIP_STYLE_SM } from '@/lib/constants/chart-theme';
 import type {
   LlmRoutingTimeWindow,
   LlmRoutingByModel,
@@ -100,6 +101,7 @@ const TIME_WINDOWS: { value: LlmRoutingTimeWindow; label: string }[] = [
   { value: '24h', label: '24h' },
   { value: '7d', label: '7d' },
   { value: '30d', label: '30d' },
+  { value: 'all', label: 'All' },
 ];
 
 /** Threshold below which the alert fires (LLM disagrees with fuzzy >40%). */
@@ -280,7 +282,7 @@ function AgreementRateHero({
                     <Tooltip
                       formatter={(v: any) => [fmtPct(v), 'Agreement Rate']}
                       labelFormatter={(l) => String(l).slice(0, 10)}
-                      contentStyle={{ fontSize: '11px' }}
+                      contentStyle={TOOLTIP_STYLE_SM}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -449,10 +451,7 @@ export function ModelEffectivenessChart({ data }: { data: LlmRoutingByModel[] })
       <BarChart data={chartData} layout="vertical" margin={{ left: 100, right: 40 }}>
         <XAxis type="number" domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
         <YAxis type="category" dataKey="model" width={100} tick={{ fontSize: 11 }} />
-        <Tooltip
-          formatter={(v: any) => [`${v}%`, 'Agreement Rate']}
-          contentStyle={{ fontSize: '12px' }}
-        />
+        <Tooltip formatter={(v: any) => [`${v}%`, 'Agreement Rate']} contentStyle={TOOLTIP_STYLE} />
         <Bar
           dataKey="agreement"
           name="Agreement Rate"
@@ -515,7 +514,7 @@ function FuzzyConfidenceChart({
               <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
               <Tooltip
                 formatter={(v: any) => [v.toLocaleString(), 'Decisions']}
-                contentStyle={{ fontSize: '12px' }}
+                contentStyle={TOOLTIP_STYLE}
               />
               <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                 {buckets.map((b) => (
@@ -1269,7 +1268,7 @@ export default function LlmRoutingDashboard() {
                             ? 'p95'
                             : 'p99',
                     ]}
-                    contentStyle={{ fontSize: '12px' }}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                   <Legend formatter={(v) => v.replace('_ms', '').toUpperCase()} />
                   <Bar dataKey="p50_ms" radius={[4, 4, 0, 0]}>
@@ -1337,7 +1336,7 @@ export default function LlmRoutingDashboard() {
                   />
                   <Tooltip
                     formatter={(v: any) => [fmtPct(v), 'Agreement Rate']}
-                    contentStyle={{ fontSize: '12px' }}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                   <Bar dataKey="agreement_rate" radius={[0, 4, 4, 0]}>
                     {(byVersion ?? []).map((_, idx) => (

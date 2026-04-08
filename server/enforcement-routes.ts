@@ -24,7 +24,7 @@ router.get('/summary', async (req, res) => {
     if (!ACCEPTED_WINDOWS.has(window)) {
       return res
         .status(400)
-        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     }
     const payload = await enforcementProjection.ensureFreshForWindow(window);
     return res.json(payload.summary);
@@ -44,7 +44,7 @@ router.get('/by-language', async (req, res) => {
     if (!ACCEPTED_WINDOWS.has(window)) {
       return res
         .status(400)
-        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     }
     const payload = await enforcementProjection.ensureFreshForWindow(window);
     return res.json(payload.byLanguage);
@@ -64,7 +64,7 @@ router.get('/by-domain', async (req, res) => {
     if (!ACCEPTED_WINDOWS.has(window)) {
       return res
         .status(400)
-        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     }
     const payload = await enforcementProjection.ensureFreshForWindow(window);
     return res.json(payload.byDomain);
@@ -84,7 +84,7 @@ router.get('/violated-patterns', async (req, res) => {
     if (!ACCEPTED_WINDOWS.has(window)) {
       return res
         .status(400)
-        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     }
     const payload = await enforcementProjection.ensureFreshForWindow(window);
     return res.json(payload.violatedPatterns);
@@ -104,7 +104,7 @@ router.get('/trend', async (req, res) => {
     if (!ACCEPTED_WINDOWS.has(window)) {
       return res
         .status(400)
-        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     }
     const payload = await enforcementProjection.ensureFreshForWindow(window);
     return res.json(payload.trend);

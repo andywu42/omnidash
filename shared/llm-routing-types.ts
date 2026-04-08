@@ -230,7 +230,7 @@ export interface LlmRoutingTrendPoint {
 }
 
 /** Valid time windows for LLM routing dashboard queries. */
-export type LlmRoutingTimeWindow = '24h' | '7d' | '30d';
+export type LlmRoutingTimeWindow = '24h' | '7d' | '30d' | 'all';
 
 /**
  * Per-model effectiveness metrics (OMN-3442, OMN-3449).

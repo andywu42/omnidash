@@ -59,6 +59,7 @@ import {
   POLLING_INTERVAL_SLOW,
   getPollingInterval,
 } from '@/lib/constants/query-config';
+import { TOOLTIP_STYLE, TOOLTIP_STYLE_SM } from '@/lib/constants/chart-theme';
 import type { EnforcementTimeWindow, ViolatedPattern } from '@shared/enforcement-types';
 
 // ============================================================================
@@ -69,6 +70,7 @@ const TIME_WINDOWS: { value: EnforcementTimeWindow; label: string }[] = [
   { value: '24h', label: '24h' },
   { value: '7d', label: '7d' },
   { value: '30d', label: '30d' },
+  { value: 'all', label: 'All' },
 ];
 
 /** Pastel bar colours for the language chart (cycled by index). */
@@ -218,7 +220,7 @@ function CorrectionRateHero({
                     <Tooltip
                       formatter={(v: any) => [fmtPct(v), 'Correction Rate']}
                       labelFormatter={(l) => String(l).slice(0, 10)}
-                      contentStyle={{ fontSize: '11px' }}
+                      contentStyle={TOOLTIP_STYLE_SM}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -597,7 +599,7 @@ export default function PatternEnforcement() {
                         : 'False Positive Rate',
                   ]}
                   labelFormatter={(l) => String(l).slice(0, 10)}
-                  contentStyle={{ fontSize: '12px' }}
+                  contentStyle={TOOLTIP_STYLE}
                 />
                 <Legend
                   formatter={(value) =>
@@ -682,7 +684,7 @@ export default function PatternEnforcement() {
                   />
                   <Tooltip
                     formatter={(v: any) => [fmtPct(v), 'Hit Rate']}
-                    contentStyle={{ fontSize: '12px' }}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                   <Bar dataKey="hit_rate" radius={[0, 4, 4, 0]}>
                     {(byLanguage ?? []).map((_, idx) => (
@@ -740,7 +742,7 @@ export default function PatternEnforcement() {
                   />
                   <Tooltip
                     formatter={(v: any) => [fmtPct(v), 'Hit Rate']}
-                    contentStyle={{ fontSize: '12px' }}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                   <Bar dataKey="hit_rate" radius={[0, 4, 4, 0]}>
                     {(byDomain ?? []).map((_, idx) => (

@@ -188,4 +188,4 @@ export interface InflationAlert {
 }
 
 /** Valid time windows for enrichment dashboard queries. */
-export type EnrichmentTimeWindow = '24h' | '7d' | '30d';
+export type EnrichmentTimeWindow = '24h' | '7d' | '30d' | 'all';

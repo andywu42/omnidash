@@ -54,7 +54,7 @@ import { POLLING_INTERVAL_SLOW, getPollingInterval } from '@/lib/constants/query
 // Types
 // ============================================================================
 
-type TimeWindow = '24h' | '7d' | '30d';
+type TimeWindow = '24h' | '7d' | '30d' | 'all';
 
 interface ComplianceSummary {
   total: number;
@@ -124,6 +124,7 @@ const TIME_WINDOWS: { value: TimeWindow; label: string }[] = [
   { value: '24h', label: '24h' },
   { value: '7d', label: '7d' },
   { value: '30d', label: '30d' },
+  { value: 'all', label: 'All' },
 ];
 
 const PASS_RATE_TARGET = 90;

@@ -63,7 +63,7 @@ function parseIncludeEstimated(raw: unknown): boolean {
 
 /** Validate and normalize the time window query parameter. */
 function parseWindow(raw: unknown): CostTimeWindow {
-  if (raw === '24h' || raw === '7d' || raw === '30d') return raw;
+  if (raw === '24h' || raw === '7d' || raw === '30d' || raw === 'all') return raw;
   if (raw !== undefined) {
     console.warn(
       `[costs] parseWindow: unrecognised window value ${JSON.stringify(raw)} — defaulting to '7d'`

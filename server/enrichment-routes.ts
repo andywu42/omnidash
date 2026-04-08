@@ -60,7 +60,7 @@ router.get('/summary', async (req, res) => {
     if (window === null) {
       return res
         .status(400)
-        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     }
     const payload = await enrichmentProjection.ensureFreshForWindow(window);
     return res.json(payload.summary);
@@ -80,7 +80,7 @@ router.get('/by-channel', async (req, res) => {
     if (window === null) {
       return res
         .status(400)
-        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     }
     const payload = await enrichmentProjection.ensureFreshForWindow(window);
     return res.json(payload.byChannel);
@@ -100,7 +100,7 @@ router.get('/latency-distribution', async (req, res) => {
     if (window === null) {
       return res
         .status(400)
-        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     }
     const payload = await enrichmentProjection.ensureFreshForWindow(window);
     return res.json(payload.latencyDistribution);
@@ -120,7 +120,7 @@ router.get('/token-savings', async (req, res) => {
     if (window === null) {
       return res
         .status(400)
-        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     }
     const payload = await enrichmentProjection.ensureFreshForWindow(window);
     return res.json(payload.tokenSavingsTrend);
@@ -140,7 +140,7 @@ router.get('/similarity-quality', async (req, res) => {
     if (window === null) {
       return res
         .status(400)
-        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     }
     const payload = await enrichmentProjection.ensureFreshForWindow(window);
     return res.json(payload.similarityQuality);
@@ -160,7 +160,7 @@ router.get('/inflation-alerts', async (req, res) => {
     if (window === null) {
       return res
         .status(400)
-        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+        .json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     }
     const payload = await enrichmentProjection.ensureFreshForWindow(window);
     return res.json(payload.inflationAlerts);

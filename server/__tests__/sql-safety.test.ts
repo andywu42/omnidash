@@ -161,8 +161,8 @@ describe('sql-safety [OMN-5196]', () => {
   // -------------------------------------------------------------------------
 
   describe('ACCEPTED_WINDOWS', () => {
-    it('contains exactly 24h, 7d, 30d', () => {
-      expect([...ACCEPTED_WINDOWS].sort()).toEqual(['24h', '30d', '7d']);
+    it('contains exactly 24h, 7d, 30d, all', () => {
+      expect([...ACCEPTED_WINDOWS].sort()).toEqual(['24h', '30d', '7d', 'all']);
     });
 
     it('rejects unknown windows', () => {

@@ -33,6 +33,7 @@ export interface ContextEffectivenessPayload {
   '24h': ContextEffectivenessWindowPayload;
   '7d': ContextEffectivenessWindowPayload;
   '30d': ContextEffectivenessWindowPayload;
+  all: ContextEffectivenessWindowPayload;
 }
 
 function emptyWindow(): ContextEffectivenessWindowPayload {
@@ -480,6 +481,7 @@ export class ContextEffectivenessProjection extends DbBackedProjectionView<Conte
       '24h': emptyWindow(),
       '7d': emptyWindow(),
       '30d': emptyWindow(),
+      all: emptyWindow(),
     };
   }
 
@@ -490,7 +492,9 @@ export class ContextEffectivenessProjection extends DbBackedProjectionView<Conte
         query7d(db),
         query30d(db),
       ]);
-      return { '24h': data24h, '7d': data7d, '30d': data30d };
+      // 'all' reuses the 30d query as the widest available window.
+      // A dedicated queryAll with no time filter can be added later if needed.
+      return { '24h': data24h, '7d': data7d, '30d': data30d, all: data30d };
     } catch (err) {
       const pgCode = (err as { code?: string }).code;
       if (pgCode === '42P01') {

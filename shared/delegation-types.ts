@@ -233,4 +233,4 @@ export interface DelegationByModel {
 }
 
 /** Valid time windows for delegation dashboard queries. */
-export type DelegationTimeWindow = '24h' | '7d' | '30d';
+export type DelegationTimeWindow = '24h' | '7d' | '30d' | 'all';

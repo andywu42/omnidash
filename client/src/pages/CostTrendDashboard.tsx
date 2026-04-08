@@ -79,6 +79,7 @@ const TIME_WINDOWS: { value: CostTimeWindow; label: string }[] = [
   { value: '24h', label: '24h' },
   { value: '7d', label: '7d' },
   { value: '30d', label: '30d' },
+  { value: 'all', label: 'All' },
 ];
 
 /** Bar colors for the cost-by-model chart (cycled by index). */

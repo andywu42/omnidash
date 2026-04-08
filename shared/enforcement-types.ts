@@ -124,4 +124,4 @@ export interface EnforcementTrendPoint {
 }
 
 /** Valid time windows for enforcement dashboard queries. */
-export type EnforcementTimeWindow = '24h' | '7d' | '30d';
+export type EnforcementTimeWindow = '24h' | '7d' | '30d' | 'all';

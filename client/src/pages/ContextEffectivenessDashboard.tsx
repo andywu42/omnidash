@@ -56,6 +56,7 @@ import {
   POLLING_INTERVAL_SLOW,
   getPollingInterval,
 } from '@/lib/constants/query-config';
+import { TOOLTIP_STYLE } from '@/lib/constants/chart-theme';
 import type { ContextEffectivenessTimeWindow } from '@shared/context-effectiveness-types';
 
 // ============================================================================
@@ -66,6 +67,7 @@ const TIME_WINDOWS: { value: ContextEffectivenessTimeWindow; label: string }[] =
   { value: '24h', label: '24h' },
   { value: '7d', label: '7d' },
   { value: '30d', label: '30d' },
+  { value: 'all', label: 'All' },
 ];
 
 const METHOD_COLORS = [
@@ -466,7 +468,7 @@ export default function ContextEffectivenessDashboard() {
                       name === 'avg_score' ? fmtScore(v) : v.toLocaleString(),
                       name === 'avg_score' ? 'Avg Score' : 'Sessions',
                     ]}
-                    contentStyle={{ fontSize: '12px' }}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                   <Bar dataKey="avg_score" radius={[0, 4, 4, 0]}>
                     {(byMethod ?? []).map((_, idx) => (
@@ -524,7 +526,7 @@ export default function ContextEffectivenessDashboard() {
                       name === 'count' ? v.toLocaleString() : fmtScore(v),
                       name === 'count' ? 'Sessions' : 'Avg Score',
                     ]}
-                    contentStyle={{ fontSize: '12px' }}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                   <Legend />
                   <Bar
@@ -588,7 +590,7 @@ export default function ContextEffectivenessDashboard() {
                     name === 'avg_utilization_score' ? 'Avg Score' : 'Injection Rate',
                   ]}
                   labelFormatter={(l) => String(l).slice(0, 16)}
-                  contentStyle={{ fontSize: '12px' }}
+                  contentStyle={TOOLTIP_STYLE}
                 />
                 <Legend
                   formatter={(v) =>

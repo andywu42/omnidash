@@ -34,7 +34,7 @@ function validateWindow(req: Request, res: Response) {
   const raw = typeof req.query.window === 'string' ? req.query.window : '7d';
   const result = LlmRoutingTimeWindowSchema.safeParse(raw);
   if (!result.success) {
-    res.status(400).json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d' });
+    res.status(400).json({ error: 'Invalid window parameter. Must be one of: 24h, 7d, 30d, all' });
     return null;
   }
   return result.data;
@@ -45,7 +45,7 @@ function validateWindow(req: Request, res: Response) {
  * Uses ensureFresh() for the default 7d window (avoids per-window cache overhead),
  * and ensureFreshForWindow() for non-default windows.
  */
-async function fetchPayload(window: '24h' | '7d' | '30d') {
+async function fetchPayload(window: '24h' | '7d' | '30d' | 'all') {
   if (window === '7d') {
     return llmRoutingProjection.ensureFresh();
   }
@@ -63,7 +63,7 @@ async function fetchPayload(window: '24h' | '7d' | '30d') {
  */
 function setDegradedHeader(
   res: Response,
-  requestedWindow: '24h' | '7d' | '30d',
+  requestedWindow: '24h' | '7d' | '30d' | 'all',
   payload: Awaited<ReturnType<typeof fetchPayload>>
 ): void {
   if (

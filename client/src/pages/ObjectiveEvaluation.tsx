@@ -63,6 +63,7 @@ import {
   LineChart,
   Line,
 } from 'recharts';
+import { TOOLTIP_STYLE_SM } from '@/lib/constants/chart-theme';
 import {
   RefreshCw,
   ShieldAlert,
@@ -98,6 +99,7 @@ const TIME_WINDOWS: { value: ObjectiveTimeWindow; label: string }[] = [
   { value: '24h', label: '24h' },
   { value: '7d', label: '7d' },
   { value: '30d', label: '30d' },
+  { value: 'all', label: 'All' },
 ];
 
 /** Correctness and safety always highest visual priority (lexicographic ordering). */
@@ -237,7 +239,7 @@ function ScoreVectorPanel({ window }: { window: ObjectiveTimeWindow }) {
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Tooltip
                 formatter={(value: any) => [`${value}%`, '']}
-                contentStyle={{ fontSize: 11 }}
+                contentStyle={TOOLTIP_STYLE_SM}
               />
             </RadarChart>
           </ResponsiveContainer>
@@ -326,7 +328,7 @@ function GateFailureTimelinePanel({ window }: { window: ObjectiveTimeWindow }) {
                 <XAxis dataKey="ts" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{ fontSize: 11 }}
+                  contentStyle={TOOLTIP_STYLE_SM}
                   formatter={(v: any, name: any) => [v, name.replace(/_/g, ' ')]}
                 />
                 <Legend wrapperStyle={{ fontSize: 10 }} formatter={(v) => v.replace(/_/g, ' ')} />
@@ -557,7 +559,7 @@ function PolicyStateHistoryPanel({ window }: { window: ObjectiveTimeWindow }) {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="ts" tick={{ fontSize: 10 }} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} unit="%" />
-                <Tooltip contentStyle={{ fontSize: 11 }} formatter={(v: any) => [`${v}%`, '']} />
+                <Tooltip contentStyle={TOOLTIP_STYLE_SM} formatter={(v: any) => [`${v}%`, '']} />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
                 {policyIds.flatMap((pid, idx) => [
                   <Line
