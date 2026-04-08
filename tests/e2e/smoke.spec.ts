@@ -121,6 +121,12 @@ const DASHBOARD_ROUTES = [
   '/pattern-lifecycle',
   '/hostile-reviewer',
 
+  // Route aliases (OMN-7879)
+  '/speed',
+  '/success',
+  '/system-health',
+  '/pipeline-metrics',
+
   // Wiring status (OMN-6974/OMN-6975)
   '/wiring-status',
 

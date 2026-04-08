@@ -24,7 +24,7 @@ function loadAgentRegistry() {
     // Use environment variable or fallback to sibling directory
     const agentDefinitionsPath =
       process.env.AGENT_DEFINITIONS_PATH ||
-      path.resolve(__dirname, '../../omniclaude/agents/definitions');
+      path.resolve(__dirname, '../../omniclaude/plugins/onex/agents/configs');
     const registryPath = path.join(agentDefinitionsPath, 'agent-registry.yaml');
 
     const fileContents = fs.readFileSync(registryPath, 'utf8');

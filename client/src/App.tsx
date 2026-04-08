@@ -199,6 +199,12 @@ function Router() {
       {/* OMN-2924: /insights redirected to /patterns — learnedPatterns table removed */}
       <Route path="/insights">{() => <Redirect to="/patterns" />}</Route>
 
+      {/* OMN-7879: redirect short aliases to canonical category paths */}
+      <Route path="/speed">{() => <Redirect to="/category/speed" />}</Route>
+      <Route path="/success">{() => <Redirect to="/category/success" />}</Route>
+      <Route path="/system-health">{() => <Redirect to="/category/health" />}</Route>
+      <Route path="/pipeline-metrics">{() => <Redirect to="/extraction" />}</Route>
+
       {/* Effectiveness dashboard routes (OMN-1891) — sub-routes before parent [OMN-2848] */}
       <Route path="/effectiveness/latency" component={EffectivenessLatency} />
       <Route path="/effectiveness/utilization" component={EffectivenessUtilization} />

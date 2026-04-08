@@ -47,7 +47,7 @@ export default function AgentsDashboard() {
   const { data, isLoading, error } = useQuery<AgentListResponse>({
     queryKey: queryKeys.agents.list(),
     queryFn: async () => {
-      const res = await fetch('/api/agents');
+      const res = await fetch('/api/agents/agents');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     },
