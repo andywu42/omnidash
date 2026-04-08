@@ -26,8 +26,6 @@
  */
 
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from 'wouter';
 import { IntentDistribution, RecentIntents, SessionTimeline } from '@/components/intent';
 import { useIntentProjectionStream } from '@/hooks/useIntentProjectionStream';
 import { useDemoMode } from '@/contexts/DemoModeContext';
@@ -58,8 +56,6 @@ import {
   CONFIDENCE_THRESHOLD_HIGH,
   CONFIDENCE_THRESHOLD_MEDIUM,
   CONFIDENCE_THRESHOLD_LOW,
-  INTENT_COLORS,
-  DEFAULT_INTENT_COLOR,
 } from '@/lib/intent-colors';
 import {
   Brain,
@@ -69,9 +65,6 @@ import {
   BarChart3,
   RefreshCw,
   AlertCircle,
-  PieChart,
-  GitBranch,
-  ArrowRight,
 } from 'lucide-react';
 import React from 'react';
 import type { IntentItem } from '@/components/intent';
@@ -217,6 +210,7 @@ const TIME_RANGE_OPTIONS = [
   { value: '6', label: 'Last 6 hours' },
   { value: '24', label: 'Last 24 hours' },
   { value: '168', label: 'Last 7 days' },
+  { value: '0', label: 'All time' },
 ] as const;
 
 type TimeRangeHours = (typeof TIME_RANGE_OPTIONS)[number]['value'];
@@ -423,20 +417,6 @@ export default function IntentDashboard() {
   const connectionStatus = isDemoMode ? ('disconnected' as const) : liveStream.connectionStatus;
   const refresh = isDemoMode ? () => {} : liveStream.refresh;
 
-  // Fetch classification breakdown from intent_signals (OMN-5288)
-  const { data: breakdownData } = useQuery<{ breakdown: { intent_type: string; count: number }[] }>(
-    {
-      queryKey: ['intents-breakdown'],
-      queryFn: async () => {
-        const res = await fetch('/api/intents/breakdown');
-        if (!res.ok) return { breakdown: [] };
-        return res.json();
-      },
-      refetchInterval: 30_000,
-      enabled: !isDemoMode,
-    }
-  );
-
   // Derive stat card values from the projection snapshot
   const categoryCount = snapshot?.categoryCount ?? 0;
 
@@ -606,77 +586,6 @@ export default function IntentDashboard() {
             description="Most recent classification"
             icon={Activity}
           />
-        </div>
-
-        {/* Classification Breakdown + Drift Link (OMN-5288) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Classification Breakdown Card */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Classification Breakdown
-              </CardTitle>
-              <PieChart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {breakdownData?.breakdown && breakdownData.breakdown.length > 0 ? (
-                <div className="space-y-2">
-                  {breakdownData.breakdown.map((item) => {
-                    const total = breakdownData.breakdown.reduce((s, b) => s + b.count, 0);
-                    const pct = total > 0 ? ((item.count / total) * 100).toFixed(1) : '0.0';
-                    return (
-                      <div key={item.intent_type} className="space-y-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {item.intent_type}
-                            </Badge>
-                          </div>
-                          <span className="font-mono text-muted-foreground">
-                            {item.count} ({pct}%)
-                          </span>
-                        </div>
-                        <div className="h-2 w-full rounded-full bg-muted">
-                          <div
-                            className="h-2 rounded-full transition-all"
-                            style={{
-                              width: `${pct}%`,
-                              backgroundColor:
-                                INTENT_COLORS[item.intent_type] ?? DEFAULT_INTENT_COLOR,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No classification data available</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Intent Drift Link Card */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Intent Drift Detection
-              </CardTitle>
-              <GitBranch className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <p className="text-sm text-muted-foreground">
-                Track how user intents shift during sessions. Detect when tool usage diverges from
-                the originally classified intent.
-              </p>
-              <Link href="/intent-drift">
-                <Button variant="outline" size="sm" className="gap-2 w-fit">
-                  View Intent Drift
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Main Dashboard Grid */}
