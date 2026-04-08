@@ -351,7 +351,95 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
       .values(row)
       .onConflictDoNothing({ target: agentRoutingDecisions.correlationId });
 
+    // OMN-7729: Also project general routing decisions into llm_routing_decisions
+    // so the /llm-routing dashboard shows data even when LLM routing is not active.
+    // The LLM-specific llm.routing.decision event is only emitted when USE_LLM_ROUTING
+    // is enabled AND the LLM call succeeds — most sessions use fuzzy/trigger routing
+    // which only emits the general routing.decision event.
+    await this._projectGeneralRoutingToLlmTable(data, row.correlationId!, context);
+
     return true;
+  }
+
+  /**
+   * Project a general routing decision event into llm_routing_decisions.
+   * Maps general routing fields to the LLM routing schema so the /llm-routing
+   * dashboard has data from all routing paths, not just LLM-tier routing.
+   */
+  private async _projectGeneralRoutingToLlmTable(
+    data: Record<string, unknown>,
+    correlationId: string,
+    context: ProjectionContext
+  ): Promise<void> {
+    const { db } = context;
+    if (!db) return;
+
+    if (!UUID_RE.test(correlationId)) return;
+
+    const sessionId = sanitizeSessionId(
+      (data.session_id as string | null | undefined) ??
+        (data.sessionId as string | null | undefined),
+      { correlationId }
+    );
+
+    const selectedAgent =
+      (data.selected_agent as string) || (data.selectedAgent as string) || 'unknown';
+    const confidence = Number(
+      data.confidence_score ?? data.confidenceScore ?? data.confidence ?? 0
+    );
+    const routingMethod =
+      (data.routing_method as string) ||
+      (data.routingMethod as string) ||
+      ((data.metadata as any)?.routing_method as string) ||
+      'fuzzy';
+    const latencyMs = Math.round(
+      Number(data.routing_time_ms ?? data.routingTimeMs ?? (data.metadata as any)?.latency_ms ?? 0)
+    );
+    const eventTimestamp =
+      (data.emitted_at as string | null) ?? (data.created_at as string | null) ?? null;
+
+    try {
+      await db.execute(sql`
+        INSERT INTO llm_routing_decisions (
+          correlation_id, session_id, llm_agent, fuzzy_agent, agreement,
+          llm_confidence, fuzzy_confidence, llm_latency_ms, fuzzy_latency_ms,
+          used_fallback, routing_prompt_version, intent, model, cost_usd,
+          prompt_tokens, completion_tokens, total_tokens, omninode_enabled,
+          created_at
+        ) VALUES (
+          ${correlationId},
+          ${sessionId ?? null},
+          ${selectedAgent},
+          ${null},
+          ${true},
+          ${!Number.isNaN(confidence) ? confidence : null},
+          ${null},
+          ${Number.isNaN(latencyMs) ? 0 : latencyMs},
+          ${0},
+          ${false},
+          ${routingMethod},
+          ${null},
+          ${null},
+          ${null},
+          ${0},
+          ${0},
+          ${0},
+          ${true},
+          ${safeParseDate(eventTimestamp)}
+        )
+        ON CONFLICT (correlation_id) DO NOTHING
+      `);
+    } catch (err) {
+      if (isTableMissingError(err, 'llm_routing_decisions')) {
+        // Table not yet created — silently skip
+        return;
+      }
+      // Non-blocking: don't let secondary projection failure break the primary projection
+      console.warn(
+        '[ReadModelConsumer] Failed to project general routing decision to llm_routing_decisions:',
+        (err as Error).message
+      );
+    }
   }
 
   // -------------------------------------------------------------------------
