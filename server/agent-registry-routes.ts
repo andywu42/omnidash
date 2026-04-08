@@ -457,47 +457,21 @@ router.get('/executions/stats', (req, res) => {
 });
 
 // Polymorphic Agent Integration Routes
+// Mock simulation endpoints removed in OMN-7730. These return 501 until
+// a real routing backend is wired.
 
-// Simulate routing decision
-router.post('/routing/decide', async (req, res) => {
-  try {
-    const { query, context } = req.body;
-
-    if (!query) {
-      return res.status(400).json({ error: 'Query is required' });
-    }
-
-    const decision = await PolymorphicAgentIntegration.simulateRoutingDecision(query, context);
-    res.json(decision);
-  } catch (error) {
-    console.error('Error making routing decision:', error);
-    res.status(500).json({ error: 'Failed to make routing decision' });
-  }
+router.post('/routing/decide', (_req, res) => {
+  res.status(501).json({
+    error: 'Not implemented',
+    message: 'Routing decision simulation removed. Real routing backend not yet wired.',
+  });
 });
 
-// Execute agent with routing
-router.post('/routing/execute', async (req, res) => {
-  try {
-    const { query, context } = req.body;
-
-    if (!query) {
-      return res.status(400).json({ error: 'Query is required' });
-    }
-
-    // Make routing decision
-    const decision = await PolymorphicAgentIntegration.simulateRoutingDecision(query, context);
-
-    // Execute agent
-    const result = await PolymorphicAgentIntegration.executeAgent(decision);
-
-    res.json({
-      decision,
-      execution: result,
-    });
-  } catch (error) {
-    console.error('Error executing with routing:', error);
-    res.status(500).json({ error: 'Failed to execute with routing' });
-  }
+router.post('/routing/execute', (_req, res) => {
+  res.status(501).json({
+    error: 'Not implemented',
+    message: 'Routing execution simulation removed. Real routing backend not yet wired.',
+  });
 });
 
 // Get routing statistics via AgentRoutingProjection (OMN-2750)

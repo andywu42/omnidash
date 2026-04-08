@@ -349,40 +349,29 @@ describe('agent-registry routes', () => {
     expect(res.json).toHaveBeenCalledWith({ total: 10 });
   });
 
-  it('handles routing decision and execution endpoints', async () => {
+  it('returns 501 for routing decide and execute endpoints (mock removed)', async () => {
     const decideHandler = getRouteHandler('post', '/routing/decide');
     const executeHandler = getRouteHandler('post', '/routing/execute');
 
-    const decideReq: any = { body: { query: 'route', context: { foo: 'bar' } } };
     const decideRes: any = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
     };
+    decideHandler({} as any, decideRes, vi.fn());
+    expect(decideRes.status).toHaveBeenCalledWith(501);
+    expect(decideRes.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Not implemented' })
+    );
 
-    await decideHandler(decideReq, decideRes, vi.fn());
-    expect(polymorphicMocks.simulateRoutingDecision).toHaveBeenCalledWith('route', { foo: 'bar' });
-    expect(decideRes.json).toHaveBeenCalledWith({ selectedAgent: 'agent-alpha', confidence: 0.92 });
-
-    const executeReq: any = { body: { query: 'execute', context: { fizz: 'buzz' } } };
     const executeRes: any = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
     };
-
-    await executeHandler(executeReq, executeRes, vi.fn());
-    expect(polymorphicMocks.executeAgent).toHaveBeenCalled();
-    expect(executeRes.json).toHaveBeenCalledWith({
-      decision: { selectedAgent: 'agent-alpha', confidence: 0.92 },
-      execution: { result: 'ok' },
-    });
-  });
-
-  it('validates required query payloads', async () => {
-    let response = await request(app).post('/registry/routing/decide').send({});
-    expect(response.status).toBe(400);
-
-    response = await request(app).post('/registry/routing/execute').send({});
-    expect(response.status).toBe(400);
+    executeHandler({} as any, executeRes, vi.fn());
+    expect(executeRes.status).toHaveBeenCalledWith(501);
+    expect(executeRes.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Not implemented' })
+    );
   });
 
   it('returns routing statistics and performance comparison', async () => {
