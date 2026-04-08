@@ -1,13 +1,13 @@
 # .github/workflows/golden-chain-coverage.yml
 # Golden Chain Coverage Gate (OMN-7495)
 #
-# Runs golden projection tests in unit mode and verifies Tier 1 topic coverage.
 # Always produces a `golden-chain` check status (required by branch protection).
 # Skips the heavy test run when no projection-related files changed.
 name: Golden Chain Coverage Gate
 
 on:
   pull_request:
+  merge_group:
   push:
     branches: [main]
 
@@ -22,7 +22,7 @@ jobs:
       - name: Check for projection-related changes
         id: changes
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "merge_group" ]; then
             echo "run_tests=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
