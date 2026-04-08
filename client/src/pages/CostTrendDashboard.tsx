@@ -30,6 +30,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ModelSelector } from '@/components/ModelSelector';
 import { cn } from '@/lib/utils';
 import type {
   CostSummary,
@@ -720,6 +721,7 @@ export default function CostTrendDashboard() {
 
   const [timeWindow, setTimeWindow] = useState<CostTimeWindow>('7d');
   const [includeEstimated, setIncludeEstimated] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
   // Data Fetching
@@ -737,13 +739,15 @@ export default function CostTrendDashboard() {
     refetchInterval: 15_000,
   });
 
+  const trendFetchOpts = { includeEstimated, model: selectedModel ?? undefined };
+
   const {
     data: trend,
     isLoading: trendLoading,
     isError: trendError,
   } = useQuery<CostTrendPoint[]>({
-    queryKey: [...queryKeys.costs.trend(timeWindow), includeEstimated],
-    queryFn: () => costSource.trend(timeWindow, fetchOpts),
+    queryKey: [...queryKeys.costs.trend(timeWindow, selectedModel ?? undefined), includeEstimated],
+    queryFn: () => costSource.trend(timeWindow, trendFetchOpts),
     refetchInterval: 15_000,
   });
 
@@ -958,10 +962,17 @@ export default function CostTrendDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-muted-foreground" />
-              Cost Over Time ({timeWindow})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                Cost Over Time ({timeWindow})
+              </CardTitle>
+              <ModelSelector
+                value={selectedModel}
+                onChange={setSelectedModel}
+                className="w-[180px] h-8 text-xs"
+              />
+            </div>
           </CardHeader>
           <CardContent>
             {trendError ? (

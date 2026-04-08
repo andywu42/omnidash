@@ -19,6 +19,8 @@ import { buildApiUrl } from './api-base';
 export interface CostFetchOptions {
   /** Include estimated data (default: false -- API-reported only). */
   includeEstimated?: boolean;
+  /** Filter by a specific model name. */
+  model?: string;
 }
 
 /**
@@ -29,11 +31,16 @@ export interface CostFetchOptions {
 class CostSource {
   private baseUrl = buildApiUrl('/api/costs');
 
-  /** Build URL query string from window and includeEstimated options. */
-  private buildParams(options: { window?: CostTimeWindow; includeEstimated?: boolean }): string {
+  /** Build URL query string from window, includeEstimated, and model options. */
+  private buildParams(options: {
+    window?: CostTimeWindow;
+    includeEstimated?: boolean;
+    model?: string;
+  }): string {
     const params = new URLSearchParams();
     if (options.window) params.set('window', options.window);
     if (options.includeEstimated) params.set('includeEstimated', 'true');
+    if (options.model) params.set('model', options.model);
     return params.toString() ? `?${params.toString()}` : '';
   }
 
@@ -55,9 +62,9 @@ class CostSource {
     window: CostTimeWindow = '7d',
     options: CostFetchOptions = {}
   ): Promise<CostTrendPoint[]> {
-    const { includeEstimated } = options;
+    const { includeEstimated, model } = options;
     const response = await fetch(
-      `${this.baseUrl}/trend${this.buildParams({ window, includeEstimated })}`
+      `${this.baseUrl}/trend${this.buildParams({ window, includeEstimated, model })}`
     );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();

@@ -41,6 +41,7 @@ vi.mock('../projection-bootstrap', () => {
     // Public query methods (for completeness)
     querySummary: vi.fn(),
     queryTrend: vi.fn(),
+    queryTrendForModel: vi.fn(),
     queryByModel: vi.fn(),
     queryByRepo: vi.fn(),
     queryByPattern: vi.fn(),

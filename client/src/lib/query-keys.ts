@@ -518,8 +518,9 @@ export const queryKeys = {
     /** Summary metrics for a time window */
     summary: (window: string) => [...queryKeys.costs.all, 'summary', window] as const,
 
-    /** Cost trend over time */
-    trend: (window: string) => [...queryKeys.costs.all, 'trend', window] as const,
+    /** Cost trend over time, optionally filtered by model */
+    trend: (window: string, model?: string) =>
+      [...queryKeys.costs.all, 'trend', window, model ?? 'all'] as const,
 
     /** Cost breakdown by model */
     byModel: () => [...queryKeys.costs.all, 'by-model'] as const,
