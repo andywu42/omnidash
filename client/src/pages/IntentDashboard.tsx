@@ -404,7 +404,7 @@ export default function IntentDashboard() {
   // Server-side projection snapshot (OMN-2096 r4)
   // Fetches on mount, then re-fetches when WebSocket invalidation arrives.
   // When demo mode is active, fetchOnMount is disabled so we don't poll live data.
-  const liveStream = useIntentProjectionStream<IntentProjectionPayload>('intent', {
+  const liveStream = useIntentProjectionStream<IntentProjectionPayload>('intent-db', {
     limit: 100,
     fetchOnMount: !isDemoMode,
   });

@@ -79,7 +79,7 @@ describe('startup-self-test', () => {
           }),
         };
       }
-      if (viewId === 'intent') {
+      if (viewId === 'intent-db') {
         return {
           getSnapshot: () => ({
             payload: { totalIntents: 10, lastEventTimeMs: Date.now() },

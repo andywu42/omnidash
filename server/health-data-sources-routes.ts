@@ -299,7 +299,7 @@ function probeCost(): DataSourceInfo {
  */
 function probeIntents(): DataSourceInfo {
   try {
-    const view = projectionService.getView<IntentProjectionPayload>('intent');
+    const view = projectionService.getView<IntentProjectionPayload>('intent-db');
     if (!view) {
       return { status: 'mock', reason: 'no_projection_registered' };
     }

@@ -106,9 +106,12 @@ export default function IntelligenceCategory() {
   // ---------------------------------------------------------------------------
   // Intent Projection Data
   // ---------------------------------------------------------------------------
-  const { snapshot, isConnected } = useIntentProjectionStream<IntentProjectionPayload>('intent', {
-    limit: 100,
-  });
+  const { snapshot, isConnected } = useIntentProjectionStream<IntentProjectionPayload>(
+    'intent-db',
+    {
+      limit: 100,
+    }
+  );
 
   const categoryCount = snapshot?.categoryCount ?? 0;
 

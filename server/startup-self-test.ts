@@ -254,7 +254,7 @@ function probeCostTrends(): SelfTestEntry {
 
 function probeIntents(): SelfTestEntry {
   try {
-    const view = projectionService.getView<IntentProjectionPayload>('intent');
+    const view = projectionService.getView<IntentProjectionPayload>('intent-db');
     if (!view)
       return {
         source: 'intents',
