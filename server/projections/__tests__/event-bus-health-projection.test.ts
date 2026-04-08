@@ -98,7 +98,7 @@ describe('EventBusHealthProjection', () => {
 
     const oldTs = new Date().toISOString();
     projection.ingest({
-      topic: 'onex.evt.omnintelligence.pattern-discovery.v1',
+      topic: 'onex.evt.omniintelligence.pattern-discovered.v1',
       consumerGroup: 'omnidash-consumer',
       lag: 0,
       lastMessageTimestamp: oldTs,
@@ -109,7 +109,7 @@ describe('EventBusHealthProjection', () => {
     // Advance time 11 minutes
     vi.advanceTimersByTime(11 * 60_000);
 
-    const topic = projection.getTopicHealth('onex.evt.omnintelligence.pattern-discovery.v1');
+    const topic = projection.getTopicHealth('onex.evt.omniintelligence.pattern-discovered.v1');
     expect(topic!.silent).toBe(true);
 
     vi.useRealTimers();
@@ -117,7 +117,7 @@ describe('EventBusHealthProjection', () => {
 
   it('should not mark topic as silent when last message is recent', () => {
     projection.ingest({
-      topic: 'onex.evt.omnintelligence.pattern-discovery.v1',
+      topic: 'onex.evt.omniintelligence.pattern-discovered.v1',
       consumerGroup: 'omnidash-consumer',
       lag: 0,
       lastMessageTimestamp: new Date().toISOString(),
@@ -125,13 +125,13 @@ describe('EventBusHealthProjection', () => {
       presentOnBroker: true,
     });
 
-    const topic = projection.getTopicHealth('onex.evt.omnintelligence.pattern-discovery.v1');
+    const topic = projection.getTopicHealth('onex.evt.omniintelligence.pattern-discovered.v1');
     expect(topic!.silent).toBe(false);
   });
 
   it('should mark topic as silent when lastMessageTimestamp is null', () => {
     projection.ingest({
-      topic: 'onex.evt.omnintelligence.pattern-discovery.v1',
+      topic: 'onex.evt.omniintelligence.pattern-discovered.v1',
       consumerGroup: 'omnidash-consumer',
       lag: 0,
       lastMessageTimestamp: null,
@@ -139,7 +139,7 @@ describe('EventBusHealthProjection', () => {
       presentOnBroker: true,
     });
 
-    const topic = projection.getTopicHealth('onex.evt.omnintelligence.pattern-discovery.v1');
+    const topic = projection.getTopicHealth('onex.evt.omniintelligence.pattern-discovered.v1');
     expect(topic!.silent).toBe(true);
   });
 

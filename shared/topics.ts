@@ -373,6 +373,16 @@ export const SUFFIX_INTELLIGENCE_PATTERN_LIFECYCLE_TRANSITIONED =
   'onex.evt.omniintelligence.pattern-lifecycle-transitioned.v1';
 export const SUFFIX_INTELLIGENCE_PATTERN_PROMOTED = 'onex.evt.omniintelligence.pattern-promoted.v1';
 export const SUFFIX_INTELLIGENCE_PATTERN_STORED = 'onex.evt.omniintelligence.pattern-stored.v1';
+export const SUFFIX_INTELLIGENCE_PATTERN_REFINED =
+  'onex.evt.omniintelligence.pattern-refined.v1';
+
+/** OmniMemory document ingestion event (OMN-7810) */
+export const SUFFIX_OMNIMEMORY_DOCUMENT_INGESTED =
+  'onex.evt.omnimemory.document-ingested.v1';
+
+/** OmniNode routing events (OMN-7810) */
+export const SUFFIX_OMNINODE_ROUTING_REQUESTED =
+  'onex.cmd.omninode.routing-requested.v1';
 
 /** Intelligence pattern projection snapshot (OMN-2924) */
 export const SUFFIX_INTELLIGENCE_PATTERN_PROJECTION =

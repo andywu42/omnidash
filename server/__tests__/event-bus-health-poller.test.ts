@@ -118,9 +118,8 @@ describe('event-bus-health-poller configuration (OMN-4970)', () => {
       'onex.evt.omniclaude.epic-run-updated.v1',
       'onex.evt.omniclaude.pr-watch-updated.v1',
       'onex.evt.omniclaude.budget-cap-hit.v1',
-      // OMN-5600: pattern-discovery uses underscore-prefixed topic name
-      // matching the actual broker topic (_omniintelligence.pattern-discovery.v1)
-      '_omniintelligence.pattern-discovery.v1',
+      // OMN-7810: multi-producer topic (no service-specific segment)
+      'onex.evt.pattern.discovered.v1',
       'onex.evt.omniintelligence.intent-classified.v1',
     ];
 
