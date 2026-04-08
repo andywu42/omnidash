@@ -68,12 +68,14 @@ describe('isLatencyBreakdownEvent (OMN-6392)', () => {
     expect(isLatencyBreakdownEvent(event)).toBe(false);
   });
 
-  it('rejects event missing both prompt_id and promptId', () => {
+  it('accepts event missing prompt_id — emitter has no prompt_id concept (OMN-7919)', () => {
+    // The Python emitter sends correlation_id but no prompt_id.
+    // Events without prompt_id must pass this guard so they are not silently dropped.
     const event = {
       session_id: 'sess-007',
       cohort: 'test-cohort',
     };
-    expect(isLatencyBreakdownEvent(event)).toBe(false);
+    expect(isLatencyBreakdownEvent(event)).toBe(true);
   });
 
   it('rejects null', () => {

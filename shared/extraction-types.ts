@@ -155,7 +155,7 @@ export interface AgentMatchEvent {
  */
 export interface LatencyBreakdownEvent {
   session_id: string;
-  prompt_id: string;
+  prompt_id?: string | null;
   cohort: string;
   routing_time_ms?: number;
   retrieval_time_ms?: number;
@@ -231,11 +231,10 @@ export function isAgentMatchEvent(e: unknown): e is AgentMatchEvent {
 /**
  * Narrow an unknown Kafka payload to a LatencyBreakdownEvent.
  *
- * Validates required fields: `session_id` (via base) and `prompt_id`.
- * Accepts both snake_case and camelCase variants (OMN-6392).
+ * Validates required fields: `session_id` (via base).
+ * prompt_id is optional — the Python emitter has no prompt_id concept,
+ * only correlation_id. Events without prompt_id must pass this guard.
  */
 export function isLatencyBreakdownEvent(e: unknown): e is LatencyBreakdownEvent {
-  if (!isExtractionBaseEvent(e)) return false;
-  const obj = e as Record<string, unknown>;
-  return isNonEmptyString(obj.prompt_id) || isNonEmptyString(obj.promptId);
+  return isExtractionBaseEvent(e);
 }

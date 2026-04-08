@@ -568,7 +568,7 @@ export const latencyBreakdowns = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     sessionId: uuid('session_id').notNull(),
-    promptId: uuid('prompt_id').notNull(),
+    promptId: uuid('prompt_id'),
     routingTimeMs: integer('routing_time_ms'),
     retrievalTimeMs: integer('retrieval_time_ms'),
     injectionTimeMs: integer('injection_time_ms'),
@@ -582,7 +582,6 @@ export const latencyBreakdowns = pgTable(
     index('idx_lb_session_id').on(table.sessionId),
     index('idx_lb_created_at').on(table.createdAt),
     index('idx_lb_cohort').on(table.cohort),
-    uniqueIndex('uq_lb_session_prompt_cohort').on(table.sessionId, table.promptId, table.cohort),
   ]
 );
 
