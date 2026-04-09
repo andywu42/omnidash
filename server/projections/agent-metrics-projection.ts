@@ -22,6 +22,24 @@ import { agentActions, agentTransformationEvents } from '@shared/intelligence-sc
 import { DbBackedProjectionView } from './db-backed-projection-view';
 import { tryGetIntelligenceDb } from '../storage';
 
+/** Parse a time window like '1h', '30m', '7d' into { num, unit } for MAKE_INTERVAL. */
+function parseTimeWindow(tw: string): { num: number; unit: 'hours' | 'mins' | 'days' } {
+  if (tw === 'all') return { num: 10000, unit: 'days' };
+  const match = tw.match(/^(\d+)([hmd])$/);
+  if (!match) return { num: 24, unit: 'hours' };
+  const num = Math.max(1, parseInt(match[1], 10));
+  switch (match[2]) {
+    case 'h':
+      return { num, unit: 'hours' };
+    case 'm':
+      return { num, unit: 'mins' };
+    case 'd':
+      return { num, unit: 'days' };
+    default:
+      return { num: 24, unit: 'hours' };
+  }
+}
+
 // ============================================================================
 // Payload types
 // ============================================================================
@@ -125,13 +143,21 @@ export class AgentMetricsProjection extends DbBackedProjectionView<AgentMetricsP
     const db = tryGetIntelligenceDb();
     if (!db) return [];
     try {
-      const interval = timeWindowToInterval(timeWindow);
+      const { num, unit } = parseTimeWindow(timeWindow);
+      // MAKE_INTERVAL named params are SQL keywords, not values — write three
+      // literal branches so no sql.raw() is needed for the unit identifier.
+      const intervalExpr =
+        unit === 'mins'
+          ? sql`MAKE_INTERVAL(mins => ${num})`
+          : unit === 'days'
+            ? sql`MAKE_INTERVAL(days => ${num})`
+            : sql`MAKE_INTERVAL(hours => ${num})`;
       const rows = await db.execute(sql`
         SELECT id, correlation_id, agent_name, action_type, action_name,
                action_details, debug_mode, duration_ms, created_at
         FROM agent_actions
         WHERE agent_name = ${agentName}
-          AND created_at >= NOW() - INTERVAL ${interval}
+          AND created_at >= NOW() - ${intervalExpr}
         ORDER BY created_at DESC
         LIMIT ${Math.max(1, Math.min(limit, 1000))}
       `);
@@ -267,7 +293,13 @@ export class AgentMetricsProjection extends DbBackedProjectionView<AgentMetricsP
   // --------------------------------------------------------------------------
 
   private async queryAgentSummary(db: Db, timeWindow = '24h'): Promise<AgentMetricsSummary[]> {
-    const interval = timeWindowToInterval(timeWindow);
+    const { num, unit } = parseTimeWindow(timeWindow);
+    const intervalExpr =
+      unit === 'mins'
+        ? sql`MAKE_INTERVAL(mins => ${num})`
+        : unit === 'days'
+          ? sql`MAKE_INTERVAL(days => ${num})`
+          : sql`MAKE_INTERVAL(hours => ${num})`;
     const rows = await db.execute(sql`
       SELECT
         COALESCE(ard.selected_agent, aa.agent_name) AS agent,
@@ -277,8 +309,8 @@ export class AgentMetricsProjection extends DbBackedProjectionView<AgentMetricsP
       FROM agent_actions aa
       FULL OUTER JOIN agent_routing_decisions ard
         ON aa.correlation_id = ard.correlation_id
-      WHERE (aa.created_at >= NOW() - INTERVAL ${interval})
-         OR (ard.created_at >= NOW() - INTERVAL ${interval})
+      WHERE (aa.created_at >= NOW() - ${intervalExpr})
+         OR (ard.created_at >= NOW() - ${intervalExpr})
       GROUP BY COALESCE(ard.selected_agent, aa.agent_name)
       HAVING COUNT(DISTINCT COALESCE(aa.id, ard.id)) > 0
       ORDER BY total_requests DESC
@@ -368,18 +400,3 @@ function mapActionRow(r: any): AgentActionRecord {
   };
 }
 
-function timeWindowToInterval(tw: string): string {
-  const match = tw.match(/^(\d+)([hmd])$/);
-  if (!match) return '24 hours';
-  const [, num, unit] = match;
-  switch (unit) {
-    case 'h':
-      return `${num} hours`;
-    case 'm':
-      return `${num} minutes`;
-    case 'd':
-      return `${num} days`;
-    default:
-      return '24 hours';
-  }
-}
