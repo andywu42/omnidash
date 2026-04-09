@@ -180,7 +180,7 @@ router.get('/trend', async (req, res) => {
     if (modelFilter) {
       const filtered = await view.queryTrendForModel(timeWindow, modelFilter);
       if (!filtered) {
-        return res.json([]);
+        return res.json([]); // fallback-ok: no trend data for specified model filter; empty is a valid result
       }
       trend = filtered;
     } else {

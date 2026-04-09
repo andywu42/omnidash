@@ -36,7 +36,7 @@ export function registerTraceRoutes(router: Router): void {
         .limit(limit);
 
       if (decisions.length === 0) {
-        res.json([]);
+        res.json([]); // fallback-ok: no routing decisions recorded yet; empty is a valid result before any agent activity
         return;
       }
 
