@@ -885,6 +885,7 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
             ? String(data.sessionId)
             : null,
       selectedProvider,
+      selectedTier: String(data.selected_tier ?? data.selectedTier ?? 'claude'),
       selectedModel: String(data.selected_model ?? data.selectedModel ?? ''),
       reason: String(data.reason ?? ''),
       selectionMode: String(data.selection_mode ?? data.selectionMode ?? 'round_robin'),
@@ -913,6 +914,7 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
           target: infraRoutingDecisions.correlationId,
           set: {
             selectedProvider: row.selectedProvider,
+            selectedTier: row.selectedTier,
             selectedModel: row.selectedModel,
             reason: row.reason,
             selectionMode: row.selectionMode,

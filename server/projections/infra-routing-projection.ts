@@ -21,6 +21,7 @@ export interface InfraRoutingDecisionRow {
   correlationId: string;
   sessionId: string | null;
   selectedProvider: string;
+  selectedTier: string;
   selectedModel: string;
   reason: string;
   selectionMode: string;
@@ -87,6 +88,7 @@ export class InfraRoutingProjection extends DbBackedProjectionView<InfraRoutingP
             correlation_id AS "correlationId",
             session_id AS "sessionId",
             selected_provider AS "selectedProvider",
+            selected_tier AS "selectedTier",
             selected_model AS "selectedModel",
             reason,
             selection_mode AS "selectionMode",

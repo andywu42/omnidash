@@ -2698,6 +2698,7 @@ export const infraRoutingDecisions = pgTable(
     correlationId: text('correlation_id').unique().notNull(),
     sessionId: text('session_id'),
     selectedProvider: text('selected_provider').notNull(),
+    selectedTier: text('selected_tier').notNull().default('claude'),
     selectedModel: text('selected_model').notNull().default(''),
     reason: text('reason').notNull().default(''),
     selectionMode: text('selection_mode').notNull().default('round_robin'),
@@ -2712,6 +2713,7 @@ export const infraRoutingDecisions = pgTable(
     index('idx_infra_routing_created_at').on(table.createdAt),
     index('idx_infra_routing_provider').on(table.selectedProvider),
     index('idx_infra_routing_model').on(table.selectedModel),
+    index('idx_infra_routing_tier').on(table.selectedTier),
   ]
 );
 
