@@ -14,7 +14,9 @@
  *   GET /api/costs/token-usage
  *
  * Source table: llm_cost_aggregates (defined in shared/intelligence-schema.ts)
- * Zero-cost rows are excluded from aggregates (total_cost_usd = 0 is filtered out).
+ * Zero-cost rows (local/free LLMs) are INCLUDED in token-based aggregates.
+ * Cost-specific queries (cost_change_pct, prior-period comparison) still filter
+ * on total_cost_usd > 0 to avoid skewing cost deltas with $0.00 rows.
  *
  * Note on NULL handling: even though numeric columns are declared NOT NULL with a
  * DEFAULT of '0', PostgreSQL's SUM() aggregate returns NULL (not 0) when the
@@ -306,7 +308,10 @@ export class CostMetricsProjection extends DbBackedProjectionView<CostMetricsPay
     const cutoff = windowCutoff(window);
     const unit = truncUnit(window);
 
-    const conditions = [gte(lca.bucketTime, cutoff), gt(lca.totalCostUsd, '0')];
+    // Include all rows regardless of cost so that zero-cost local-LLM calls
+    // (e.g. Ollama, local vLLM) are reflected in the trend chart. The cost
+    // line will show $0.00 for those periods, which is correct.
+    const conditions = [gte(lca.bucketTime, cutoff)];
     if (modelName) {
       conditions.push(eq(lca.modelName, modelName));
     }
@@ -376,7 +381,9 @@ export class CostMetricsProjection extends DbBackedProjectionView<CostMetricsPay
         usage_source: sql<string | null>`mode() WITHIN GROUP (ORDER BY ${lca.usageSource})`,
       })
       .from(lca)
-      .where(and(gte(lca.bucketTime, cutoff), gt(lca.totalCostUsd, '0')))
+      // Include zero-cost rows so local LLMs (e.g. Ollama, local vLLM) appear
+      // in the breakdown. Their cost column will show $0.00 which is accurate.
+      .where(gte(lca.bucketTime, cutoff))
       .groupBy(lca.modelName)
       .orderBy(desc(sql`SUM(${lca.totalCostUsd}::numeric)`));
 
@@ -416,7 +423,8 @@ export class CostMetricsProjection extends DbBackedProjectionView<CostMetricsPay
         usage_source: sql<string | null>`mode() WITHIN GROUP (ORDER BY ${lca.usageSource})`,
       })
       .from(lca)
-      .where(and(gte(lca.bucketTime, cutoff), gt(lca.totalCostUsd, '0')))
+      // Include zero-cost rows so local LLMs appear in the repo breakdown.
+      .where(gte(lca.bucketTime, cutoff))
       .groupBy(lca.repoName)
       .orderBy(desc(sql`SUM(${lca.totalCostUsd}::numeric)`));
 
@@ -454,7 +462,8 @@ export class CostMetricsProjection extends DbBackedProjectionView<CostMetricsPay
         usage_source: sql<string | null>`mode() WITHIN GROUP (ORDER BY ${lca.usageSource})`,
       })
       .from(lca)
-      .where(and(gte(lca.bucketTime, cutoff), gt(lca.totalCostUsd, '0')))
+      // Include zero-cost rows so local LLMs appear in the pattern breakdown.
+      .where(gte(lca.bucketTime, cutoff))
       .groupBy(lca.patternId, lca.patternName)
       .orderBy(desc(sql`SUM(${lca.totalCostUsd}::numeric)`));
 
