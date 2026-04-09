@@ -806,7 +806,7 @@ export function registerPatternRoutes(router: Router): void {
                 sum +
                 (typeof m.qualityScore === 'string'
                   ? parseFloat(m.qualityScore)
-                  : m.qualityScore || 0),
+                  : (m.qualityScore ?? 0)),
               0
             ) / Math.min(5, qualityMetrics.length);
         const olderAvg =
@@ -817,7 +817,7 @@ export function registerPatternRoutes(router: Router): void {
                 sum +
                 (typeof m.qualityScore === 'string'
                   ? parseFloat(m.qualityScore)
-                  : m.qualityScore || 0),
+                  : (m.qualityScore ?? 0)),
               0
             ) / Math.max(1, qualityMetrics.length - 5);
         trend = recentAvg - olderAvg;
@@ -841,7 +841,7 @@ export function registerPatternRoutes(router: Router): void {
       const response = {
         id: patternData.id,
         name: patternData.patternName || 'Unknown Pattern',
-        quality: qualityScore || 0,
+        quality: qualityScore ?? null,
         usage: metadata.usageCount || 0,
         category: metadata.patternCategory || patternData.patternType || 'uncategorized',
         description: metadata.description || '',
