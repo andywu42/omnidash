@@ -1,26 +1,46 @@
 import { Router, type Request, type Response } from 'express';
-import { getOidcClient, isAuthEnabled, getBaseUrl, generators } from './oidc-client';
+import rateLimit from 'express-rate-limit';
+import * as client from 'openid-client';
+import { getOidcConfig, isAuthEnabled, getBaseUrl } from './oidc-client';
+
+// Rate limiter for auth endpoints (15 requests per 60s window per IP)
+const authRateLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication requests, please try again later' },
+});
 
 const router = Router();
 
 // GET /auth/login — initiate OIDC authorization code flow with PKCE
-router.get('/login', (req: Request, res: Response) => {
+router.get('/login', authRateLimiter, async (req: Request, res: Response) => {
   if (!isAuthEnabled()) {
     return res.status(503).json({ error: 'Authentication is not enabled' });
   }
 
-  const client = getOidcClient();
-  const state = generators.state();
-  const nonce = generators.nonce();
-  const codeVerifier = generators.codeVerifier();
-  const codeChallenge = generators.codeChallenge(codeVerifier);
+  const config = getOidcConfig();
+  const state = client.randomState();
+  const nonce = client.randomNonce();
+  const codeVerifier = client.randomPKCECodeVerifier();
+  const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier);
+
+  // Regenerate session to prevent session fixation attacks
+  const returnTo = (req.query.returnTo as string) || '/';
+  await new Promise<void>((resolve, reject) => {
+    req.session.regenerate((err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
 
   req.session.oidcState = state;
   req.session.oidcNonce = nonce;
   req.session.oidcCodeVerifier = codeVerifier;
-  req.session.returnTo = (req.query.returnTo as string) || '/';
+  req.session.returnTo = returnTo;
 
-  const authUrl = client.authorizationUrl({
+  const authUrl = client.buildAuthorizationUrl(config, {
     scope: 'openid profile email offline_access',
     state,
     nonce,
@@ -29,47 +49,53 @@ router.get('/login', (req: Request, res: Response) => {
     redirect_uri: `${getBaseUrl()}/auth/callback`,
   });
 
-  res.redirect(authUrl);
+  res.redirect(authUrl.href);
 });
 
 // GET /auth/callback — exchange authorization code for tokens
-router.get('/callback', async (req: Request, res: Response) => {
+router.get('/callback', authRateLimiter, async (req: Request, res: Response) => {
   if (!isAuthEnabled()) {
     return res.status(503).json({ error: 'Authentication is not enabled' });
   }
 
   try {
-    const client = getOidcClient();
-    const params = client.callbackParams(req);
+    const config = getOidcConfig();
+    const currentUrl = new URL(`${getBaseUrl()}${req.originalUrl}`);
 
-    const tokenSet = await client.callback(`${getBaseUrl()}/auth/callback`, params, {
-      state: req.session.oidcState,
-      nonce: req.session.oidcNonce,
-      code_verifier: req.session.oidcCodeVerifier,
+    const tokenResponse = await client.authorizationCodeGrant(config, currentUrl, {
+      expectedState: req.session.oidcState,
+      expectedNonce: req.session.oidcNonce,
+      pkceCodeVerifier: req.session.oidcCodeVerifier,
     });
 
     // Store token set in session
     req.session.tokenSet = {
-      access_token: tokenSet.access_token,
-      refresh_token: tokenSet.refresh_token,
-      id_token: tokenSet.id_token,
-      expires_at: tokenSet.expires_at,
-      token_type: tokenSet.token_type,
+      access_token: tokenResponse.access_token,
+      refresh_token: tokenResponse.refresh_token,
+      id_token: tokenResponse.id_token,
+      expires_at: tokenResponse.expires_in
+        ? Math.floor(Date.now() / 1000) + tokenResponse.expires_in
+        : undefined,
+      token_type: tokenResponse.token_type,
     };
 
     // Extract user claims from ID token
-    const claims = tokenSet.claims();
-    const realmAccess = (claims as Record<string, unknown>).realm_access as
-      | { roles?: string[] }
-      | undefined;
+    const claims = tokenResponse.claims();
+    if (claims) {
+      const realmAccess = (claims as Record<string, unknown>).realm_access as
+        | { roles?: string[] }
+        | undefined;
 
-    req.session.user = {
-      sub: claims.sub,
-      email: claims.email,
-      name: claims.name,
-      preferred_username: claims.preferred_username,
-      realm_roles: realmAccess?.roles,
-    };
+      req.session.user = {
+        sub: claims.sub,
+        email: (claims as Record<string, unknown>).email as string | undefined,
+        name: (claims as Record<string, unknown>).name as string | undefined,
+        preferred_username: (claims as Record<string, unknown>).preferred_username as
+          | string
+          | undefined,
+        realm_roles: realmAccess?.roles,
+      };
+    }
 
     // Clean up OIDC flow state
     delete req.session.oidcState;
@@ -92,7 +118,7 @@ router.post('/logout', (req: Request, res: Response) => {
     return res.status(503).json({ error: 'Authentication is not enabled' });
   }
 
-  const client = getOidcClient();
+  const config = getOidcConfig();
   const idTokenHint = req.session.tokenSet?.id_token;
 
   req.session.destroy((err) => {
@@ -102,12 +128,12 @@ router.post('/logout', (req: Request, res: Response) => {
 
     let logoutUrl: string;
     try {
-      logoutUrl = client.endSessionUrl({
-        id_token_hint: idTokenHint,
-        post_logout_redirect_uri: getBaseUrl(),
-      });
+      const params: Record<string, string> = {};
+      if (idTokenHint) params.id_token_hint = idTokenHint;
+      params.post_logout_redirect_uri = getBaseUrl();
+      logoutUrl = client.buildEndSessionUrl(config, params).href;
     } catch {
-      // If endSessionUrl fails (e.g., no end_session_endpoint), redirect to base
+      // If buildEndSessionUrl fails (e.g., no end_session_endpoint), redirect to base
       logoutUrl = getBaseUrl();
     }
 

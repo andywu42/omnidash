@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
-import { isAuthEnabled, getOidcClient } from './oidc-client';
+import * as client from 'openid-client';
+import { isAuthEnabled, getOidcConfig } from './oidc-client';
 
 /**
  * Middleware: refresh access token if expiring within 60 seconds.
@@ -28,20 +29,22 @@ export function refreshTokenIfNeeded(req: Request, res: Response, next: NextFunc
   }
 
   // Token expiring soon — refresh
-  const client = getOidcClient();
+  const config = getOidcConfig();
   client
-    .refresh(tokenSet.refresh_token)
-    .then((newTokenSet) => {
+    .refreshTokenGrant(config, tokenSet.refresh_token)
+    .then((newTokenResponse) => {
       req.session.tokenSet = {
-        access_token: newTokenSet.access_token,
-        refresh_token: newTokenSet.refresh_token || tokenSet.refresh_token,
-        id_token: newTokenSet.id_token || tokenSet.id_token,
-        expires_at: newTokenSet.expires_at,
-        token_type: newTokenSet.token_type,
+        access_token: newTokenResponse.access_token,
+        refresh_token: newTokenResponse.refresh_token || tokenSet.refresh_token,
+        id_token: newTokenResponse.id_token || tokenSet.id_token,
+        expires_at: newTokenResponse.expires_in
+          ? Math.floor(Date.now() / 1000) + newTokenResponse.expires_in
+          : tokenSet.expires_at,
+        token_type: newTokenResponse.token_type,
       };
       next();
     })
-    .catch((error) => {
+    .catch((error: unknown) => {
       console.error('[auth] Token refresh failed:', error);
       req.session.destroy(() => {
         res.status(401).json({ error: 'Session expired', authenticated: false });

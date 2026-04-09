@@ -1,9 +1,7 @@
-import { Issuer, type Client, generators } from 'openid-client';
+import * as client from 'openid-client';
 
-let oidcClient: Client | null = null;
+let oidcConfig: client.Configuration | null = null;
 let authEnabled = false;
-
-export { generators };
 
 export function isAuthEnabled(): boolean {
   return authEnabled;
@@ -15,11 +13,11 @@ export function getBaseUrl(): string {
   return url;
 }
 
-export function getOidcClient(): Client {
-  if (!oidcClient) {
+export function getOidcConfig(): client.Configuration {
+  if (!oidcConfig) {
     throw new Error('OIDC client not initialized. Call initOidcClient() first.');
   }
-  return oidcClient;
+  return oidcConfig;
 }
 
 export async function initOidcClient(): Promise<void> {
@@ -56,17 +54,17 @@ export async function initOidcClient(): Promise<void> {
   }
 
   try {
-    const issuer = await Issuer.discover(issuerUrl);
-    console.log(`[oidc] Discovered issuer: ${issuer.metadata.issuer}`);
+    const config = await client.discovery(
+      new URL(issuerUrl),
+      clientId,
+      { redirect_uris: [`${getBaseUrl()}/auth/callback`] },
+      client.ClientSecretPost(clientSecret),
+    );
 
-    oidcClient = new issuer.Client({
-      client_id: clientId,
-      client_secret: clientSecret,
-      redirect_uris: [`${getBaseUrl()}/auth/callback`],
-      response_types: ['code'],
-      token_endpoint_auth_method: 'client_secret_post',
-    });
+    const serverMeta = config.serverMetadata();
+    console.log(`[oidc] Discovered issuer: ${serverMeta.issuer}`);
 
+    oidcConfig = config;
     authEnabled = true;
     console.log('[oidc] OIDC client initialized successfully');
   } catch (error) {
