@@ -374,7 +374,8 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
     // Build trend rows
     const trendRows: InsertBaselinesTrend[] = (rawTrend as Record<string, unknown>[])
       .filter((t) => {
-        const date = t.date ?? t.dateStr;
+        // Accept date, dateStr, or trend_date (upstream producer uses trend_date)
+        const date = t.date ?? t.dateStr ?? t.trend_date;
         if (date == null || date === '') {
           console.warn(
             '[ReadModelConsumer] Skipping trend row with blank/null date:',
@@ -393,7 +394,7 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
       })
       .map((t) => ({
         snapshotId,
-        date: String(t.date ?? t.dateStr),
+        date: String(t.date ?? t.dateStr ?? t.trend_date),
         avgCostSavings: String(
           Math.min(Math.max(Number(t.avg_cost_savings ?? t.avgCostSavings ?? 0), 0), 99)
         ),

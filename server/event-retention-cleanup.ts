@@ -66,15 +66,16 @@ export async function runRetentionCleanup(): Promise<{
   if (!db) return { deletedGeneral: 0, deletedHighVolume: 0, deletedNeverStore: 0 };
 
   // 1. Delete never-store topics (safety net for anything that slipped past ingestion filter)
+  // Cast JS array to PostgreSQL text[] so ANY() receives the correct type.
   const neverStoreResult = await db.execute(sql`
     DELETE FROM event_bus_events
-    WHERE topic = ANY(${NEVER_STORE_TOPICS})
+    WHERE topic = ANY(${NEVER_STORE_TOPICS}::text[])
   `);
 
   // 2. Delete high-volume topics beyond retention
   const highVolResult = await db.execute(sql`
     DELETE FROM event_bus_events
-    WHERE topic = ANY(${HIGH_VOLUME_TOPICS})
+    WHERE topic = ANY(${HIGH_VOLUME_TOPICS}::text[])
       AND created_at < NOW() - MAKE_INTERVAL(days => ${HIGH_VOLUME_RETENTION_DAYS})
   `);
 
