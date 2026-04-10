@@ -95,6 +95,8 @@ read_model_topics:
     handler: "projectNodeStateChangeEvent"
 
   # --- omnibase-infra topics ---
+  - topic: "onex.evt.omnibase-infra.consumer-health.v1"
+    handler: "projectConsumerHealth"
   - topic: "onex.evt.omnibase-infra.baselines-computed.v1"
     handler: "projectBaselinesComputed"
   - topic: "onex.evt.omnibase-infra.llm-health-snapshot.v1"

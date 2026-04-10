@@ -7,6 +7,7 @@
  * - Wiring health snapshot -> in-memory WiringHealthProjection (OMN-5292)
  * - Circuit breaker event -> circuit_breaker_events (OMN-5293)
  * - Savings estimated -> savings_estimates (OMN-5552)
+ * - Consumer health event -> consumer_health_events (OMN-5527)
  */
 
 import { randomUUID } from 'crypto';
@@ -22,6 +23,7 @@ import {
   runtimeErrorEvents,
   runtimeErrorTriageState,
   infraRoutingDecisions,
+  consumerHealthEvents,
 } from '@shared/intelligence-schema';
 import type {
   InsertBaselinesSnapshot,
@@ -34,6 +36,7 @@ import type {
   InsertRuntimeErrorEvent,
   InsertRuntimeErrorTriageState,
   InsertInfraRoutingDecision,
+  InsertConsumerHealthEvent,
 } from '@shared/intelligence-schema';
 import { baselinesProjection } from '../../projection-bootstrap';
 import { emitBaselinesUpdate } from '../../baselines-events';
@@ -46,6 +49,7 @@ import {
   TOPIC_OMNIBASE_INFRA_RUNTIME_ERROR,
   TOPIC_OMNIBASE_INFRA_ERROR_TRIAGED,
   TOPIC_OMNIBASE_INFRA_ROUTING_DECIDED,
+  TOPIC_OMNIBASE_INFRA_CONSUMER_HEALTH,
 } from '@shared/topics';
 import { wiringHealthProjection } from '../../projections/wiring-health-projection';
 import type { TopicWiringRecord } from '../../projections/wiring-health-projection';
@@ -78,6 +82,7 @@ const SAVINGS_ESTIMATED_TOPIC = SUFFIX_OMNIBASE_INFRA_SAVINGS_ESTIMATED;
 const RUNTIME_ERROR_TOPIC = TOPIC_OMNIBASE_INFRA_RUNTIME_ERROR;
 const ERROR_TRIAGED_TOPIC = TOPIC_OMNIBASE_INFRA_ERROR_TRIAGED;
 const ROUTING_DECIDED_TOPIC = TOPIC_OMNIBASE_INFRA_ROUTING_DECIDED;
+const CONSUMER_HEALTH_TOPIC = TOPIC_OMNIBASE_INFRA_CONSUMER_HEALTH;
 
 const OMNIBASE_INFRA_TOPICS = new Set([
   SUFFIX_OMNIBASE_INFRA_BASELINES_COMPUTED,
@@ -88,6 +93,7 @@ const OMNIBASE_INFRA_TOPICS = new Set([
   TOPIC_OMNIBASE_INFRA_RUNTIME_ERROR,
   TOPIC_OMNIBASE_INFRA_ERROR_TRIAGED,
   TOPIC_OMNIBASE_INFRA_ROUTING_DECIDED,
+  TOPIC_OMNIBASE_INFRA_CONSUMER_HEALTH,
 ]);
 
 export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
@@ -146,6 +152,9 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
     }
     if (topic === ROUTING_DECIDED_TOPIC) {
       return this.projectInfraRoutingDecided(data, context);
+    }
+    if (topic === CONSUMER_HEALTH_TOPIC) {
+      return this.projectConsumerHealth(data, context, meta);
     }
     return false;
   }
@@ -932,6 +941,81 @@ export class OmnibaseInfraProjectionHandler implements ProjectionHandler {
         console.warn(
           '[ReadModelConsumer] infra_routing_decisions table not yet created -- ' +
             'run migrations to enable infra routing projection'
+        );
+        return true;
+      }
+      throw err;
+    }
+
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
+  // Consumer health events -> consumer_health_events (OMN-5527)
+  // -------------------------------------------------------------------------
+
+  private async projectConsumerHealth(
+    data: Record<string, unknown>,
+    context: ProjectionContext,
+    meta: MessageMeta
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    const rawId = String(data.event_id ?? data.eventId ?? data.id ?? '').trim();
+    const id = rawId && UUID_RE.test(rawId) ? rawId : meta.fallbackId;
+
+    const toNullableNumber = (value: unknown): number | null => {
+      if (value == null || value === '') return null;
+      const n = Number(value);
+      return Number.isFinite(n) ? n : null;
+    };
+    const consumerIdentity = String(data.consumer_identity ?? data.consumerIdentity ?? '').trim();
+    const consumerGroup = String(data.consumer_group ?? data.consumerGroup ?? '').trim();
+    const topic = String(data.topic ?? '').trim();
+    const eventType = String(data.event_type ?? data.eventType ?? '').trim();
+    const severity = String(data.severity ?? 'INFO').trim();
+
+    if (!consumerIdentity || !topic || !eventType) {
+      console.warn('[ReadModelConsumer] consumer-health event missing required fields', {
+        consumerIdentity,
+        topic,
+        eventType,
+      });
+      return true;
+    }
+
+    const row: InsertConsumerHealthEvent = {
+      id,
+      consumerIdentity,
+      consumerGroup,
+      topic,
+      eventType,
+      severity,
+      fingerprint: String(data.fingerprint ?? '').trim(),
+      errorMessage: String(data.error_message ?? data.errorMessage ?? '').slice(0, 2000),
+      errorType: String(data.error_type ?? data.errorType ?? '').trim(),
+      hostname: String(data.hostname ?? '').trim(),
+      serviceLabel: String(data.service_label ?? data.serviceLabel ?? '').trim(),
+      rebalanceDurationMs: toNullableNumber(
+        data.rebalance_duration_ms ?? data.rebalanceDurationMs
+      ),
+      partitionsAssigned: toNullableNumber(
+        data.partitions_assigned ?? data.partitionsAssigned
+      ),
+      partitionsRevoked: toNullableNumber(
+        data.partitions_revoked ?? data.partitionsRevoked
+      ),
+      emittedAt: safeParseDate(data.emitted_at ?? data.emittedAt ?? data.timestamp),
+    };
+
+    try {
+      await db.insert(consumerHealthEvents).values(row).onConflictDoNothing();
+    } catch (err) {
+      if (isTableMissingError(err, 'consumer_health_events')) {
+        console.warn(
+          '[ReadModelConsumer] consumer_health_events table not yet created -- ' +
+            'run migrations to enable consumer health projection'
         );
         return true;
       }

@@ -515,6 +515,10 @@ export const TOPIC_OMNIBASE_INFRA_RUNTIME_ERROR = 'onex.evt.omnibase-infra.runti
  * Consumed by ReadModelConsumer to project into runtime_error_triage_state table. */
 export const TOPIC_OMNIBASE_INFRA_ERROR_TRIAGED = 'onex.evt.omnibase-infra.error-triaged.v1';
 
+/** Consumer health events from omnibase-infra runtime consumers (OMN-5527).
+ * Consumed by ReadModelConsumer to project into consumer_health_events table. */
+export const TOPIC_OMNIBASE_INFRA_CONSUMER_HEALTH = 'onex.evt.omnibase-infra.consumer-health.v1';
+
 /** Hook health error events from omniclaude hooks (OMN-7157).
  * Consumed by ReadModelConsumer to project into hook_health_events table. */
 export const TOPIC_OMNICLAUDE_HOOK_HEALTH_ERROR = 'onex.evt.omniclaude.hook-health-error.v1';
