@@ -204,7 +204,7 @@ monitored_topics:
   - topic: "onex.evt.omniintelligence.pattern-refined.v1"
 
   # --- omnimemory topics ---
-  - topic: "onex.evt.omnimemory.document-ingested.v1"
+  - topic: "onex.evt.omnimemory.document-indexed.v1"
 
   # --- omninode topics ---
   - topic: "onex.cmd.omninode.routing-requested.v1"

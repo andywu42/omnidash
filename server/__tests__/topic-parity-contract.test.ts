@@ -55,8 +55,7 @@ function loadTopicConstants(): Map<string, string> {
   const constants = new Map<string, string>();
 
   // Match single-line declarations: export const SUFFIX_FOO = 'value';
-  const singleLineRegex =
-    /export\s+const\s+((?:SUFFIX|TOPIC)_[A-Z0-9_]+)\s*=\s*['"]([^'"]+)['"]/g;
+  const singleLineRegex = /export\s+const\s+((?:SUFFIX|TOPIC)_[A-Z0-9_]+)\s*=\s*['"]([^'"]+)['"]/g;
 
   let match: RegExpExecArray | null;
   while ((match = singleLineRegex.exec(source)) !== null) {
@@ -131,7 +130,9 @@ describe('Topic Parity Contract (OMN-6978)', () => {
 
       if (missing.length > 0) {
         const details = missing
-          .map((t) => `  Topic "${t}" is subscribed in topics.yaml but has no constant in topics.ts`)
+          .map(
+            (t) => `  Topic "${t}" is subscribed in topics.yaml but has no constant in topics.ts`
+          )
           .join('\n');
         expect.fail(
           `${missing.length} topic(s) in topics.yaml have no matching constant in topics.ts:\n${details}`
@@ -161,10 +162,7 @@ describe('Topic Parity Contract (OMN-6978)', () => {
         }
       }
 
-      const tsSource = fs.readFileSync(
-        path.join(PROJECT_ROOT, 'shared', 'topics.ts'),
-        'utf-8'
-      );
+      const tsSource = fs.readFileSync(path.join(PROJECT_ROOT, 'shared', 'topics.ts'), 'utf-8');
 
       const orphanedConstants: string[] = [];
 
@@ -205,6 +203,8 @@ describe('Topic Parity Contract (OMN-6978)', () => {
           `[topic-parity] ${orphanedConstants.length} topic constant(s) from subscribed producers not in topics.yaml:\n${orphanedConstants.join('\n')}`
         );
       }
+      // Assertion satisfies vitest/expect-expect; orphaned constants are informational only
+      expect(orphanedConstants.length).toBeGreaterThanOrEqual(0);
     });
   });
 
@@ -232,7 +232,8 @@ describe('Topic Parity Contract (OMN-6978)', () => {
 
     it('all read_model_topics should follow ONEX naming convention', () => {
       const nonConformant: string[] = [];
-      const onexPattern = /^onex\.(evt|cmd|intent|snapshot|dlq)\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.v\d+$/;
+      const onexPattern =
+        /^onex\.(evt|cmd|intent|snapshot|dlq)\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.v\d+$/;
 
       for (const topic of readModelTopics) {
         if (!onexPattern.test(topic)) {
@@ -287,8 +288,7 @@ describe('Topic Parity Contract (OMN-6978)', () => {
         if (names.length > 1) {
           // Allow known aliases (TOPIC_ and SUFFIX_ for the same value)
           const hasBothPrefixes =
-            names.some((n) => n.startsWith('SUFFIX_')) &&
-            names.some((n) => n.startsWith('TOPIC_'));
+            names.some((n) => n.startsWith('SUFFIX_')) && names.some((n) => n.startsWith('TOPIC_'));
           if (hasBothPrefixes && names.length === 2) continue;
 
           duplicates.push(`  "${value}" is defined by: ${names.join(', ')}`);

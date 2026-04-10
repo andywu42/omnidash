@@ -149,7 +149,7 @@ describe('EventBusHealthProjection', () => {
 
   it('should set missingFromBroker: true when presentOnBroker is false', () => {
     projection.ingest({
-      topic: 'onex.evt.omnimemory.document-ingested.v1',
+      topic: 'onex.evt.omnimemory.document-indexed.v1',
       consumerGroup: 'omnidash-consumer',
       lag: 0,
       lastMessageTimestamp: null,
@@ -157,13 +157,13 @@ describe('EventBusHealthProjection', () => {
       presentOnBroker: false,
     });
 
-    const topic = projection.getTopicHealth('onex.evt.omnimemory.document-ingested.v1');
+    const topic = projection.getTopicHealth('onex.evt.omnimemory.document-indexed.v1');
     expect(topic!.missingFromBroker).toBe(true);
   });
 
   it('should not set missingFromBroker when topic is present on broker', () => {
     projection.ingest({
-      topic: 'onex.evt.omnimemory.document-ingested.v1',
+      topic: 'onex.evt.omnimemory.document-indexed.v1',
       consumerGroup: 'omnidash-consumer',
       lag: 3,
       lastMessageTimestamp: new Date().toISOString(),
@@ -171,7 +171,7 @@ describe('EventBusHealthProjection', () => {
       presentOnBroker: true,
     });
 
-    const topic = projection.getTopicHealth('onex.evt.omnimemory.document-ingested.v1');
+    const topic = projection.getTopicHealth('onex.evt.omnimemory.document-indexed.v1');
     expect(topic!.missingFromBroker).toBe(false);
   });
 
@@ -232,7 +232,7 @@ describe('EventBusHealthProjection', () => {
       presentOnBroker: true,
     });
     projection.ingest({
-      topic: 'onex.evt.omnimemory.document-ingested.v1',
+      topic: 'onex.evt.omnimemory.document-indexed.v1',
       consumerGroup: 'omnidash-consumer',
       lag: 0,
       lastMessageTimestamp: null,
@@ -244,7 +244,7 @@ describe('EventBusHealthProjection', () => {
     expect(all).toHaveLength(3);
 
     const missing = all.find((t) => t.missingFromBroker);
-    expect(missing!.topic).toBe('onex.evt.omnimemory.document-ingested.v1');
+    expect(missing!.topic).toBe('onex.evt.omnimemory.document-indexed.v1');
 
     const highLag = all.find((t) => t.lag === 15);
     expect(highLag!.topic).toBe('onex.evt.omniclaude.epic-run-updated.v1');

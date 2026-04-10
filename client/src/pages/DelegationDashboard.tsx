@@ -68,7 +68,7 @@ import { TOOLTIP_STYLE, TOOLTIP_STYLE_SM } from '@/lib/constants/chart-theme';
 import type {
   DelegationTimeWindow,
   DelegationShadowDivergence,
-  DelegationByModel,
+  DelegationByModel as _DelegationByModel,
 } from '@shared/delegation-types';
 
 // ============================================================================
