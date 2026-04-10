@@ -21,10 +21,12 @@ function getPerformanceData(agentName: string) {
 // Load agent registry from YAML file
 function loadAgentRegistry() {
   try {
-    // Use environment variable or fallback to sibling directory
+    // Resolve path: env var > $OMNI_HOME-relative > __dirname-relative fallback (OMN-7994)
     const agentDefinitionsPath =
       process.env.AGENT_DEFINITIONS_PATH ||
-      path.resolve(__dirname, '../../omniclaude/plugins/onex/agents/configs');
+      (process.env.OMNI_HOME
+        ? path.join(process.env.OMNI_HOME, 'omniclaude/plugins/onex/agents/configs')
+        : path.resolve(__dirname, '../../omniclaude/plugins/onex/agents/configs'));
     const registryPath = path.join(agentDefinitionsPath, 'agent-registry.yaml');
 
     const fileContents = fs.readFileSync(registryPath, 'utf8');
@@ -85,7 +87,7 @@ router.get('/agents', (req, res) => {
 
     const registry = loadAgentRegistry();
     if (!registry || !registry.agents) {
-      return res.status(500).json({ error: 'Failed to load agent registry' });
+      return res.status(500).json({ error: 'Agent registry not found', agents: [] });
     }
 
     let agents = Object.entries(registry.agents).map(([key, agentData]: [string, any]) => {
