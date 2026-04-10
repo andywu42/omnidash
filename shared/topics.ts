@@ -614,6 +614,11 @@ export const TOPIC_OMNIMARKET_BUILD_LOOP_ORCHESTRATOR_PHASE_TRANSITION =
 export const TOPIC_OMNIMARKET_BUILD_LOOP_ORCHESTRATOR_COMPLETED =
   'onex.evt.omnimarket.build-loop-orchestrator-completed.v1';
 
+/** Sweep result event (OMN-8172).
+ * Emitted by sweep nodes (aislop, coverage, compliance, contract, dashboard, runtime, data_flow)
+ * after each run. Consumed by ReadModelConsumer to project into sweep_results table. */
+export const TOPIC_OMNIMARKET_SWEEP_RESULT = 'onex.evt.omnimarket.sweep-result.v1';
+
 // ============================================================================
 // Topic Groups — DELETED (OMN-5252 / OMN-5031)
 //

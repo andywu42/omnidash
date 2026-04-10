@@ -2787,3 +2787,33 @@ export const insertIntelligenceBloomEvalResultSchema = createInsertSchema(
   intelligenceBloomEvalResults
 );
 export type InsertIntelligenceBloomEvalResult = typeof intelligenceBloomEvalResults.$inferInsert;
+
+// Sweep Results Table (migration 0056_sweep_results, OMN-8172)
+// Projected from onex.evt.omnimarket.sweep-result.v1 by OmnimarketProjectionHandler.
+export const sweepResults = pgTable(
+  'sweep_results',
+  {
+    id: serial('id').primaryKey(),
+    sweepType: varchar('sweep_type', { length: 64 }).notNull(),
+    sessionId: uuid('session_id').notNull(),
+    correlationId: uuid('correlation_id').notNull(),
+    ranAt: timestamp('ran_at', { withTimezone: true }).notNull(),
+    durationSeconds: doublePrecision('duration_seconds'),
+    passed: boolean('passed').notNull(),
+    findingCount: integer('finding_count').default(0),
+    criticalCount: integer('critical_count').default(0),
+    warningCount: integer('warning_count').default(0),
+    reposScanned: text('repos_scanned').array().default([]),
+    summary: text('summary'),
+    outputPath: text('output_path'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (t) => [
+    index('idx_sweep_results_sweep_type').on(t.sweepType),
+    index('idx_sweep_results_ran_at').on(t.ranAt),
+    index('idx_sweep_results_passed').on(t.passed),
+  ]
+);
+
+export const insertSweepResultSchema = createInsertSchema(sweepResults);
+export type InsertSweepResult = typeof sweepResults.$inferInsert;

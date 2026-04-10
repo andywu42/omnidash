@@ -109,7 +109,10 @@ export function startRetentionCleanup(): void {
   // Remove this block after node_retention_cleanup is verified live for 1 week.
   // Set LEGACY_RETENTION_ENABLED=true to re-enable this inline cleanup as a fallback.
   if (process.env.LEGACY_RETENTION_ENABLED !== 'true') {
-    console.log('[retention-cleanup] Skipped — migrated to node_retention_cleanup (OMN-8152). Set LEGACY_RETENTION_ENABLED=true to re-enable.');
+    // ONEX_FLAG_EXEMPT: OMN-8152 migration fallback — remove after node_retention_cleanup verified live 1 week
+    console.log(
+      '[retention-cleanup] Skipped — migrated to node_retention_cleanup (OMN-8152). Set LEGACY_RETENTION_ENABLED=true to re-enable.'
+    );
     return;
   }
 

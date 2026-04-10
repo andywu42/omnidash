@@ -126,6 +126,8 @@ const HANDLER_FILES = [
   path.join(HANDLER_DIR, 'omnimarket-projections.ts'),
   // Bloom eval projection handler (OMN-8146)
   path.join(HANDLER_DIR, 'bloom-eval-projections.ts'),
+  // Sweep result projection handler (OMN-8172)
+  path.join(HANDLER_DIR, 'sweep-projections.ts'),
 ];
 
 // ---------------------------------------------------------------------------
