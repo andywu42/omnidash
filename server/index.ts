@@ -38,6 +38,7 @@ import { getBrokerString } from './bus-config.js';
 import { initProjectionListeners, teardownProjectionListeners } from './projection-instance';
 import { wireProjectionSources } from './projection-bootstrap';
 import { readModelConsumer } from './read-model-consumer';
+import { consumerHealthHeartbeat } from './consumer-health-heartbeat';
 import { runStartupBackfillIfEmpty } from './startup-backfill';
 import { startCdqaGateWatcher } from './cdqa-gate-watcher';
 import { startPipelineHealthWatcher, stopPipelineHealthWatcher } from './pipeline-health-watcher';
@@ -230,6 +231,17 @@ app.use((req, res, next) => {
       console.error('   Application will continue with limited functionality');
     });
 
+  // Start consumer-health heartbeat emitter (OMN-6971).
+  // Publishes a self-reported health event every
+  // CONSUMER_HEALTH_HEARTBEAT_INTERVAL_MS (default 60s). The event loops back
+  // through the read-model consumer and lands in consumer_health_events.
+  consumerHealthHeartbeat.start().catch((err) => {
+    console.warn(
+      '[ConsumerHealthHeartbeat] failed to start:',
+      err instanceof Error ? err.message : err
+    );
+  });
+
   // Start periodic retention cleanup for event_bus_events (OMN-7011).
   // Runs on startup + every 1 hour. Tiered: 14d general, 3d high-volume, purge never-store.
   import('./event-retention-cleanup.js')
@@ -373,6 +385,7 @@ app.use((req, res, next) => {
     }
     teardownProjectionListeners();
     cleanupProjectionSources?.();
+    await consumerHealthHeartbeat.stop();
     await readModelConsumer.stop();
     await eventBusDataSource.stop();
     eventBusMockGenerator.stop();
@@ -395,6 +408,7 @@ app.use((req, res, next) => {
     }
     teardownProjectionListeners();
     cleanupProjectionSources?.();
+    await consumerHealthHeartbeat.stop();
     await readModelConsumer.stop();
     await eventBusDataSource.stop();
     eventBusMockGenerator.stop();
