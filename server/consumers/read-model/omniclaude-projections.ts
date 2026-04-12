@@ -1426,6 +1426,11 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
     const emittedAt = safeParseDate(
       data.emitted_at ?? data.emittedAt ?? data.timestamp ?? data.created_at
     );
+    const correlationId =
+      (data.correlation_id as string | null) ||
+      (data.correlationId as string | null) ||
+      (data._correlation_id as string | null) ||
+      null;
 
     try {
       await db
@@ -1434,6 +1439,7 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
           sessionId,
           outcome,
           emittedAt,
+          ...(correlationId ? { correlationId } : {}),
         })
         .onConflictDoUpdate({
           target: sessionOutcomes.sessionId,
@@ -1441,6 +1447,7 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
             outcome: sql`EXCLUDED.outcome`,
             emittedAt: sql`EXCLUDED.emitted_at`,
             ingestedAt: sql`NOW()`,
+            correlationId: sql`COALESCE(EXCLUDED.correlation_id, session_outcomes.correlation_id)`,
           },
         });
 

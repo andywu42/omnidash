@@ -1809,10 +1809,12 @@ export const sessionOutcomes = pgTable(
     outcome: text('outcome').notNull(),
     emittedAt: timestamp('emitted_at', { withTimezone: true }).notNull(),
     ingestedAt: timestamp('ingested_at', { withTimezone: true }).notNull().defaultNow(),
+    correlationId: uuid('correlation_id'),
   },
   (table) => [
     index('idx_session_outcomes_outcome').on(table.outcome),
     index('idx_session_outcomes_emitted_at').on(table.emittedAt),
+    index('idx_session_outcomes_correlation_id').on(table.correlationId),
   ]
 );
 
