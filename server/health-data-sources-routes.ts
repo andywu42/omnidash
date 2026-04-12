@@ -627,10 +627,7 @@ function probeEnvSync(): DataSourceInfo {
     const infraDir = process.env.OMNIBASE_INFRA_DIR ?? '';
     const candidates = infraDir
       ? [`${infraDir}/scripts/sync-omnibase-env.py`]
-      : [
-          `${os.homedir()}/Code/omni_home/omnibase_infra/scripts/sync-omnibase-env.py`,
-          '/Volumes/PRO-G40/Code/omni_home/omnibase_infra/scripts/sync-omnibase-env.py',
-        ];
+      : [`${os.homedir()}/Code/omni_home/omnibase_infra/scripts/sync-omnibase-env.py`];
     if (!candidates.some((p) => fs.existsSync(p))) {
       return { status: 'offline', reason: 'sync_script_missing' };
     }

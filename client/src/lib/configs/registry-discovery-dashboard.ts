@@ -289,7 +289,7 @@ export function generateMockRegistryDiscoveryData(): RegistryDiscoveryData {
     {
       node_id: 'node-001-auth-effect',
       service_name: 'node-auth-effect',
-      address: '192.168.86.201',
+      address: '127.0.0.1',
       port: 8001,
       health_status: 'passing',
       last_check_at: new Date(now.getTime() - 5000).toISOString(),
@@ -297,7 +297,7 @@ export function generateMockRegistryDiscoveryData(): RegistryDiscoveryData {
     {
       node_id: 'node-002-transform-compute',
       service_name: 'node-transform-compute',
-      address: '192.168.86.201',
+      address: '127.0.0.1',
       port: 8002,
       health_status: 'passing',
       last_check_at: new Date(now.getTime() - 8000).toISOString(),
@@ -305,7 +305,7 @@ export function generateMockRegistryDiscoveryData(): RegistryDiscoveryData {
     {
       node_id: 'node-003-aggregate-reducer',
       service_name: 'node-aggregate-reducer',
-      address: '192.168.86.200',
+      address: '127.0.0.1',
       port: 8003,
       health_status: 'warning',
       last_check_at: new Date(now.getTime() - 30000).toISOString(),
@@ -313,7 +313,7 @@ export function generateMockRegistryDiscoveryData(): RegistryDiscoveryData {
     {
       node_id: 'node-004-workflow-orchestrator',
       service_name: 'node-workflow-orchestrator',
-      address: '192.168.86.200',
+      address: '127.0.0.1',
       port: 8004,
       health_status: 'passing',
       last_check_at: new Date(now.getTime() - 3000).toISOString(),
@@ -321,7 +321,7 @@ export function generateMockRegistryDiscoveryData(): RegistryDiscoveryData {
     {
       node_id: 'node-008-queue-effect',
       service_name: 'node-queue-effect',
-      address: '192.168.86.100',
+      address: '127.0.0.1',
       port: 8005,
       health_status: 'passing',
       last_check_at: new Date(now.getTime() - 12000).toISOString(),
