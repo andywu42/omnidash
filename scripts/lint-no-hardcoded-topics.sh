@@ -91,8 +91,16 @@ NEW_IMPORTS=$(grep -r "buildSubscriptionTopics" "$PROJECT_ROOT/server/" "$PROJEC
 if [ -n "$NEW_IMPORTS" ]; then
   for file in $NEW_IMPORTS; do
     basename_file=$(basename "$file")
-    if [[ "$basename_file" != *.test.ts ]]; then
-      echo -e "${RED}  FAIL${NC}: buildSubscriptionTopics() reference in $basename_file (deleted in OMN-5252)"
+    if [[ "$basename_file" == *.test.ts ]]; then
+      continue
+    fi
+    # Only flag non-comment lines (skip // and JSDoc * lines)
+    non_comment_hits=$(grep -n "buildSubscriptionTopics" "$file" 2>/dev/null \
+      | grep -v '^\s*[0-9]*:\s*//' \
+      | grep -v '^\s*[0-9]*:\s*\*' || true)
+    if [ -n "$non_comment_hits" ]; then
+      echo -e "${RED}  FAIL${NC}: buildSubscriptionTopics() non-comment reference in $basename_file (deleted in OMN-5252)"
+      echo "    $non_comment_hits"
       VIOLATIONS=$((VIOLATIONS + 1))
     fi
   done
