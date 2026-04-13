@@ -1,0 +1,396 @@
+# shared/topics.yaml — Flow manifest for data_flow_sweep
+#
+# Enriches topics.yaml (root) with E2E metadata for each read-model topic:
+#   - source:   producing repo/service
+#   - consumer: projection handler function name
+#   - table:    target omnidash_analytics DB table(s)
+#
+# Generated from topics.yaml + server/consumers/read-model/*.ts
+# Used by: onex:data_flow_sweep skill (Phase 1 manifest build)
+
+version: "1"
+
+topics:
+  # --- omniclaude ---
+  - topic: "onex.evt.omniclaude.agent-actions.v1"
+    source: "omniclaude"
+    consumer: "projectAgentAction"
+    table: "agent_actions"
+
+  - topic: "onex.evt.omniclaude.agent-match.v1"
+    source: "omniclaude"
+    consumer: "projectAgentMatch"
+    table: "agent_routing_decisions"
+
+  - topic: "onex.evt.omniclaude.agent-status.v1"
+    source: "omniclaude"
+    consumer: "projectAgentStatusEvent"
+    table: "agent_status_events"
+
+  - topic: "onex.evt.omniclaude.agent-transformation.v1"
+    source: "omniclaude"
+    consumer: "projectAgentTransformation"
+    table: "agent_transformation_events"
+
+  - topic: "onex.evt.omniclaude.budget-cap-hit.v1"
+    source: "omniclaude"
+    consumer: "projectBudgetCapHit"
+    table: "pipeline_budget_state"
+
+  - topic: "onex.evt.omniclaude.circuit-breaker-tripped.v1"
+    source: "omniclaude"
+    consumer: "projectCircuitBreakerTripped"
+    table: "debug_escalation_counts"
+
+  - topic: "onex.evt.omniclaude.context-enrichment.v1"
+    source: "omniclaude"
+    consumer: "projectContextEnrichment"
+    table: "context_enrichment_events"
+
+  - topic: "onex.evt.omniclaude.context-utilization.v1"
+    source: "omniclaude"
+    consumer: "projectContextUtilization"
+    table: "context_utilization_events"
+
+  - topic: "onex.evt.omniclaude.correlation-trace.v1"
+    source: "omniclaude"
+    consumer: "projectCorrelationTrace"
+    table: "correlation_trace_events"
+
+  - topic: "onex.evt.omniclaude.debug-trigger-record.v1"
+    source: "omniclaude"
+    consumer: "projectDebugTriggerRecord"
+    table: "debug_trigger_records"
+
+  - topic: "onex.evt.omniclaude.delegation-shadow-comparison.v1"
+    source: "omniclaude"
+    consumer: "projectDelegationShadowComparison"
+    table: "delegation_shadow_comparisons"
+
+  - topic: "onex.evt.omniclaude.dod-guard-fired.v1"
+    source: "omniclaude"
+    consumer: "projectDodGuardFired"
+    table: "dod_guard_events"
+
+  - topic: "onex.evt.omniclaude.dod-verify-completed.v1"
+    source: "omniclaude"
+    consumer: "projectDodVerifyCompleted"
+    table: "dod_verify_runs"
+
+  - topic: "onex.evt.omniclaude.epic-run-updated.v1"
+    source: "omniclaude"
+    consumer: "projectEpicRunUpdated"
+    table: "epic_run_events"
+
+  - topic: "onex.evt.omniclaude.evidence-written.v1"
+    source: "omniclaude"
+    consumer: "projectTeamEvent"
+    table: "team_task_events"
+
+  - topic: "onex.evt.omniclaude.gate-decision.v1"
+    source: "omniclaude"
+    consumer: "projectGateDecision"
+    table: "gate_decisions"
+
+  - topic: "onex.evt.omniclaude.hook-health-error.v1"
+    source: "omniclaude"
+    consumer: "projectHookHealthError"
+    table: "hook_health_events"
+
+  - topic: "onex.evt.omniclaude.hostile-reviewer-completed.v1"
+    source: "omniclaude"
+    consumer: "projectHostileReviewerCompleted"
+    table: "hostile_reviewer_runs"
+
+  - topic: "onex.evt.omniclaude.latency-breakdown.v1"
+    source: "omniclaude"
+    consumer: "projectLatencyBreakdown"
+    table: "latency_breakdown_events"
+
+  - topic: "onex.evt.omniclaude.llm-routing-decision.v1"
+    source: "omniclaude"
+    consumer: "projectLlmRoutingDecision"
+    table: "llm_routing_decisions"
+
+  - topic: "onex.evt.omniclaude.pattern-enforcement.v1"
+    source: "omniclaude"
+    consumer: "projectPatternEnforcement"
+    table: "pattern_enforcement_events"
+
+  - topic: "onex.evt.omniclaude.performance-metrics.v1"
+    source: "omniclaude"
+    consumer: "projectPerformanceMetrics"
+    table: "performance_metrics"
+
+  - topic: "onex.evt.omniclaude.phase-metrics.v1"
+    source: "omniclaude"
+    consumer: "projectPhaseMetrics"
+    table: "phase_metrics_events"
+
+  - topic: "onex.evt.omniclaude.pr-validation-rollup.v1"
+    source: "omniclaude"
+    consumer: "projectPrValidationRollup"
+    table: "pr_validation_rollups"
+
+  - topic: "onex.evt.omniclaude.pr-watch-updated.v1"
+    source: "omniclaude"
+    consumer: "projectPrWatchUpdated"
+    table: "pr_watch_state"
+
+  - topic: "onex.evt.omniclaude.routing-decision.v1"
+    source: "omniclaude"
+    consumer: "projectRoutingDecision"
+    table: "agent_routing_decisions"
+
+  - topic: "onex.evt.omniclaude.session-outcome.v1"
+    source: "omniclaude"
+    consumer: "projectSessionOutcome"
+    table: "session_outcomes"
+
+  - topic: "onex.evt.omniclaude.skill-started.v1"
+    source: "omniclaude"
+    consumer: "projectSkillStarted"
+    table: "skill_invocations"
+
+  - topic: "onex.evt.omniclaude.skill-completed.v1"
+    source: "omniclaude"
+    consumer: "projectSkillCompleted"
+    table: "skill_invocations"
+
+  - topic: "onex.evt.omniclaude.task-assigned.v1"
+    source: "omniclaude"
+    consumer: "projectTeamEvent"
+    table: "team_task_events"
+
+  - topic: "onex.evt.omniclaude.task-completed.v1"
+    source: "omniclaude"
+    consumer: "projectTeamEvent"
+    table: "team_task_events"
+
+  - topic: "onex.evt.omniclaude.task-delegated.v1"
+    source: "omniclaude"
+    consumer: "projectTaskDelegated"
+    table: "task_delegation_events"
+
+  - topic: "onex.evt.omniclaude.task-progress.v1"
+    source: "omniclaude"
+    consumer: "projectTeamEvent"
+    table: "team_task_events"
+
+  # --- platform ---
+  - topic: "onex.evt.platform.dlq-message.v1"
+    source: "omnibase_infra"
+    consumer: "projectDlqMessage"
+    table: "dlq_messages"
+
+  - topic: "onex.evt.platform.node-introspection.v1"
+    source: "omnibase_infra"
+    consumer: "projectNodeIntrospectionEvent"
+    table: "node_service_registry"
+
+  - topic: "onex.evt.platform.node-heartbeat.v1"
+    source: "omnibase_infra"
+    consumer: "projectNodeHeartbeatEvent"
+    table: "node_service_registry"
+
+  - topic: "onex.evt.platform.node-state-change.v1"
+    source: "omnibase_infra"
+    consumer: "projectNodeStateChangeEvent"
+    table: "node_service_registry"
+
+  # --- omnibase-infra ---
+  - topic: "onex.evt.omnibase-infra.baselines-computed.v1"
+    source: "omnibase_infra"
+    consumer: "projectBaselinesComputed"
+    table: "baselines_snapshots, baselines_comparisons, baselines_trend, baselines_breakdown"
+
+  - topic: "onex.evt.omnibase-infra.circuit-breaker.v1"
+    source: "omnibase_infra"
+    consumer: "projectCircuitBreakerEvent"
+    table: "circuit_breaker_events"
+
+  - topic: "onex.evt.omnibase-infra.consumer-health.v1"
+    source: "omnibase_infra"
+    consumer: "projectConsumerHealth"
+    table: "consumer_health_events"
+
+  - topic: "onex.evt.omnibase-infra.error-triaged.v1"
+    source: "omnibase_infra"
+    consumer: "projectErrorTriaged"
+    table: "runtime_error_triage_state"
+
+  - topic: "onex.evt.omnibase-infra.llm-health-snapshot.v1"
+    source: "omnibase_infra"
+    consumer: "projectLlmHealthSnapshot"
+    table: "llm_health_snapshots"
+
+  - topic: "onex.evt.omnibase-infra.routing-decided.v1"
+    source: "omnibase_infra"
+    consumer: "projectInfraRoutingDecided"
+    table: "infra_routing_decisions"
+
+  - topic: "onex.evt.omnibase-infra.runtime-error.v1"
+    source: "omnibase_infra"
+    consumer: "projectRuntimeErrorEvent"
+    table: "runtime_error_events"
+
+  - topic: "onex.evt.omnibase-infra.savings-estimated.v1"
+    source: "omnibase_infra"
+    consumer: "projectSavingsEstimated"
+    table: "savings_estimates"
+
+  - topic: "onex.evt.omnibase-infra.wiring-health-snapshot.v1"
+    source: "omnibase_infra"
+    consumer: "projectWiringHealthSnapshot"
+    table: "wiring_health_snapshots"
+
+  # --- omniintelligence ---
+  - topic: "onex.evt.omniintelligence.bloom-eval-completed.v1"
+    source: "omniintelligence"
+    consumer: "projectBloomEvalCompleted"
+    table: "intelligence_bloom_eval_results"
+
+  - topic: "onex.evt.omniintelligence.ci-debug-escalation.v1"
+    source: "omniintelligence"
+    consumer: "projectCiDebugEscalation"
+    table: "ci_debug_escalation_events"
+
+  - topic: "onex.evt.omniintelligence.compliance-evaluated.v1"
+    source: "omniintelligence"
+    consumer: "projectComplianceEvaluated"
+    table: "compliance_evaluations"
+
+  - topic: "onex.evt.omniintelligence.context-effectiveness.v1"
+    source: "omniintelligence"
+    consumer: "projectContextEffectiveness"
+    table: "context_effectiveness_snapshots"
+
+  - topic: "onex.evt.omniintelligence.episode-boundary.v1"
+    source: "omniintelligence"
+    consumer: "projectEpisodeEvent"
+    table: "rl_episodes"
+
+  - topic: "onex.evt.omniintelligence.eval-completed.v1"
+    source: "omniintelligence"
+    consumer: "projectEvalCompleted"
+    table: "eval_results"
+
+  - topic: "onex.evt.omniintelligence.intent-classified.v1"
+    source: "omniintelligence"
+    consumer: "projectIntentClassified"
+    table: "intent_classifications"
+
+  - topic: "onex.evt.omniintelligence.intent-drift-detected.v1"
+    source: "omniintelligence"
+    consumer: "projectIntentDriftDetected"
+    table: "intent_drift_events"
+
+  - topic: "onex.evt.omniintelligence.llm-call-completed.v1"
+    source: "omniintelligence"
+    consumer: "projectLlmCostEvent"
+    table: "llm_cost_aggregates"
+
+  - topic: "onex.evt.omniintelligence.pattern-lifecycle-transitioned.v1"
+    source: "omniintelligence"
+    consumer: "projectPatternLifecycleTransitioned"
+    table: "pattern_lifecycle_transitions"
+
+  - topic: "onex.evt.omniintelligence.pattern-projection.v1"
+    source: "omniintelligence"
+    consumer: "projectPatternProjection"
+    table: "pattern_learning_artifacts"
+
+  - topic: "onex.evt.omniintelligence.pattern-promoted.v1"
+    source: "omniintelligence"
+    consumer: "projectPatternLifecycleStateChange"
+    table: "pattern_learning_artifacts, pattern_lifecycle_transitions"
+
+  - topic: "onex.evt.omniintelligence.pattern-stored.v1"
+    source: "omniintelligence"
+    consumer: "projectPatternLifecycleStateChange"
+    table: "pattern_learning_artifacts, pattern_lifecycle_transitions"
+
+  - topic: "onex.evt.omniintelligence.plan-review-strategy-run-completed.v1"
+    source: "omniintelligence"
+    consumer: "projectPlanReviewStrategyRunCompleted"
+    table: "plan_review_runs"
+
+  - topic: "onex.evt.omniintelligence.routing-feedback-processed.v1"
+    source: "omniintelligence"
+    consumer: "projectRoutingFeedbackEvent"
+    table: "routing_feedback_events"
+
+  - topic: "onex.evt.omniintelligence.run-evaluated.v1"
+    source: "omniintelligence"
+    consumer: "projectRunEvaluated"
+    table: "objective_evaluations"
+
+  - topic: "onex.cmd.omniintelligence.pattern-learning.v1"
+    source: "omniclaude"
+    consumer: "projectPatternLearningRequested"
+    table: "pattern_learning_artifacts"
+
+  # --- omnimemory ---
+  - topic: "onex.evt.omnimemory.document-discovered.v1"
+    source: "omnimemory"
+    consumer: "projectDocumentDiscovered"
+    table: "memory_documents"
+
+  - topic: "onex.evt.omnimemory.intent-stored.v1"
+    source: "omnimemory"
+    consumer: "projectIntentStored"
+    table: "memory_documents"
+
+  - topic: "onex.evt.omnimemory.memory-expired.v1"
+    source: "omnimemory"
+    consumer: "projectMemoryExpired"
+    table: "memory_documents"
+
+  - topic: "onex.evt.omnimemory.memory-retrieval-response.v1"
+    source: "omnimemory"
+    consumer: "projectRetrievalResponse"
+    table: "memory_retrievals"
+
+  - topic: "onex.evt.omnimemory.memory-stored.v1"
+    source: "omnimemory"
+    consumer: "projectMemoryStored"
+    table: "memory_documents"
+
+  # --- review-pairing ---
+  - topic: "onex.evt.review-pairing.calibration-run-completed.v1"
+    source: "omniintelligence"
+    consumer: "projectCalibrationRunCompleted"
+    table: "review_calibration_runs_rm"
+
+  # --- onex_change_control ---
+  - topic: "onex.evt.onex-change-control.contract-drift-detected.v1"
+    source: "onex_change_control"
+    consumer: "projectContractDriftDetected"
+    table: "contract_drift_events"
+
+  # --- cross-cutting pattern ---
+  - topic: "onex.evt.pattern.discovered.v1"
+    source: "omniintelligence"
+    consumer: "projectPatternDiscoveredEvent"
+    table: "pattern_learning_artifacts"
+
+  # --- omnimarket ---
+  - topic: "onex.evt.omnimarket.build-loop-orchestrator-phase-transition.v1"
+    source: "omnimarket"
+    consumer: "projectBuildLoopOrchestratorEvent"
+    table: "build_loop_orchestrator_events"
+
+  - topic: "onex.evt.omnimarket.build-loop-orchestrator-completed.v1"
+    source: "omnimarket"
+    consumer: "projectBuildLoopOrchestratorEvent"
+    table: "build_loop_orchestrator_events"
+
+  - topic: "onex.evt.omnimarket.session-post-mortem.v1"
+    source: "omnimarket"
+    consumer: "projectSessionPostMortem"
+    table: "session_post_mortems"
+
+  - topic: "onex.evt.omnimarket.sweep-result.v1"
+    source: "omnimarket"
+    consumer: "projectSweepResult"
+    table: "sweep_results"
