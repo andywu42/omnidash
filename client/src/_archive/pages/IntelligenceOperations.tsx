@@ -30,8 +30,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { MockDataBadge } from '@/components/MockDataBadge';
-import { ensureTimeSeries } from '@/components/mockUtils';
 import { agentOperationsSource } from '@/lib/data-sources';
 import {
   POLLING_INTERVAL_SLOW,
@@ -220,10 +218,9 @@ export default function IntelligenceOperations() {
     refetchInterval: getPollingInterval(POLLING_INTERVAL_SLOW),
   });
 
-  // Keep old queries for now but they're replaced by operationsSourceData
-  const operationsData = null; // Deprecated - use operationsSourceData
-  const qualityImpactData: QualityImpact[] = []; // Deprecated - use operationsSourceData
-  const qualityLoading = false;
+  // Deprecated stubs — replaced by operationsSourceData
+  const operationsData = null;
+  const qualityImpactData: QualityImpact[] = [];
   const operationsLoading = operationsSourceLoading;
 
   // Fetch recent actions as fallback if WebSocket hasn't provided data yet
@@ -255,12 +252,9 @@ export default function IntelligenceOperations() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recentActionsData]);
 
-  // Extract transformed data from source
-  const chartDataRaw = operationsSourceData?.chartData || [];
-  const { data: chartData, isMock: isChartMock } = ensureTimeSeries(chartDataRaw, 20, 10);
-
-  const qualityDataRaw = operationsSourceData?.qualityChartData || [];
-  const { data: qualityData, isMock: isQualityMock } = ensureTimeSeries(qualityDataRaw, 2, 1.5);
+  // Extract transformed data from source — use real data only, no mock fallback
+  const chartData = operationsSourceData?.chartData || [];
+  const qualityData = operationsSourceData?.qualityChartData || [];
 
   const operations = operationsSourceData?.operations || [];
   const totalOperations = operationsSourceData?.totalOperations || 0;
@@ -331,7 +325,6 @@ export default function IntelligenceOperations() {
 
       <div className="grid grid-cols-2 gap-6">
         <div>
-          {isChartMock && <MockDataBadge className="mb-2" />}
           <RealtimeChart
             title="Operations per Minute"
             data={chartData}
@@ -340,37 +333,20 @@ export default function IntelligenceOperations() {
           />
         </div>
         <div className="space-y-4">
-          {(() => {
-            // Check if quality impact data is empty or all zeros
-            const hasNoData = !qualityImpactData || qualityImpactData.length === 0;
-            const allZeros =
-              qualityImpactData &&
-              qualityImpactData.length > 0 &&
-              qualityImpactData.every((d) => Math.abs(d.avgQualityImprovement) < 0.001);
-
-            return (
-              <>
-                {(hasNoData || allZeros) && !qualityLoading && (
-                  <Alert className="border-status-warning/50 bg-status-warning/10">
-                    <AlertTriangle className="h-4 w-4 text-status-warning" />
-                    <AlertDescription className="text-status-warning">
-                      {hasNoData
-                        ? 'No quality impact data available yet. Quality improvement tracking may not be configured.'
-                        : 'No quality improvements detected in selected time range. Quality gates and optimizations may not be active.'}
-                    </AlertDescription>
-                  </Alert>
-                )}
-                <div>
-                  {isQualityMock && <MockDataBadge className="mb-2" />}
-                  <RealtimeChart
-                    title="Quality Improvement Impact"
-                    data={qualityData}
-                    color="hsl(var(--chart-3))"
-                  />
-                </div>
-              </>
-            );
-          })()}
+          {qualityData.length === 0 && !isLoading && (
+            <Alert className="border-status-warning/50 bg-status-warning/10">
+              <AlertTriangle className="h-4 w-4 text-status-warning" />
+              <AlertDescription className="text-status-warning">
+                No quality impact data available yet. Quality improvement tracking may not be
+                configured.
+              </AlertDescription>
+            </Alert>
+          )}
+          <RealtimeChart
+            title="Quality Improvement Impact"
+            data={qualityData}
+            color="hsl(var(--chart-3))"
+          />
         </div>
       </div>
 
@@ -662,7 +638,6 @@ export default function IntelligenceOperations() {
           level="h2"
         />
 
-        {(!topDocumentsData || topDocumentsData.length === 0) && <MockDataBadge className="mb-2" />}
         <DataTable<TopAccessedDocument>
           title="Top Accessed Documents"
           data={
@@ -804,7 +779,6 @@ export default function IntelligenceOperations() {
 
       {/* Polymorphic Transformation Viewer */}
       <div>
-        <MockDataBadge className="mb-2" />
         <TransformationFlow timeWindow="30d" />
       </div>
     </div>
