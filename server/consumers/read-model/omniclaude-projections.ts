@@ -580,7 +580,11 @@ export class OmniclaudeProjectionHandler implements ProjectionHandler {
           ${outcome},
           ${evt.confidence != null ? Number(evt.confidence) : null},
           ${(evt.agent_name as string) ?? null},
-          ${safeParseDate(evt.timestamp)}
+          ${safeParseDate(
+            (data.emitted_at as string) ??
+              (data.emittedAt as string) ??
+              evt.timestamp
+          )}
         )
         ON CONFLICT (correlation_id) DO NOTHING
       `);
