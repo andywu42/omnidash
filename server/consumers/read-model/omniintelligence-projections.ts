@@ -51,6 +51,7 @@ import {
   SUFFIX_INTELLIGENCE_PATTERN_STORED,
   SUFFIX_PATTERN_DISCOVERED,
   SUFFIX_INTELLIGENCE_EVAL_COMPLETED,
+  SUFFIX_INTELLIGENCE_QUALITY_ASSESSMENT_COMPLETED,
 } from '@shared/topics';
 import { emitEffectivenessUpdate } from '../../effectiveness-events';
 import {
@@ -171,6 +172,7 @@ const OMNIINTELLIGENCE_TOPICS = new Set([
   SUFFIX_INTELLIGENCE_PATTERN_STORED,
   SUFFIX_PATTERN_DISCOVERED,
   SUFFIX_INTELLIGENCE_EVAL_COMPLETED,
+  SUFFIX_INTELLIGENCE_QUALITY_ASSESSMENT_COMPLETED,
 ]);
 
 export class OmniintelligenceProjectionHandler implements ProjectionHandler {
@@ -264,6 +266,8 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
       }
       case SUFFIX_INTELLIGENCE_EVAL_COMPLETED:
         return this.projectEvalCompleted(data, context);
+      case SUFFIX_INTELLIGENCE_QUALITY_ASSESSMENT_COMPLETED:
+        return this.projectQualityAssessmentCompleted(data, context);
       case SUFFIX_PATTERN_DISCOVERED: {
         const pid = (data.pattern_id as string) || (data.patternId as string);
         if (!pid) {
@@ -347,7 +351,8 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
     const nEstimatedCost = Number(rawEstimatedCost);
     const estimatedCostUsd = String(Number.isFinite(nEstimatedCost) ? nEstimatedCost : 0);
 
-    const rawTotalCost = data.total_cost_usd ?? data.totalCostUsd ?? rawCostUsdFlat ?? rawEstimatedCost;
+    const rawTotalCost =
+      data.total_cost_usd ?? data.totalCostUsd ?? rawCostUsdFlat ?? rawEstimatedCost;
     const nTotalCost = Number(rawTotalCost);
     const totalCostUsd = String(Number.isFinite(nTotalCost) ? nTotalCost : 0);
 
@@ -1461,6 +1466,102 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
       'unknown';
     console.log(`[ReadModelConsumer] eval-completed acknowledged: ${evalId}`);
     return true;
+  }
+
+  // -------------------------------------------------------------------------
+  // quality-assessment-completed -> pattern_quality_metrics (SOW Phase 2)
+  //
+  // The quality-assessment-completed.v1 event is emitted by the
+  // _quality_assessment_handler in omniintelligence after running
+  // NodeQualityScoringCompute. The `source_path` field carries the pattern UUID
+  // (set from `entity_id` in the originating command from NodePatternFeedbackEffect).
+  // Upserts computed scores into pattern_quality_metrics keyed on pattern_id.
+  // -------------------------------------------------------------------------
+
+  private async projectQualityAssessmentCompleted(
+    data: Record<string, unknown>,
+    context: ProjectionContext
+  ): Promise<boolean> {
+    const { db } = context;
+    if (!db) return false;
+
+    // source_path carries the pattern UUID (set from entity_id in the command)
+    const patternId =
+      (data.source_path as string) ||
+      (data.sourcePath as string) ||
+      (data.pattern_id as string) ||
+      (data.patternId as string) ||
+      (data.entity_id as string);
+
+    if (!patternId || !UUID_RE.test(patternId)) {
+      console.warn(
+        `[ReadModelConsumer] quality-assessment-completed missing or invalid pattern_id "${patternId}" -- skipping`
+      );
+      return true;
+    }
+
+    const qualityScore = Number(data.quality_score ?? data.qualityScore ?? 0);
+    const dimensionsRaw = data.dimensions;
+    const dimensions = dimensionsRaw && typeof dimensionsRaw === 'object' ? dimensionsRaw : {};
+    const confidence = Number(
+      (dimensions as Record<string, unknown>).confidence ??
+        (data.metadata as Record<string, unknown> | undefined)?.confidence ??
+        0.5
+    );
+
+    try {
+      await db
+        .insert(patternQualityMetrics)
+        .values({
+          patternId,
+          qualityScore: Number.isFinite(qualityScore) ? qualityScore : 0,
+          confidence: Number.isFinite(confidence) ? confidence : 0.5,
+          measurementTimestamp: new Date(),
+          version: '1.0.0',
+          metadata: {
+            source: 'quality-assessment-completed.v1',
+            onex_compliant: data.onex_compliant ?? data.onexCompliant ?? false,
+            dimensions,
+            recommendations: data.recommendations ?? [],
+            correlation_id: data.correlation_id ?? data.correlationId,
+          },
+          projectedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: patternQualityMetrics.patternId,
+          set: {
+            qualityScore: Number.isFinite(qualityScore) ? qualityScore : 0,
+            confidence: Number.isFinite(confidence) ? confidence : 0.5,
+            measurementTimestamp: new Date(),
+            metadata: {
+              source: 'quality-assessment-completed.v1',
+              onex_compliant: data.onex_compliant ?? data.onexCompliant ?? false,
+              dimensions,
+              recommendations: data.recommendations ?? [],
+              correlation_id: data.correlation_id ?? data.correlationId,
+            },
+            updatedAt: new Date(),
+            projectedAt: new Date(),
+          },
+        });
+      console.log(
+        `[ReadModelConsumer] quality-assessment-completed projected: pattern_id=${patternId} quality_score=${qualityScore}`
+      );
+      return true;
+    } catch (err) {
+      if (isTableMissingError(err, 'pattern_quality_metrics')) {
+        console.warn(
+          '[ReadModelConsumer] pattern_quality_metrics table not yet created -- ' +
+            'run migrations to enable quality metrics projection'
+        );
+        return true;
+      }
+      console.warn(
+        `[ReadModelConsumer] quality-assessment-completed upsert failed for ${patternId}:`,
+        err
+      );
+      return false;
+    }
   }
 
   /**

@@ -147,6 +147,8 @@ read_model_topics:
     handler: "projectEvalCompleted"
   - topic: "onex.evt.omniintelligence.bloom-eval-completed.v1"
     handler: "projectBloomEvalCompleted"
+  - topic: "onex.evt.omniintelligence.quality-assessment-completed.v1"
+    handler: "projectQualityAssessmentCompleted"
 
   # --- omnimemory topics ---
   - topic: "onex.evt.omnimemory.document-discovered.v1"
