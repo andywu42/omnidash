@@ -514,17 +514,45 @@ jobs:
           if [ "$FAILED" = "1" ]; then exit 1; fi
           echo "All checks passed (tests: $TEST_RESULT, arch-guard: $ARCH_RESULT, migration: $MIGRATION_RESULT, smoke: $SMOKE_RESULT, playwright: $PLAYWRIGHT_RESULT, playwright-data: $PLAYWRIGHT_DATA_RESULT, schema-parity: $SCHEMA_PARITY_RESULT)"
 
+  # ============================================================================
+  # MIGRATION COLLISION GATE (OMN-8623)
+  # Detects duplicate numeric prefixes in migrations/ that cause non-deterministic
+  # apply order and silent data loss.
+  # NOTE: Gate must land AFTER the 5 existing duplicate-prefix collisions are fixed.
+  # ============================================================================
+  migration-collision:
+    name: Migration Collision Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check for duplicate migration prefixes
+        run: python scripts/check_migration_collisions.py
+
   # ⚠️ Do not rename — branch protection requires this exact check name
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [tests-gate]
+    needs: [tests-gate, migration-collision]
     if: always()
     steps:
       - name: Evaluate gates
         run: |
           echo "CI Tests Gate: ${{ needs.tests-gate.result }}"
+          echo "Migration Collision: ${{ needs.migration-collision.result }}"
+          FAILED=false
           if [[ "${{ needs.tests-gate.result }}" != "success" ]]; then
+            echo "::error::CI Summary: tests-gate FAILED"
+            FAILED=true
+          fi
+          if [[ "${{ needs.migration-collision.result }}" != "success" ]]; then
+            echo "::error::CI Summary: migration-collision FAILED"
+            FAILED=true
+          fi
+          if [[ "$FAILED" == "true" ]]; then
             echo "::error::CI Summary: FAILED"
             exit 1
           fi

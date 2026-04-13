@@ -78,6 +78,18 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # OMN-8623: migration collision check (fast, triggers on migrations/ changes)
+      # Detects duplicate numeric prefixes in migrations/ that cause non-deterministic
+      # apply order. Blocks commit if collisions are found.
+      # NOTE: this gate must land AFTER the 5 duplicate-prefix collisions are fixed.
+      - id: migration-collision-check
+        name: Migration collision check
+        language: system
+        entry: python scripts/check_migration_collisions.py
+        files: ^migrations/
+        pass_filenames: false
+        stages: [pre-commit]
+
   - repo: https://github.com/OmniNode-ai/onex_change_control
     rev: 16659f5db9f03b7f248da5fc319647013be18682 # pragma: allowlist secret
     hooks:
