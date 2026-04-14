@@ -1225,6 +1225,7 @@ describe('OMN-2924: Pattern projection write handlers', () => {
           {
             id: 'pat-uuid-1',
             domain_id: 'code_generation',
+            pattern_type: 'tool_usage_pattern',
             quality_score: 0.85,
             status: 'validated',
             confidence: 0.9,

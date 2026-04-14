@@ -153,6 +153,31 @@ function derivePatternDisplayName(signature: string): {
   return { displayName, patternTypeFromSig: typePrefix };
 }
 
+// OMN-8707: Allowlist of pattern types that may be written into pattern_learning_artifacts.
+// Any type not in this set is rejected at ingestion (watermark advances, no retry).
+// To add a new type: update docs/process/pattern-intelligence-taxonomy.md first.
+const ALLOWED_PATTERN_TYPES = new Set([
+  'tool_usage_pattern',
+  'architecture_pattern',
+  'entry_point_pattern',
+  'function_signature',
+  'class_definition',
+  'import_pattern',
+  'bug_repetition',
+  'contract_violation',
+  'test_gap',
+  'anti_pattern',
+  'circular_dep',
+]);
+
+// OMN-8710: Substring denylist — defense-in-depth against noise that slips past the allowlist.
+const NOISE_PATTERN_SUBSTRINGS = ['_co_', 'module_boundary', 'proximity', 'colocation'];
+
+function isAllowedPatternType(patternType: string): boolean {
+  if (!ALLOWED_PATTERN_TYPES.has(patternType)) return false;
+  return !NOISE_PATTERN_SUBSTRINGS.some((sub) => patternType.includes(sub));
+}
+
 const OMNIINTELLIGENCE_TOPICS = new Set([
   TOPIC_OMNIINTELLIGENCE_LLM_CALL_COMPLETED,
   SUFFIX_INTELLIGENCE_PATTERN_PROJECTION,
@@ -485,6 +510,14 @@ export class OmniintelligenceProjectionHandler implements ProjectionHandler {
             ? (pattern.patternType as string)
             : undefined) ||
           'learned_pattern';
+
+        // OMN-8707: Reject pattern types not in the taxonomy allowlist.
+        if (!isAllowedPatternType(patternType)) {
+          console.debug(
+            `[ReadModelConsumer] Pattern type "${patternType}" not in allowlist -- dropping`
+          );
+          continue;
+        }
 
         const lifecycleState =
           (pattern.status as string) ||
