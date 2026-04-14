@@ -8,7 +8,7 @@
  * Routes do NOT execute SQL directly — all queries are encapsulated in the
  * projection following the OMN-2325 architectural rule.
  *
- * Source table: llm_routing_decisions (migrations/0006b_llm_routing_decisions.sql)
+ * Source table: llm_routing_decisions (migrations/0063_llm_routing_decisions.sql)
  * Event consumed: onex.evt.omniclaude.llm-routing-decision.v1
  *
  * GOLDEN METRIC: agreement_rate > 60%. Alert if disagreement_rate > 40%.

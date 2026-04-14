@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS github_webhook_deliveries (
 );
 
 -- Index for cleanup of old entries (keep 7 days)
-CREATE INDEX idx_github_webhook_deliveries_received_at
+CREATE INDEX IF NOT EXISTS idx_github_webhook_deliveries_received_at
     ON github_webhook_deliveries (received_at);

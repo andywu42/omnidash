@@ -12,7 +12,7 @@
  *   GET /api/llm-routing/disagreements?window=7d
  *   GET /api/llm-routing/trend?window=7d
  *
- * Source table: llm_routing_decisions (created by migrations/0006b_llm_routing_decisions.sql).
+ * Source table: llm_routing_decisions (created by migrations/0063_llm_routing_decisions.sql).
  * Drizzle schema: llmRoutingDecisions in shared/intelligence-schema.ts. Queries use raw SQL via
  * drizzle's `db.execute(sql`...`)` interface, consistent with read-model-consumer.ts.
  *

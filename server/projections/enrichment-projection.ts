@@ -5,7 +5,7 @@
  * ProjectionView interface. Routes call ensureFresh() and access sub-fields
  * instead of importing storage or executing SQL directly.
  *
- * Source table: context_enrichment_events (defined by migrations/0005b_context_enrichment_events.sql)
+ * Source table: context_enrichment_events (defined by migrations/0075_context_enrichment_events.sql)
  *
  * Columns used: correlation_id, channel, model_name, cache_hit, outcome,
  *   latency_ms, tokens_before, tokens_after, net_tokens_saved,

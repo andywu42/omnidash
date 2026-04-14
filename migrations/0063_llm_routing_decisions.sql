@@ -53,7 +53,13 @@ CREATE TABLE IF NOT EXISTS llm_routing_decisions (
   -- When the routing decision originally occurred
   created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   -- When this row was projected from Kafka
-  projected_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  projected_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  -- Token tracking columns (added via 0013 on upgrade; included here for fresh-install parity)
+  prompt_tokens          INTEGER NOT NULL DEFAULT 0,
+  completion_tokens      INTEGER NOT NULL DEFAULT 0,
+  total_tokens           INTEGER NOT NULL DEFAULT 0,
+  omninode_enabled       BOOLEAN NOT NULL DEFAULT TRUE,
+  CONSTRAINT chk_lrd_token_columns_nn CHECK (prompt_tokens >= 0 AND completion_tokens >= 0 AND total_tokens >= 0)
 );
 
 -- Named alias for the unique index that backs the inline UNIQUE constraint on
@@ -88,3 +94,7 @@ CREATE INDEX IF NOT EXISTS idx_lrd_prompt_version
 CREATE INDEX IF NOT EXISTS idx_lrd_agent_pair
   ON llm_routing_decisions (llm_agent, fuzzy_agent, created_at DESC)
   WHERE agreement = FALSE;
+
+-- Token and omninode indexes (mirror of 0013 for fresh-install parity)
+CREATE INDEX IF NOT EXISTS idx_lrd_tokens   ON llm_routing_decisions(total_tokens) WHERE total_tokens > 0;
+CREATE INDEX IF NOT EXISTS idx_lrd_omninode ON llm_routing_decisions(omninode_enabled);

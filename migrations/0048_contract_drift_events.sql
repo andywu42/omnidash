@@ -15,6 +15,6 @@ CREATE TABLE IF NOT EXISTS contract_drift_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_cde_repo ON contract_drift_events(repo);
-CREATE INDEX idx_cde_drift_type ON contract_drift_events(drift_type);
-CREATE INDEX idx_cde_detected_at ON contract_drift_events(detected_at);
+CREATE INDEX IF NOT EXISTS idx_cde_repo ON contract_drift_events(repo);
+CREATE INDEX IF NOT EXISTS idx_cde_drift_type ON contract_drift_events(drift_type);
+CREATE INDEX IF NOT EXISTS idx_cde_detected_at ON contract_drift_events(detected_at);

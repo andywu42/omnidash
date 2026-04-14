@@ -6,8 +6,8 @@
  *
  * Requires TEST_DATABASE_URL pointing to a PostgreSQL database whose name
  * ends with _test or -test. The baselines_* tables must already exist
- * (run migrations/0004_baselines_roi.sql, 0005a_baselines_trend_unique.sql,
- * and 0006a_baselines_breakdown_unique.sql).
+ * (run migrations/0004_baselines_roi.sql, 0005_baselines_trend_unique.sql,
+ * and 0006_baselines_breakdown_unique.sql).
  *
  * In CI, missing TEST_DATABASE_URL is a hard failure.
  * Outside CI, tests are skipped with a warning.

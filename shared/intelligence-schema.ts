@@ -1437,7 +1437,7 @@ export type PatternEnforcementEventRow = typeof patternEnforcementEvents.$inferS
 export type InsertPatternEnforcementEvent = typeof patternEnforcementEvents.$inferInsert;
 
 /**
- * Context Enrichment Events Table (migration 0005b)
+ * Context Enrichment Events Table (migration 0062)
  * Projected events from onex.evt.omniclaude.context-enrichment.v1
  */
 export const contextEnrichmentEvents = pgTable(
@@ -1476,11 +1476,11 @@ export type ContextEnrichmentEventRow = typeof contextEnrichmentEvents.$inferSel
 export type InsertContextEnrichmentEvent = typeof contextEnrichmentEvents.$inferInsert;
 
 /**
- * LLM Routing Decisions Table (migration 0006b, altered by 0011a + 0011b + 0013)
+ * LLM Routing Decisions Table (migration 0063, altered by 0011 + 0064 + 0013)
  * Projected events from onex.evt.omniclaude.llm-routing-decision.v1
  *
- * Note: correlation_id was TEXT in 0006b, converted to UUID by 0011a.
- * fuzzy_agent was NOT NULL in 0006b, made nullable by 0011b.
+ * Note: correlation_id was TEXT in 0063, converted to UUID by 0011.
+ * fuzzy_agent was NOT NULL in 0063, made nullable by 0064.
  * Token columns (prompt_tokens, completion_tokens, total_tokens, omninode_enabled) added by 0013.
  */
 export const llmRoutingDecisions = pgTable(
