@@ -47,6 +47,7 @@ export async function setupVite(app: Express, server: Server) {
     }
     vite.middlewares.handle(req, res, next);
   });
+  // lgtm[js/missing-rate-limiting] -- dev-only SPA HTML handler; rate limiting is not applicable here
   app.use('*', async (req, res, next) => {
     const url = req.originalUrl;
 

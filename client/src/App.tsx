@@ -131,6 +131,8 @@ import AgentCoordinationDashboard from '@/pages/AgentCoordinationDashboard';
 import EventLedgerDashboard from '@/pages/EventLedgerDashboard';
 // Doc Freshness dashboard (feature-hookup Phase 2)
 import DocFreshnessDashboard from '@/pages/DocFreshnessDashboard';
+// Friction Log dashboard (OMN-8698)
+import FrictionLogDashboard from '@/pages/FrictionLogDashboard';
 // Security Posture dashboard (feature-hookup Phase 4)
 import SecurityPostureDashboard from '@/pages/SecurityPostureDashboard';
 // Alert History dashboard
@@ -344,6 +346,7 @@ function Router() {
       <Route path="/event-ledger" component={EventLedgerDashboard} />
       {/* Doc Freshness dashboard (feature-hookup Phase 2) */}
       <Route path="/doc-freshness" component={DocFreshnessDashboard} />
+      <Route path="/friction" component={FrictionLogDashboard} />
       {/* Integration Catalog dashboard (feature-hookup Phase 3) */}
       <Route path="/integrations" component={IntegrationCatalogDashboard} />
 

@@ -472,6 +472,12 @@ const advancedSubGroups: AdvancedSubGroup[] = [
         description: 'Documentation freshness sweep results and stale content tracking',
       },
       {
+        title: 'Friction Log',
+        url: '/friction',
+        icon: AlertTriangle,
+        description: 'On-disk friction events from agent sessions — pipeline gaps, stalls, misrouting (OMN-8698)',
+      },
+      {
         title: 'Agents',
         url: '/agents',
         icon: Bot,

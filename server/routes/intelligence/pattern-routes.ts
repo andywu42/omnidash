@@ -254,7 +254,7 @@ export function registerPatternRoutes(router: Router): void {
         }))
       );
     } catch (error) {
-      console.error('Error fetching pattern discovery:', error);
+      console.error('Error fetching pattern discovery:', error instanceof Error ? error.message : String(error));
       res.status(500).json({
         error: 'Failed to fetch pattern discovery',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -333,7 +333,7 @@ export function registerPatternRoutes(router: Router): void {
         source: 'pattern_lineage_nodes',
       });
     } catch (error) {
-      console.error('Error fetching pattern summary:', error);
+      console.error('Error fetching pattern summary:', error instanceof Error ? error.message : String(error));
       res.status(500).json({
         error: 'Failed to fetch pattern summary',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -407,7 +407,7 @@ export function registerPatternRoutes(router: Router): void {
 
       res.json(patterns);
     } catch (error) {
-      console.error('Error fetching recent patterns:', error);
+      console.error('Error fetching recent patterns:', error instanceof Error ? error.message : String(error));
       res.status(500).json({
         error: 'Failed to fetch recent patterns',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -458,7 +458,7 @@ export function registerPatternRoutes(router: Router): void {
 
       res.json(formattedTrends);
     } catch (error) {
-      console.error('Error fetching pattern trends:', error);
+      console.error('Error fetching pattern trends');
       res.status(500).json({
         error: 'Failed to fetch pattern trends',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -548,7 +548,7 @@ export function registerPatternRoutes(router: Router): void {
 
       res.json(formattedPatterns);
     } catch (error) {
-      console.error('Error fetching pattern list:', error);
+      console.error('Error fetching pattern list:', error instanceof Error ? error.message : String(error));
       res.status(500).json({
         error: 'Failed to fetch pattern list',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -605,7 +605,7 @@ export function registerPatternRoutes(router: Router): void {
         }))
       );
     } catch (error) {
-      console.error('Error fetching quality trends:', error);
+      console.error('Error fetching quality trends');
       res.status(500).json({
         error: 'Failed to fetch quality trends',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -649,7 +649,7 @@ export function registerPatternRoutes(router: Router): void {
 
       res.json(formattedPerformance);
     } catch (error) {
-      console.error('Error fetching pattern performance:', error);
+      console.error('Error fetching pattern performance:', error instanceof Error ? error.message : String(error));
       res.status(500).json({
         error: 'Failed to fetch pattern performance',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -774,7 +774,7 @@ export function registerPatternRoutes(router: Router): void {
 
       res.json(relationships);
     } catch (error) {
-      console.error('Error fetching pattern relationships:', error);
+      console.error('Error fetching pattern relationships:', error instanceof Error ? error.message : String(error));
       res.status(500).json({
         error: 'Failed to fetch pattern relationships',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -809,7 +809,7 @@ export function registerPatternRoutes(router: Router): void {
 
       res.json(languageData);
     } catch (error) {
-      console.error('Error fetching language breakdown:', error);
+      console.error('Error fetching language breakdown:', error instanceof Error ? error.message : String(error));
       res.status(500).json({
         error: 'Failed to fetch language breakdown',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -905,7 +905,7 @@ export function registerPatternRoutes(router: Router): void {
 
       res.json(response);
     } catch (error) {
-      console.error('Error fetching pattern details:', error);
+      console.error('Error fetching pattern details:', error instanceof Error ? error.message : String(error));
       res.status(500).json({
         error: 'Failed to fetch pattern details',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -960,7 +960,7 @@ export function registerPatternRoutes(router: Router): void {
 
       res.json(artifacts.map(transformPatlearnArtifact));
     } catch (error) {
-      console.error('Error fetching PATLEARN artifacts:', error);
+      console.error('Error fetching PATLEARN artifacts:', error instanceof Error ? error.message : String(error));
       res.status(500).json({
         error: 'Failed to fetch PATLEARN artifacts',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -1049,7 +1049,7 @@ export function registerPatternRoutes(router: Router): void {
         deprecationsInWindow: deprecations[0]?.count || 0,
       });
     } catch (error) {
-      console.error('Error fetching PATLEARN summary:', error);
+      console.error('Error fetching PATLEARN summary:', error instanceof Error ? error.message : String(error));
       res.status(500).json({
         error: 'Failed to fetch PATLEARN summary',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -1113,7 +1113,7 @@ export function registerPatternRoutes(router: Router): void {
         similarPatterns,
       });
     } catch (error) {
-      console.error('Error fetching PATLEARN artifact detail:', error);
+      console.error('Error fetching PATLEARN artifact detail:', error instanceof Error ? error.message : String(error));
       res.status(500).json({
         error: 'Failed to fetch PATLEARN artifact detail',
         message: error instanceof Error ? error.message : 'Unknown error',

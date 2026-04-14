@@ -128,6 +128,8 @@ import integrationCatalogRoutes from './integration-catalog-routes';
 import { systemActivityRoutes } from './system-activity-routes';
 // Hot Nodes traffic distribution routes (OMN-8695)
 import hotNodesRoutes from './hot-nodes-routes';
+// Friction Log dashboard routes (OMN-8698)
+import frictionRoutes from './friction-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -354,6 +356,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Hot Nodes traffic distribution routes (OMN-8695)
   app.use('/api/nodes/hot', hotNodesRoutes);
+
+  // Friction Log dashboard routes (OMN-8698)
+  app.use('/api/friction', frictionRoutes);
 
   // Prometheus metrics endpoint (OMN-4609)
   // Route: GET /metrics — NO authentication. Prometheus scrapes without tokens.

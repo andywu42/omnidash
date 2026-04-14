@@ -155,6 +155,9 @@ const DASHBOARD_ROUTES = [
   '/pipeline',
   '/settings',
 
+  // Friction log dashboard (OMN-8698)
+  '/friction',
+
   // Eval results (OMN-6780)
   '/eval-results',
 

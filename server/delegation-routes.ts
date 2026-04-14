@@ -36,7 +36,7 @@ router.get('/summary', async (req, res) => {
     const payload = await delegationProjection.ensureFreshForWindow(timeWindow);
     return res.json(payload.summary);
   } catch (error) {
-    console.error('[delegation] Error fetching summary:', error);
+    console.error('[delegation] Error fetching summary');
     return res.status(500).json({ error: 'Failed to fetch delegation summary' });
   }
 });
@@ -52,7 +52,7 @@ router.get('/by-task-type', async (req, res) => {
     const payload = await delegationProjection.ensureFreshForWindow(timeWindow);
     return res.json(payload.byTaskType);
   } catch (error) {
-    console.error('[delegation] Error fetching by-task-type:', error);
+    console.error('[delegation] Error fetching by-task-type');
     return res.status(500).json({ error: 'Failed to fetch delegation by task type' });
   }
 });
@@ -68,7 +68,7 @@ router.get('/by-model', async (req, res) => {
     const payload = await delegationProjection.ensureFreshForWindow(timeWindow);
     return res.json(payload.byModel);
   } catch (error) {
-    console.error('[delegation] Error fetching by-model:', error);
+    console.error('[delegation] Error fetching by-model');
     return res.status(500).json({ error: 'Failed to fetch delegation by model' });
   }
 });
@@ -84,7 +84,7 @@ router.get('/cost-savings', async (req, res) => {
     const payload = await delegationProjection.ensureFreshForWindow(timeWindow);
     return res.json(payload.costSavings);
   } catch (error) {
-    console.error('[delegation] Error fetching cost-savings:', error);
+    console.error('[delegation] Error fetching cost-savings');
     return res.status(500).json({ error: 'Failed to fetch delegation cost savings' });
   }
 });
@@ -100,7 +100,7 @@ router.get('/quality-gates', async (req, res) => {
     const payload = await delegationProjection.ensureFreshForWindow(timeWindow);
     return res.json(payload.qualityGates);
   } catch (error) {
-    console.error('[delegation] Error fetching quality-gates:', error);
+    console.error('[delegation] Error fetching quality-gates');
     return res.status(500).json({ error: 'Failed to fetch delegation quality gates' });
   }
 });
@@ -116,7 +116,7 @@ router.get('/by-model', async (req, res) => {
     const payload = await delegationProjection.ensureFreshForWindow(timeWindow);
     return res.json(payload.byModel);
   } catch (error) {
-    console.error('[delegation] Error fetching by-model:', error);
+    console.error('[delegation] Error fetching by-model');
     return res.status(500).json({ error: 'Failed to fetch delegation by model' });
   }
 });
@@ -132,7 +132,7 @@ router.get('/shadow-divergence', async (req, res) => {
     const payload = await delegationProjection.ensureFreshForWindow(timeWindow);
     return res.json(payload.shadowDivergence);
   } catch (error) {
-    console.error('[delegation] Error fetching shadow-divergence:', error);
+    console.error('[delegation] Error fetching shadow-divergence');
     return res.status(500).json({ error: 'Failed to fetch delegation shadow divergence' });
   }
 });
@@ -147,7 +147,7 @@ router.get('/decisions', async (req, res) => {
     const decisions = await delegationProjection.queryRecentDecisions(limit);
     return res.json(decisions);
   } catch (error) {
-    console.error('[delegation] Error fetching decisions:', error);
+    console.error('[delegation] Error fetching decisions');
     return res.status(500).json({ error: 'Failed to fetch delegation decisions' });
   }
 });
@@ -163,7 +163,7 @@ router.get('/trend', async (req, res) => {
     const payload = await delegationProjection.ensureFreshForWindow(timeWindow);
     return res.json(payload.trend);
   } catch (error) {
-    console.error('[delegation] Error fetching trend:', error);
+    console.error('[delegation] Error fetching trend');
     return res.status(500).json({ error: 'Failed to fetch delegation trend' });
   }
 });
