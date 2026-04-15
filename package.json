@@ -133,7 +133,7 @@
     "zod-validation-error": "^4.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.1.0",
+    "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
     "@playwright/test": "^1.56.1",
     "@replit/vite-plugin-cartographer": "^0.4.0",
